@@ -1,0 +1,489 @@
+{% extends "base.html" %}
+
+{% block title %}Editar curso{% endblock %}
+
+
+
+{% block content_header %}
+
+<div class="row">
+
+
+    <div class="col-sm-6">
+
+
+        <h3 class="mb-0">
+
+
+            <i class="bi bi-pencil-square me-2"></i>
+
+
+            Editar curso
+
+
+
+        </h3>
+
+
+    </div>
+
+
+
+
+
+    <div class="col-sm-6">
+
+
+        <ol class="breadcrumb float-sm-end">
+
+
+            <li class="breadcrumb-item">
+
+                <a href="{% url 'core:index' %}">
+                    Inicio
+                </a>
+
+            </li>
+
+
+
+
+            <li class="breadcrumb-item">
+
+                <a href="{% url 'academica:lista' %}">
+                    Académica
+                </a>
+
+            </li>
+
+
+
+
+            <li class="breadcrumb-item active">
+
+                Editar
+
+            </li>
+
+
+
+
+        </ol>
+
+
+    </div>
+
+
+</div>
+
+
+{% endblock %}
+
+
+
+
+
+
+
+
+
+{% block content %}
+
+
+
+
+
+
+
+<div class="row">
+
+
+
+    <div class="col-md-8">
+
+
+
+
+
+        <div class="card">
+
+
+
+
+
+            <div class="card-header">
+
+
+                <h5 class="mb-0">
+
+
+                    <i class="bi bi-mortarboard me-2"></i>
+
+
+                    Editar información del curso
+
+
+
+                </h5>
+
+
+
+            </div>
+
+
+
+
+
+
+
+            <div class="card-body">
+
+
+
+
+
+                <form>
+
+
+
+
+
+
+
+                    <!-- Curso -->
+
+                    <div class="mb-3">
+
+
+                        <label class="form-label">
+
+
+                            Curso
+
+
+                        </label>
+
+
+
+
+                        <input 
+                            type="text"
+                            class="form-control"
+                            value="5° Año"
+                        >
+
+
+
+                    </div>
+
+
+
+
+
+
+
+
+
+                    <!-- División -->
+
+                    <div class="mb-3">
+
+
+                        <label class="form-label">
+
+
+                            División
+
+
+                        </label>
+
+
+
+
+                        <input 
+                            type="text"
+                            class="form-control"
+                            value="A"
+                        >
+
+
+
+                    </div>
+
+
+
+
+
+
+
+
+
+                    <!-- Turno -->
+
+                    <div class="mb-3">
+
+
+                        <label class="form-label">
+
+
+                            Turno
+
+
+                        </label>
+
+
+
+
+                        <select class="form-select">
+
+
+                            <option selected>
+
+
+                                Mañana
+
+
+                            </option>
+
+
+                            <option>
+
+
+                                Tarde
+
+
+                            </option>
+
+
+                            <option>
+
+
+                                Noche
+
+
+                            </option>
+
+
+
+                        </select>
+
+
+
+                    </div>
+
+
+
+
+
+
+
+
+
+                    <!-- Responsable -->
+
+                    <div class="mb-3">
+
+
+                        <label class="form-label">
+
+
+                            Responsable / Preceptor
+
+
+                        </label>
+
+
+
+
+                        <select class="form-select">
+
+
+                            <option selected>
+
+
+                                Laura Fernández
+
+
+                            </option>
+
+
+                            <option>
+
+
+                                Martín Gómez
+
+
+                            </option>
+
+
+                            <option>
+
+
+                                Ana Martínez
+
+
+                            </option>
+
+
+
+                        </select>
+
+
+
+                    </div>
+
+
+
+
+
+
+
+
+
+                    <!-- Estado -->
+
+                    <div class="mb-3">
+
+
+                        <label class="form-label">
+
+
+                            Estado
+
+
+                        </label>
+
+
+
+
+                        <select class="form-select">
+
+
+                            <option selected>
+
+
+                                Activo
+
+
+                            </option>
+
+
+                            <option>
+
+
+                                Inactivo
+
+
+                            </option>
+
+
+
+                        </select>
+
+
+
+                    </div>
+
+
+
+
+
+
+
+
+
+                    <div class="d-flex justify-content-between">
+
+
+
+
+
+                        <a 
+                            href="{% url 'academica:lista' %}" 
+                            class="btn btn-secondary"
+                        >
+
+
+                            <i class="bi bi-arrow-left"></i>
+
+
+                            Cancelar
+
+
+
+                        </a>
+
+
+
+
+
+
+
+                        <button 
+                            type="submit"
+                            class="btn btn-primary"
+                        >
+
+
+                            <i class="bi bi-save"></i>
+
+
+                            Guardar cambios
+
+
+
+                        </button>
+
+
+
+
+
+
+                    </div>
+
+
+
+
+
+
+
+
+                </form>
+
+
+
+
+
+
+            </div>
+
+
+
+
+
+
+
+        </div>
+
+
+
+
+
+
+
+    </div>
+
+
+
+
+
+</div>
+
+
+
+
+
+
+
+
+{% endblock %}

@@ -1,0 +1,562 @@
+{% extends "base.html" %}
+
+{% block title %}Certificados{% endblock %}
+
+
+
+{% block content_header %}
+
+<div class="row">
+
+
+    <div class="col-sm-6">
+
+
+        <h3 class="mb-0">
+
+
+            <i class="bi bi-file-earmark-text me-2"></i>
+
+
+            Certificados
+
+
+
+        </h3>
+
+
+    </div>
+
+
+
+
+
+    <div class="col-sm-6">
+
+
+        <ol class="breadcrumb float-sm-end">
+
+
+            <li class="breadcrumb-item">
+
+                <a href="{% url 'core:index' %}">
+                    Inicio
+                </a>
+
+            </li>
+
+
+
+
+            <li class="breadcrumb-item active">
+
+                Certificados
+
+            </li>
+
+
+
+
+        </ol>
+
+
+    </div>
+
+
+</div>
+
+
+{% endblock %}
+
+
+
+
+
+
+
+
+
+{% block content %}
+
+
+
+
+
+
+
+<div class="row mb-3">
+
+
+    <div class="col">
+
+
+
+        <a href="{% url 'certificados:nuevo' %}" class="btn btn-primary">
+
+
+            <i class="bi bi-plus-circle"></i>
+
+
+            Nuevo certificado
+
+
+
+        </a>
+
+
+
+    </div>
+
+
+
+</div>
+
+
+
+
+
+
+
+
+
+<div class="card">
+
+
+
+
+
+    <div class="card-header">
+
+
+        <h5 class="mb-0">
+
+
+            <i class="bi bi-list-ul me-2"></i>
+
+
+            Listado de certificados
+
+
+
+        </h5>
+
+
+
+    </div>
+
+
+
+
+
+
+
+    <div class="card-body">
+
+
+
+
+
+        <div class="table-responsive">
+
+
+
+
+
+            <table class="table table-hover align-middle">
+
+
+
+
+
+                <thead class="table-light">
+
+
+                    <tr>
+
+
+                        <th>
+                            Alumno
+                        </th>
+
+
+                        <th>
+                            Tipo
+                        </th>
+
+
+                        <th>
+                            Fecha
+                        </th>
+
+
+                        <th>
+                            Estado
+                        </th>
+
+
+                        <th>
+                            Descargar
+                        </th>
+
+
+                        <th class="text-center">
+                            Acciones
+                        </th>
+
+
+
+                    </tr>
+
+
+
+                </thead>
+
+
+
+
+
+
+
+
+
+                <tbody>
+
+
+
+
+
+
+                    <tr>
+
+
+
+                        <td>
+
+
+                            <i class="bi bi-person-circle text-primary me-2"></i>
+
+
+                            Juan Pérez
+
+
+
+                        </td>
+
+
+
+
+
+                        <td>
+
+
+                            Certificado de alumno regular
+
+
+
+                        </td>
+
+
+
+
+
+                        <td>
+
+
+                            04/08/2026
+
+
+
+                        </td>
+
+
+
+
+
+                        <td>
+
+
+
+                            <span class="badge text-bg-success">
+
+
+                                Generado
+
+
+                            </span>
+
+
+
+                        </td>
+
+
+
+
+
+
+                        <td>
+
+
+                            <a href="#" class="btn btn-sm btn-success">
+
+
+                                <i class="bi bi-download"></i>
+
+
+                                Descargar
+
+
+
+                            </a>
+
+
+
+                        </td>
+
+
+
+
+
+
+
+                        <td class="text-center">
+
+
+
+
+
+                            <a 
+                                href="#"
+                                class="btn btn-sm btn-info"
+                            >
+
+
+                                <i class="bi bi-eye"></i>
+
+
+
+                            </a>
+
+
+
+
+
+
+
+                            <button 
+                                class="btn btn-sm btn-danger"
+                            >
+
+
+                                <i class="bi bi-trash"></i>
+
+
+
+                            </button>
+
+
+
+
+
+
+                        </td>
+
+
+
+
+
+
+                    </tr>
+
+
+
+
+
+
+
+
+
+                    <tr>
+
+
+
+                        <td>
+
+
+                            <i class="bi bi-person-circle text-primary me-2"></i>
+
+
+                            María González
+
+
+
+                        </td>
+
+
+
+
+
+                        <td>
+
+
+                            Certificado de estudios
+
+
+
+                        </td>
+
+
+
+
+
+                        <td>
+
+
+                            01/08/2026
+
+
+
+                        </td>
+
+
+
+
+
+                        <td>
+
+
+
+                            <span class="badge text-bg-warning">
+
+
+                                Pendiente
+
+
+                            </span>
+
+
+
+                        </td>
+
+
+
+
+
+
+
+                        <td>
+
+
+                            <button class="btn btn-sm btn-secondary" disabled>
+
+
+                                <i class="bi bi-download"></i>
+
+
+                                Descargar
+
+
+
+                            </button>
+
+
+
+                        </td>
+
+
+
+
+
+
+
+
+                        <td class="text-center">
+
+
+
+
+
+                            <a 
+                                href="#"
+                                class="btn btn-sm btn-info"
+                            >
+
+
+                                <i class="bi bi-eye"></i>
+
+
+
+                            </a>
+
+
+
+
+
+
+
+                            <button 
+                                class="btn btn-sm btn-danger"
+                            >
+
+
+                                <i class="bi bi-trash"></i>
+
+
+
+                            </button>
+
+
+
+
+
+
+                        </td>
+
+
+
+
+
+
+                    </tr>
+
+
+
+
+
+
+                </tbody>
+
+
+
+
+
+
+            </table>
+
+
+
+
+
+
+        </div>
+
+
+
+
+
+    </div>
+
+
+
+
+
+
+
+</div>
+
+
+
+
+
+
+
+{% endblock %}

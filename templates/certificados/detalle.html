@@ -1,0 +1,470 @@
+{% extends "base.html" %}
+
+{% block title %}Detalle certificado{% endblock %}
+
+
+
+{% block content_header %}
+
+<div class="row">
+
+
+    <div class="col-sm-6">
+
+
+        <h3 class="mb-0">
+
+
+            <i class="bi bi-file-earmark-text me-2"></i>
+
+
+            Detalle del certificado
+
+
+
+        </h3>
+
+
+    </div>
+
+
+
+
+
+    <div class="col-sm-6">
+
+
+        <ol class="breadcrumb float-sm-end">
+
+
+            <li class="breadcrumb-item">
+
+                <a href="{% url 'core:index' %}">
+                    Inicio
+                </a>
+
+            </li>
+
+
+
+
+            <li class="breadcrumb-item">
+
+                <a href="{% url 'certificados:lista' %}">
+                    Certificados
+                </a>
+
+            </li>
+
+
+
+
+            <li class="breadcrumb-item active">
+
+                Detalle
+
+            </li>
+
+
+
+
+        </ol>
+
+
+    </div>
+
+
+</div>
+
+
+{% endblock %}
+
+
+
+
+
+
+
+
+
+{% block content %}
+
+
+
+
+
+
+
+<div class="row">
+
+
+
+    <div class="col-md-8">
+
+
+
+
+
+        <div class="card">
+
+
+
+
+
+            <div class="card-header">
+
+
+                <h5 class="mb-0">
+
+
+                    <i class="bi bi-info-circle me-2"></i>
+
+
+                    Información del certificado
+
+
+
+                </h5>
+
+
+
+            </div>
+
+
+
+
+
+
+
+            <div class="card-body">
+
+
+
+
+
+                <div class="row mb-3">
+
+
+
+                    <div class="col-md-4 fw-bold">
+
+
+                        Alumno
+
+
+                    </div>
+
+
+
+
+                    <div class="col-md-8">
+
+
+                        <i class="bi bi-person-circle text-primary me-2"></i>
+
+
+                        Juan Pérez
+
+
+                    </div>
+
+
+
+                </div>
+
+
+
+
+
+
+
+
+
+                <div class="row mb-3">
+
+
+
+                    <div class="col-md-4 fw-bold">
+
+
+                        Tipo
+
+
+                    </div>
+
+
+
+
+                    <div class="col-md-8">
+
+
+                        Certificado de alumno regular
+
+
+                    </div>
+
+
+
+                </div>
+
+
+
+
+
+
+
+
+
+                <div class="row mb-3">
+
+
+
+                    <div class="col-md-4 fw-bold">
+
+
+                        Fecha de emisión
+
+
+                    </div>
+
+
+
+
+                    <div class="col-md-8">
+
+
+                        04/08/2026
+
+
+                    </div>
+
+
+
+                </div>
+
+
+
+
+
+
+
+
+
+                <div class="row mb-3">
+
+
+
+                    <div class="col-md-4 fw-bold">
+
+
+                        Estado
+
+
+                    </div>
+
+
+
+
+                    <div class="col-md-8">
+
+
+                        <span class="badge text-bg-success">
+
+
+                            Generado
+
+
+                        </span>
+
+
+                    </div>
+
+
+
+                </div>
+
+
+
+
+
+
+
+
+
+                <div class="row mb-3">
+
+
+
+                    <div class="col-md-4 fw-bold">
+
+
+                        Observaciones
+
+
+                    </div>
+
+
+
+
+                    <div class="col-md-8">
+
+
+                        Certificado generado correctamente para presentación académica.
+
+
+                    </div>
+
+
+
+                </div>
+
+
+
+
+
+
+
+
+
+                <div class="row mb-3">
+
+
+
+                    <div class="col-md-4 fw-bold">
+
+
+                        Archivo
+
+
+                    </div>
+
+
+
+
+                    <div class="col-md-8">
+
+
+                        <a href="#" class="btn btn-success btn-sm">
+
+
+                            <i class="bi bi-download"></i>
+
+
+                            Descargar certificado
+
+
+                        </a>
+
+
+                    </div>
+
+
+
+                </div>
+
+
+
+
+
+
+
+
+
+                <hr>
+
+
+
+
+
+
+
+
+
+                <div class="d-flex justify-content-between">
+
+
+
+
+
+                    <a 
+                        href="{% url 'certificados:lista' %}" 
+                        class="btn btn-secondary"
+                    >
+
+
+                        <i class="bi bi-arrow-left"></i>
+
+
+                        Volver
+
+
+
+                    </a>
+
+
+
+
+
+
+
+                    <a 
+                        href="{% url 'certificados:editar' 1 %}" 
+                        class="btn btn-primary"
+                    >
+
+
+                        <i class="bi bi-pencil"></i>
+
+
+                        Editar
+
+
+
+                    </a>
+
+
+
+
+
+
+                </div>
+
+
+
+
+
+
+
+
+            </div>
+
+
+
+
+
+
+
+        </div>
+
+
+
+
+
+
+
+    </div>
+
+
+
+
+
+</div>
+
+
+
+
+
+
+
+
+{% endblock %}

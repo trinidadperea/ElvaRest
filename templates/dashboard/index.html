@@ -1,0 +1,83 @@
+{% extends 'base.html' %}
+
+{% block title %}Dashboard{% endblock %}
+
+{% block content_header %}
+<div class="row">
+    <div class="col-sm-6">
+        <h3 class="mb-0">Dashboard</h3>
+    </div>
+    <div class="col-sm-6">
+        <ol class="breadcrumb float-sm-end">
+            <li class="breadcrumb-item active">Inicio</li>
+        </ol>
+    </div>
+</div>
+{% endblock %}
+
+{% block content %}
+
+<div class="row">
+
+    <div class="col-lg-3 col-6">
+        <div class="small-box text-bg-primary">
+            <div class="inner">
+                <h3>0</h3>
+                <p>Docentes</p>
+            </div>
+            <div class="small-box-icon">
+                <i class="bi bi-person-badge"></i>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-3 col-6">
+        <div class="small-box text-bg-success">
+            <div class="inner">
+                <h3>0</h3>
+                <p>Alertas</p>
+            </div>
+            <div class="small-box-icon">
+                <i class="bi bi-exclamation-triangle"></i>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-3 col-6">
+        <div class="small-box text-bg-warning">
+            <div class="inner">
+                <h3>0</h3>
+                <p>Usuarios</p>
+            </div>
+            <div class="small-box-icon">
+                <i class="bi bi-people"></i>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-3 col-6">
+        <div class="small-box text-bg-danger">
+            <div class="inner">
+                <h3>0</h3>
+                <p>Licencias</p>
+            </div>
+            <div class="small-box-icon">
+                <i class="bi bi-calendar2-week"></i>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<div class="card">
+    <div class="card-header">
+        <h3 class="card-title">Bienvenido</h3>
+    </div>
+
+    <div class="card-body">
+        Bienvenido al sistema <strong>ElvaRest</strong>,
+        {{ request.user.get_full_name|default:request.user.username }}.
+    </div>
+</div>
+
+{% endblock %}

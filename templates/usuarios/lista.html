@@ -1,0 +1,278 @@
+{% extends "base.html" %}
+
+{% block title %}Usuarios{% endblock %}
+
+{% block content_header %}
+<div class="row">
+    <div class="col-sm-6">
+        <h3 class="mb-0">
+            <i class="bi bi-people me-2"></i>
+            Usuarios
+        </h3>
+    </div>
+
+    <div class="col-sm-6">
+        <ol class="breadcrumb float-sm-end">
+            <li class="breadcrumb-item">
+                <a href="{% url 'core:index' %}">Inicio</a>
+            </li>
+            <li class="breadcrumb-item active">
+                Usuarios
+            </li>
+        </ol>
+    </div>
+</div>
+{% endblock %}
+
+{% block content %}
+
+<div class="card">
+
+    <div class="card-header">
+
+        <div class="row align-items-center">
+
+            <div class="col-md-6">
+
+                <a href="{% url 'usuarios:nuevo' %}" class="btn btn-primary">
+                    <i class="bi bi-person-plus"></i>
+                    Nuevo usuario
+                </a>
+
+            </div>
+
+            <div class="col-md-6">
+
+                <div class="input-group">
+
+                    <input
+                        type="text"
+                        class="form-control"
+                        placeholder="Buscar usuario..."
+                    >
+
+                    <button class="btn btn-outline-secondary">
+
+                        <i class="bi bi-search"></i>
+
+                    </button>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+    <div class="card-body">
+
+        <div class="table-responsive">
+
+            <table class="table table-hover table-bordered align-middle">
+
+                <thead class="table-light">
+
+                    <tr>
+
+                        <th>Usuario</th>
+
+                        <th>Nombre completo</th>
+
+                        <th>Rol</th>
+
+                        <th>Estado</th>
+
+                        <th>Último acceso</th>
+
+                        <th width="180">Acciones</th>
+
+                    </tr>
+
+                </thead>
+
+                <tbody>
+
+                    <tr>
+
+                        <td>mperez</td>
+
+                        <td>Marta Perez</td>
+
+                        <td>
+
+                            <span class="badge text-bg-primary">
+
+                                Administrador
+
+                            </span>
+
+                        </td>
+
+                        <td>
+
+                            <span class="badge text-bg-success">
+
+                                Activo
+
+                            </span>
+
+                        </td>
+
+                        <td>04/08/2026 10:15</td>
+
+                        <td>
+
+                            <a href="{% url 'usuarios:detalle' 1 %}" class="btn btn-sm btn-info">
+                                <i class="bi bi-eye"></i>
+                            </a>
+
+                            <a href="{% url 'usuarios:editar' 1 %}" class="btn btn-sm btn-warning">
+                                <i class="bi bi-pencil-square"></i>
+                            </a>
+
+                            <button class="btn btn-sm btn-danger">
+                                <i class="bi bi-trash"></i>
+                            </button>
+
+                        </td>
+
+                    </tr>
+
+                    <tr>
+
+                        <td>jperez</td>
+
+                        <td>Juan Pérez</td>
+
+                        <td>
+
+                            <span class="badge text-bg-info">
+
+                                Secretario
+
+                            </span>
+
+                        </td>
+
+                        <td>
+
+                            <span class="badge text-bg-success">
+
+                                Activo
+
+                            </span>
+
+                        </td>
+
+                        <td>03/08/2026 16:42</td>
+
+                        <td>
+
+                            <a href="{% url 'usuarios:detalle' 2 %}" class="btn btn-sm btn-info">
+                                <i class="bi bi-eye"></i>
+                            </a>
+
+                            <a href="{% url 'usuarios:editar' 2 %}" class="btn btn-sm btn-warning">
+                                <i class="bi bi-pencil-square"></i>
+                            </a>
+
+                            <button class="btn btn-sm btn-danger">
+                                <i class="bi bi-trash"></i>
+                            </button>
+
+                        </td>
+
+                    </tr>
+
+                    <tr>
+
+                        <td>mgomez</td>
+
+                        <td>María Gómez</td>
+
+                        <td>
+
+                            <span class="badge text-bg-secondary">
+
+                                Docente
+
+                            </span>
+
+                        </td>
+
+                        <td>
+
+                            <span class="badge text-bg-danger">
+
+                                Bloqueado
+
+                            </span>
+
+                        </td>
+
+                        <td>30/07/2026 08:20</td>
+
+                        <td>
+
+                            <a href="{% url 'usuarios:detalle' 3 %}" class="btn btn-sm btn-info">
+                                <i class="bi bi-eye"></i>
+                            </a>
+
+                            <a href="{% url 'usuarios:editar' 3 %}" class="btn btn-sm btn-warning">
+                                <i class="bi bi-pencil-square"></i>
+                            </a>
+
+                            <button class="btn btn-sm btn-danger">
+                                <i class="bi bi-trash"></i>
+                            </button>
+
+                        </td>
+
+                    </tr>
+
+                </tbody>
+
+            </table>
+
+        </div>
+
+    </div>
+
+    <div class="card-footer d-flex justify-content-between align-items-center">
+
+        <small class="text-muted">
+
+            Mostrando 3 usuarios
+
+        </small>
+
+        <nav>
+
+            <ul class="pagination pagination-sm mb-0">
+
+                <li class="page-item disabled">
+                    <span class="page-link">Anterior</span>
+                </li>
+
+                <li class="page-item active">
+                    <span class="page-link">1</span>
+                </li>
+
+                <li class="page-item">
+                    <a class="page-link" href="#">2</a>
+                </li>
+
+                <li class="page-item">
+                    <a class="page-link" href="#">Siguiente</a>
+                </li>
+
+            </ul>
+
+        </nav>
+
+    </div>
+
+</div>
+
+{% endblock %}

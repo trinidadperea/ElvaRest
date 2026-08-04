@@ -1,0 +1,654 @@
+{% extends "base.html" %}
+
+{% block title %}Detalle de alerta{% endblock %}
+
+
+
+{% block content_header %}
+
+<div class="row">
+
+
+    <div class="col-sm-6">
+
+
+        <h3 class="mb-0">
+
+            <i class="bi bi-bell me-2"></i>
+
+            Detalle de alerta
+
+        </h3>
+
+
+    </div>
+
+
+
+
+
+    <div class="col-sm-6">
+
+
+        <ol class="breadcrumb float-sm-end">
+
+
+            <li class="breadcrumb-item">
+
+                <a href="{% url 'core:index' %}">
+                    Inicio
+                </a>
+
+            </li>
+
+
+
+
+            <li class="breadcrumb-item">
+
+                <a href="{% url 'alertas:lista' %}">
+                    Alertas
+                </a>
+
+            </li>
+
+
+
+
+
+            <li class="breadcrumb-item active">
+
+                Detalle
+
+            </li>
+
+
+
+
+        </ol>
+
+
+    </div>
+
+
+</div>
+
+
+{% endblock %}
+
+
+
+
+
+
+
+
+
+{% block content %}
+
+
+
+
+
+
+<div class="row mb-3">
+
+
+    <div class="col">
+
+
+
+        <a href="{% url 'alertas:lista' %}" class="btn btn-secondary">
+
+
+            <i class="bi bi-arrow-left"></i>
+
+
+            Volver
+
+
+
+        </a>
+
+
+
+
+
+
+        <a href="{% url 'alertas:editar' 1 %}" class="btn btn-warning">
+
+
+            <i class="bi bi-pencil-square"></i>
+
+
+            Editar
+
+
+
+        </a>
+
+
+
+
+
+
+        <button class="btn btn-danger">
+
+
+            <i class="bi bi-trash"></i>
+
+
+            Eliminar
+
+
+
+        </button>
+
+
+
+
+
+    </div>
+
+
+
+</div>
+
+
+
+
+
+
+
+
+
+<div class="row">
+
+
+
+
+
+
+    <div class="col-lg-4">
+
+
+
+
+
+
+        <div class="card">
+
+
+
+
+
+            <div class="card-body text-center">
+
+
+
+
+
+                <i class="bi bi-exclamation-triangle display-1 text-danger"></i>
+
+
+
+
+
+
+                <h4 class="mt-3">
+
+
+                    Falta de documentación
+
+
+                </h4>
+
+
+
+
+
+                <p class="text-muted">
+
+                    Documentación pendiente de entrega
+
+                </p>
+
+
+
+
+
+
+                <span class="badge text-bg-danger">
+
+                    Prioridad Alta
+
+                </span>
+
+
+
+
+
+
+                <br>
+
+
+
+
+                <span class="badge text-bg-warning mt-2">
+
+                    Pendiente
+
+                </span>
+
+
+
+
+
+
+            </div>
+
+
+
+
+
+        </div>
+
+
+
+
+
+
+
+    </div>
+
+
+
+
+
+
+
+
+
+    <div class="col-lg-8">
+
+
+
+
+
+
+
+        <div class="card">
+
+
+
+
+
+            <div class="card-header">
+
+
+                <h5 class="mb-0">
+
+
+                    <i class="bi bi-info-circle me-2"></i>
+
+
+                    Información de la alerta
+
+
+
+                </h5>
+
+
+            </div>
+
+
+
+
+
+
+
+            <div class="card-body">
+
+
+
+
+
+                <div class="row">
+
+
+
+
+
+                    <div class="col-md-6">
+
+
+
+
+
+                        <p>
+
+                            <strong>Título:</strong>
+
+                            Falta de documentación
+
+                        </p>
+
+
+
+
+
+
+                        <p>
+
+                            <strong>Tipo:</strong>
+
+                            Documentación
+
+                        </p>
+
+
+
+
+
+
+                        <p>
+
+                            <strong>Prioridad:</strong>
+
+                            Alta
+
+                        </p>
+
+
+
+
+
+                    </div>
+
+
+
+
+
+
+
+
+
+                    <div class="col-md-6">
+
+
+
+
+
+                        <p>
+
+                            <strong>Estado:</strong>
+
+                            Pendiente
+
+                        </p>
+
+
+
+
+
+
+                        <p>
+
+                            <strong>Fecha:</strong>
+
+                            04/08/2026
+
+                        </p>
+
+
+
+
+
+
+                        <p>
+
+                            <strong>Destinatario:</strong>
+
+                            Docentes
+
+                        </p>
+
+
+
+
+
+                    </div>
+
+
+
+
+
+
+
+                </div>
+
+
+
+
+
+
+            </div>
+
+
+
+
+
+
+
+        </div>
+
+
+
+
+
+
+
+
+
+        <div class="card">
+
+
+
+
+
+            <div class="card-header">
+
+
+                <h5 class="mb-0">
+
+
+                    <i class="bi bi-chat-left-text me-2"></i>
+
+
+                    Descripción
+
+
+
+                </h5>
+
+
+            </div>
+
+
+
+
+
+
+
+            <div class="card-body">
+
+
+
+
+
+                <p>
+
+
+                    Se detectó documentación faltante correspondiente al período actual.
+                    El usuario deberá completar la información solicitada para resolver la alerta.
+
+
+                </p>
+
+
+
+
+
+
+            </div>
+
+
+
+
+
+
+
+        </div>
+
+
+
+
+
+
+
+
+
+        <div class="card">
+
+
+
+
+
+            <div class="card-header">
+
+
+                <h5 class="mb-0">
+
+
+                    <i class="bi bi-clock-history me-2"></i>
+
+
+                    Historial
+
+
+
+                </h5>
+
+
+            </div>
+
+
+
+
+
+
+
+            <div class="card-body">
+
+
+
+
+
+
+                <ul class="list-group">
+
+
+
+
+
+
+                    <li class="list-group-item">
+
+
+                        <strong>Creación:</strong>
+
+                        04/08/2026 09:30
+
+
+
+                    </li>
+
+
+
+
+
+
+
+                    <li class="list-group-item">
+
+
+                        <strong>Última modificación:</strong>
+
+                        04/08/2026 11:15
+
+
+
+                    </li>
+
+
+
+
+
+
+
+                    <li class="list-group-item">
+
+
+                        <strong>Creada por:</strong>
+
+                        Administrador
+
+
+
+                    </li>
+
+
+
+
+
+
+                </ul>
+
+
+
+
+
+
+            </div>
+
+
+
+
+
+
+
+        </div>
+
+
+
+
+
+
+
+    </div>
+
+
+
+
+
+
+
+</div>
+
+
+
+
+
+
+
+{% endblock %}

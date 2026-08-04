@@ -1,0 +1,470 @@
+{% extends "base.html" %}
+
+{% block title %}Detalle curso{% endblock %}
+
+
+
+{% block content_header %}
+
+<div class="row">
+
+
+    <div class="col-sm-6">
+
+
+        <h3 class="mb-0">
+
+
+            <i class="bi bi-mortarboard me-2"></i>
+
+
+            Detalle del curso
+
+
+
+        </h3>
+
+
+    </div>
+
+
+
+
+
+    <div class="col-sm-6">
+
+
+        <ol class="breadcrumb float-sm-end">
+
+
+            <li class="breadcrumb-item">
+
+                <a href="{% url 'core:index' %}">
+                    Inicio
+                </a>
+
+            </li>
+
+
+
+
+            <li class="breadcrumb-item">
+
+                <a href="{% url 'academica:lista' %}">
+                    Académica
+                </a>
+
+            </li>
+
+
+
+
+            <li class="breadcrumb-item active">
+
+                Detalle
+
+            </li>
+
+
+
+
+        </ol>
+
+
+    </div>
+
+
+</div>
+
+
+{% endblock %}
+
+
+
+
+
+
+
+
+
+{% block content %}
+
+
+
+
+
+
+
+<div class="row">
+
+
+
+
+
+    <!-- Curso -->
+
+    <div class="col-md-6">
+
+
+
+        <div class="card">
+
+
+
+            <div class="card-header">
+
+
+                <h5 class="mb-0">
+
+
+                    <i class="bi bi-book me-2"></i>
+
+
+                    Curso
+
+
+
+                </h5>
+
+
+            </div>
+
+
+
+
+
+            <div class="card-body">
+
+
+                <h4>
+
+
+                    5° Año
+
+
+                </h4>
+
+
+                <p class="text-muted mb-0">
+
+
+                    División A
+
+
+                </p>
+
+
+            </div>
+
+
+
+        </div>
+
+
+
+    </div>
+
+
+
+
+
+
+
+
+
+    <!-- Turno -->
+
+    <div class="col-md-6">
+
+
+
+        <div class="card">
+
+
+
+            <div class="card-header">
+
+
+                <h5 class="mb-0">
+
+
+                    <i class="bi bi-clock me-2"></i>
+
+
+                    Turno
+
+
+
+                </h5>
+
+
+            </div>
+
+
+
+
+
+            <div class="card-body">
+
+
+                <h4>
+
+
+                    Mañana
+
+
+                </h4>
+
+
+                <p class="text-muted mb-0">
+
+
+                    Horario escolar correspondiente
+
+
+                </p>
+
+
+            </div>
+
+
+
+        </div>
+
+
+
+    </div>
+
+
+
+
+
+
+
+
+
+    <!-- Responsable -->
+
+    <div class="col-md-6">
+
+
+
+        <div class="card">
+
+
+
+            <div class="card-header">
+
+
+                <h5 class="mb-0">
+
+
+                    <i class="bi bi-person-badge me-2"></i>
+
+
+                    Preceptor responsable
+
+
+
+                </h5>
+
+
+            </div>
+
+
+
+
+
+            <div class="card-body">
+
+
+                <h4>
+
+
+                    Laura Fernández
+
+
+                </h4>
+
+
+                <p class="text-muted mb-0">
+
+
+                    Responsable asignado al curso
+
+
+                </p>
+
+
+            </div>
+
+
+
+        </div>
+
+
+
+    </div>
+
+
+
+
+
+
+
+
+
+    <!-- Estado -->
+
+    <div class="col-md-6">
+
+
+
+        <div class="card">
+
+
+
+            <div class="card-header">
+
+
+                <h5 class="mb-0">
+
+
+                    <i class="bi bi-check-circle me-2"></i>
+
+
+                    Estado
+
+
+
+                </h5>
+
+
+            </div>
+
+
+
+
+
+            <div class="card-body">
+
+
+                <span class="badge text-bg-success fs-6">
+
+
+                    Activo
+
+
+                </span>
+
+
+            </div>
+
+
+
+        </div>
+
+
+
+    </div>
+
+
+
+
+
+
+
+</div>
+
+
+
+
+
+
+
+
+
+<div class="card mt-3">
+
+
+
+
+
+    <div class="card-body">
+
+
+
+
+
+        <div class="d-flex justify-content-between">
+
+
+
+
+
+            <a 
+                href="{% url 'academica:lista' %}" 
+                class="btn btn-secondary"
+            >
+
+
+                <i class="bi bi-arrow-left"></i>
+
+
+                Volver
+
+
+
+            </a>
+
+
+
+
+
+
+
+            <a 
+                href="{% url 'academica:editar' 1 %}" 
+                class="btn btn-primary"
+            >
+
+
+                <i class="bi bi-pencil"></i>
+
+
+                Editar
+
+
+
+            </a>
+
+
+
+
+
+
+        </div>
+
+
+
+
+
+
+    </div>
+
+
+
+
+
+
+
+</div>
+
+
+
+
+
+
+
+
+{% endblock %}

@@ -1,0 +1,596 @@
+{% extends "base.html" %}
+
+{% block title %}Reportes{% endblock %}
+
+
+
+{% block content_header %}
+
+<div class="row">
+
+
+    <div class="col-sm-6">
+
+
+        <h3 class="mb-0">
+
+
+            <i class="bi bi-bar-chart-line me-2"></i>
+
+
+            Reportes
+
+
+
+        </h3>
+
+
+    </div>
+
+
+
+
+
+    <div class="col-sm-6">
+
+
+        <ol class="breadcrumb float-sm-end">
+
+
+            <li class="breadcrumb-item">
+
+                <a href="{% url 'core:index' %}">
+                    Inicio
+                </a>
+
+            </li>
+
+
+
+
+            <li class="breadcrumb-item active">
+
+                Reportes
+
+            </li>
+
+
+
+
+        </ol>
+
+
+    </div>
+
+
+</div>
+
+
+{% endblock %}
+
+
+
+
+
+
+
+
+
+{% block content %}
+
+
+
+
+
+
+
+
+
+<!-- Indicadores -->
+
+<div class="row">
+
+
+
+
+
+    <div class="col-lg-3 col-6">
+
+
+        <div class="small-box bg-primary">
+
+
+            <div class="inner">
+
+
+                <h3>
+                    120
+                </h3>
+
+
+                <p>
+                    Docentes
+                </p>
+
+
+            </div>
+
+
+            <div class="icon">
+
+
+                <i class="bi bi-person-badge"></i>
+
+
+            </div>
+
+
+        </div>
+
+
+    </div>
+
+
+
+
+
+
+
+
+
+    <div class="col-lg-3 col-6">
+
+
+        <div class="small-box bg-success">
+
+
+            <div class="inner">
+
+
+                <h3>
+                    350
+                </h3>
+
+
+                <p>
+                    Usuarios
+                </p>
+
+
+            </div>
+
+
+            <div class="icon">
+
+
+                <i class="bi bi-people"></i>
+
+
+            </div>
+
+
+        </div>
+
+
+    </div>
+
+
+
+
+
+
+
+
+
+    <div class="col-lg-3 col-6">
+
+
+        <div class="small-box bg-warning">
+
+
+            <div class="inner">
+
+
+                <h3>
+                    18
+                </h3>
+
+
+                <p>
+                    Licencias
+                </p>
+
+
+            </div>
+
+
+            <div class="icon">
+
+
+                <i class="bi bi-calendar-x"></i>
+
+
+            </div>
+
+
+        </div>
+
+
+    </div>
+
+
+
+
+
+
+
+
+
+    <div class="col-lg-3 col-6">
+
+
+        <div class="small-box bg-danger">
+
+
+            <div class="inner">
+
+
+                <h3>
+                    7
+                </h3>
+
+
+                <p>
+                    Alertas
+                </p>
+
+
+            </div>
+
+
+            <div class="icon">
+
+
+                <i class="bi bi-bell"></i>
+
+
+            </div>
+
+
+        </div>
+
+
+    </div>
+
+
+
+
+
+</div>
+
+
+
+
+
+
+
+
+
+<!-- Gráfico -->
+
+<div class="card">
+
+
+
+
+
+    <div class="card-header">
+
+
+        <h5 class="mb-0">
+
+
+            <i class="bi bi-graph-up me-2"></i>
+
+
+            Estadísticas generales
+
+
+
+        </h5>
+
+
+
+    </div>
+
+
+
+
+
+
+
+    <div class="card-body">
+
+
+
+
+
+        <canvas id="reportesChart" height="100"></canvas>
+
+
+
+
+
+
+    </div>
+
+
+
+
+
+
+
+</div>
+
+
+
+
+
+
+
+
+
+<!-- Reportes disponibles -->
+
+<div class="card mt-4">
+
+
+
+
+
+    <div class="card-header">
+
+
+        <h5 class="mb-0">
+
+
+            <i class="bi bi-file-earmark-bar-graph me-2"></i>
+
+
+            Reportes disponibles
+
+
+
+        </h5>
+
+
+
+    </div>
+
+
+
+
+
+
+
+    <div class="card-body">
+
+
+
+
+
+        <div class="row">
+
+
+
+
+
+            <div class="col-md-6">
+
+
+
+                <div class="form-check mb-3">
+
+
+                    <input 
+                        class="form-check-input"
+                        type="radio"
+                        name="reporte"
+                    >
+
+
+                    <label class="form-check-label">
+
+
+                        Docentes
+
+
+                    </label>
+
+
+                </div>
+
+
+
+
+
+
+
+                <div class="form-check mb-3">
+
+
+                    <input 
+                        class="form-check-input"
+                        type="radio"
+                        name="reporte"
+                    >
+
+
+                    <label class="form-check-label">
+
+
+                        Licencias
+
+
+                    </label>
+
+
+                </div>
+
+
+
+            </div>
+
+
+
+
+
+
+
+
+
+            <div class="col-md-6">
+
+
+
+                <div class="form-check mb-3">
+
+
+                    <input 
+                        class="form-check-input"
+                        type="radio"
+                        name="reporte"
+                    >
+
+
+                    <label class="form-check-label">
+
+
+                        Usuarios
+
+
+                    </label>
+
+
+                </div>
+
+
+
+
+
+
+
+                <div class="form-check mb-3">
+
+
+                    <input 
+                        class="form-check-input"
+                        type="radio"
+                        name="reporte"
+                    >
+
+
+                    <label class="form-check-label">
+
+
+                        Académica
+
+
+                    </label>
+
+
+                </div>
+
+
+
+            </div>
+
+
+
+
+
+        </div>
+
+
+
+
+
+
+
+
+
+        <hr>
+
+
+
+
+
+
+
+        <div class="d-flex gap-2">
+
+
+
+
+
+            <button class="btn btn-danger">
+
+
+                <i class="bi bi-file-earmark-pdf"></i>
+
+
+                Exportar PDF
+
+
+
+            </button>
+
+
+
+
+
+
+
+            <button class="btn btn-success">
+
+
+                <i class="bi bi-file-earmark-excel"></i>
+
+
+                Exportar Excel
+
+
+
+            </button>
+
+
+
+
+
+
+        </div>
+
+
+
+
+
+
+    </div>
+
+
+
+
+
+
+
+</div>
+
+
+
+
+
+
+
+
+
+{% endblock %}

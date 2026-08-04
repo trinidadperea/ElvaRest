@@ -1,0 +1,213 @@
+{% extends "base.html" %}
+
+{% block title %}Nuevo docente{% endblock %}
+
+{% block content_header %}
+<div class="row">
+    <div class="col-sm-6">
+        <h3 class="mb-0">
+            <i class="bi bi-person-plus me-2"></i>
+            Nuevo docente
+        </h3>
+    </div>
+
+    <div class="col-sm-6">
+        <ol class="breadcrumb float-sm-end">
+            <li class="breadcrumb-item">
+                <a href="{% url 'core:index' %}">Inicio</a>
+            </li>
+            <li class="breadcrumb-item">
+                <a href="{% url 'docentes:lista' %}">Docentes</a>
+            </li>
+            <li class="breadcrumb-item active">
+                Nuevo
+            </li>
+        </ol>
+    </div>
+</div>
+{% endblock %}
+
+{% block content %}
+
+<form>
+
+    <!-- Datos personales -->
+    <div class="card">
+
+        <div class="card-header">
+            <h3 class="card-title">
+                <i class="bi bi-person me-2"></i>
+                Datos personales
+            </h3>
+        </div>
+
+        <div class="card-body">
+
+            <div class="row">
+
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">Nombre *</label>
+                    <input type="text" class="form-control" placeholder="Ingrese el nombre">
+                </div>
+
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">Apellido *</label>
+                    <input type="text" class="form-control" placeholder="Ingrese el apellido">
+                </div>
+
+                <div class="col-md-4 mb-3">
+                    <label class="form-label">DNI *</label>
+                    <input type="text" class="form-control" placeholder="12345678">
+                </div>
+
+                <div class="col-md-4 mb-3">
+                    <label class="form-label">CUIL</label>
+                    <input type="text" class="form-control" placeholder="20-12345678-3">
+                </div>
+
+                <div class="col-md-4 mb-3">
+                    <label class="form-label">Fecha de nacimiento</label>
+                    <input type="date" class="form-control">
+                </div>
+
+                <div class="col-md-4 mb-3">
+                    <label class="form-label">Sexo</label>
+                    <select class="form-select">
+                        <option selected disabled>Seleccione...</option>
+                        <option>Femenino</option>
+                        <option>Masculino</option>
+                        <option>Otro</option>
+                    </select>
+                </div>
+
+                <div class="col-md-4 mb-3">
+                    <label class="form-label">Estado civil</label>
+                    <select class="form-select">
+                        <option selected disabled>Seleccione...</option>
+                        <option>Soltero/a</option>
+                        <option>Casado/a</option>
+                        <option>Divorciado/a</option>
+                        <option>Viudo/a</option>
+                    </select>
+                </div>
+
+                <div class="col-md-4 mb-3">
+                    <label class="form-label">Nacionalidad</label>
+                    <input type="text" class="form-control" placeholder="Argentina">
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+    <!-- Contacto -->
+    <div class="card">
+
+        <div class="card-header">
+            <h3 class="card-title">
+                <i class="bi bi-envelope me-2"></i>
+                Información de contacto
+            </h3>
+        </div>
+
+        <div class="card-body">
+
+            <div class="row">
+
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">Correo electrónico</label>
+                    <input type="email" class="form-control" placeholder="correo@ejemplo.com">
+                </div>
+
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">Teléfono</label>
+                    <input type="text" class="form-control" placeholder="2611234567">
+                </div>
+
+                <div class="col-12 mb-3">
+                    <label class="form-label">Dirección</label>
+                    <input type="text" class="form-control" placeholder="Calle, número, ciudad">
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+    <!-- Información laboral -->
+    <div class="card">
+
+        <div class="card-header">
+            <h3 class="card-title">
+                <i class="bi bi-briefcase me-2"></i>
+                Información laboral
+            </h3>
+        </div>
+
+        <div class="card-body">
+
+            <div class="row">
+
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">Cargo *</label>
+                    <input type="text" class="form-control" placeholder="Profesor">
+                </div>
+
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">Título</label>
+                    <input type="text" class="form-control" placeholder="Profesor de Matemática">
+                </div>
+
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">Fecha de ingreso</label>
+                    <input type="date" class="form-control">
+                </div>
+
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">Estado</label>
+                    <select class="form-select">
+                        <option selected>Activo</option>
+                        <option>Inactivo</option>
+                    </select>
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+    <!-- Botones -->
+    <div class="card">
+
+        <div class="card-body d-flex justify-content-between">
+
+            <a href="{% url 'docentes:lista' %}" class="btn btn-secondary">
+                <i class="bi bi-arrow-left"></i>
+                Volver
+            </a>
+
+            <div>
+
+                <button type="reset" class="btn btn-outline-secondary">
+                    <i class="bi bi-x-circle"></i>
+                    Limpiar
+                </button>
+
+                <button type="submit" class="btn btn-primary">
+                    <i class="bi bi-floppy"></i>
+                    Guardar docente
+                </button>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</form>
+
+{% endblock %}

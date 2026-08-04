@@ -1,0 +1,615 @@
+{% extends "base.html" %}
+
+{% block title %}Académica{% endblock %}
+
+
+
+{% block content_header %}
+
+<div class="row">
+
+
+    <div class="col-sm-6">
+
+
+        <h3 class="mb-0">
+
+
+            <i class="bi bi-mortarboard me-2"></i>
+
+
+            Académica
+
+
+
+        </h3>
+
+
+    </div>
+
+
+
+
+
+    <div class="col-sm-6">
+
+
+        <ol class="breadcrumb float-sm-end">
+
+
+            <li class="breadcrumb-item">
+
+                <a href="{% url 'core:index' %}">
+                    Inicio
+                </a>
+
+            </li>
+
+
+
+
+            <li class="breadcrumb-item active">
+
+                Académica
+
+            </li>
+
+
+
+
+        </ol>
+
+
+    </div>
+
+
+</div>
+
+
+{% endblock %}
+
+
+
+
+
+
+
+
+
+{% block content %}
+
+
+
+
+
+
+
+<div class="row mb-3">
+
+
+    <div class="col-md-6">
+
+
+
+        <a href="{% url 'academica:nuevo' %}" class="btn btn-primary">
+
+
+            <i class="bi bi-plus-circle"></i>
+
+
+            Nuevo curso
+
+
+
+        </a>
+
+
+
+    </div>
+
+
+
+
+
+
+
+    <div class="col-md-6">
+
+
+
+        <div class="input-group">
+
+
+            <input 
+                type="text"
+                class="form-control"
+                placeholder="Buscar curso..."
+            >
+
+
+
+            <button class="btn btn-outline-secondary">
+
+
+                <i class="bi bi-search"></i>
+
+
+            </button>
+
+
+
+        </div>
+
+
+
+    </div>
+
+
+
+</div>
+
+
+
+
+
+
+
+
+
+<div class="card">
+
+
+
+
+
+    <div class="card-header">
+
+
+        <h5 class="mb-0">
+
+
+            <i class="bi bi-list-ul me-2"></i>
+
+
+            Cursos registrados
+
+
+
+        </h5>
+
+
+
+    </div>
+
+
+
+
+
+
+
+    <div class="card-body">
+
+
+
+
+
+        <div class="table-responsive">
+
+
+
+
+
+            <table class="table table-hover align-middle">
+
+
+
+
+
+                <thead class="table-light">
+
+
+                    <tr>
+
+
+                        <th>
+                            Curso
+                        </th>
+
+
+                        <th>
+                            División
+                        </th>
+
+
+                        <th>
+                            Turno
+                        </th>
+
+
+                        <th>
+                            Preceptor
+                        </th>
+
+
+                        <th>
+                            Estado
+                        </th>
+
+
+                        <th class="text-center">
+                            Acciones
+                        </th>
+
+
+
+                    </tr>
+
+
+
+                </thead>
+
+
+
+
+
+
+
+
+
+                <tbody>
+
+
+
+
+
+
+                    <tr>
+
+
+
+                        <td>
+
+
+                            <i class="bi bi-book text-primary me-2"></i>
+
+
+                            5° Año
+
+
+
+                        </td>
+
+
+
+
+
+                        <td>
+
+
+                            División A
+
+
+
+                        </td>
+
+
+
+
+
+                        <td>
+
+
+                            Mañana
+
+
+
+                        </td>
+
+
+
+
+
+                        <td>
+
+
+                            Laura Fernández
+
+
+
+                        </td>
+
+
+
+
+
+                        <td>
+
+
+
+                            <span class="badge text-bg-success">
+
+
+                                Activo
+
+
+                            </span>
+
+
+
+                        </td>
+
+
+
+
+
+
+
+
+
+                        <td class="text-center">
+
+
+
+
+
+                            <a 
+                                href="#"
+                                class="btn btn-sm btn-info"
+                            >
+
+
+                                <i class="bi bi-eye"></i>
+
+
+
+                            </a>
+
+
+
+
+
+
+
+                            <a 
+                                href="#"
+                                class="btn btn-sm btn-warning"
+                            >
+
+
+                                <i class="bi bi-pencil"></i>
+
+
+
+                            </a>
+
+
+
+
+
+
+
+                            <button 
+                                class="btn btn-sm btn-danger"
+                            >
+
+
+                                <i class="bi bi-trash"></i>
+
+
+
+                            </button>
+
+
+
+
+
+
+                        </td>
+
+
+
+
+
+
+                    </tr>
+
+
+
+
+
+
+
+
+
+                    <tr>
+
+
+
+                        <td>
+
+
+                            <i class="bi bi-book text-primary me-2"></i>
+
+
+                            3° Año
+
+
+
+                        </td>
+
+
+
+
+
+                        <td>
+
+
+                            División B
+
+
+
+                        </td>
+
+
+
+
+
+                        <td>
+
+
+                            Tarde
+
+
+
+                        </td>
+
+
+
+
+
+                        <td>
+
+
+                            Martín Gómez
+
+
+
+                        </td>
+
+
+
+
+
+                        <td>
+
+
+
+                            <span class="badge text-bg-secondary">
+
+
+                                Inactivo
+
+
+                            </span>
+
+
+
+                        </td>
+
+
+
+
+
+
+
+
+
+                        <td class="text-center">
+
+
+
+
+
+                            <a 
+                                href="#"
+                                class="btn btn-sm btn-info"
+                            >
+
+
+                                <i class="bi bi-eye"></i>
+
+
+
+                            </a>
+
+
+
+
+
+
+
+                            <a 
+                                href="#"
+                                class="btn btn-sm btn-warning"
+                            >
+
+
+                                <i class="bi bi-pencil"></i>
+
+
+
+                            </a>
+
+
+
+
+
+
+
+                            <button 
+                                class="btn btn-sm btn-danger"
+                            >
+
+
+                                <i class="bi bi-trash"></i>
+
+
+
+                            </button>
+
+
+
+
+
+
+                        </td>
+
+
+
+
+
+
+                    </tr>
+
+
+
+
+
+
+                </tbody>
+
+
+
+
+
+
+            </table>
+
+
+
+
+
+
+        </div>
+
+
+
+
+
+    </div>
+
+
+
+
+
+
+
+</div>
+
+
+
+
+
+
+
+{% endblock %}

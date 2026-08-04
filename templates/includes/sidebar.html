@@ -1,0 +1,87 @@
+{% load static %}
+<aside class="app-sidebar bg-body-secondary shadow" data-bs-theme="dark">
+  <div class="sidebar-brand">
+    <a href="{% url 'core:index' %}" class="brand-link">
+      <img src="{% static 'adminlte/img/AdminLTELogo.png' %}" alt="ElvaRest" class="brand-image opacity-75 shadow">
+      <span class="brand-text fw-light">ElvaRest</span>
+    </a>
+  </div>
+
+  <div class="sidebar-wrapper">
+    <nav class="mt-2" aria-label="Menú principal">
+      <ul class="nav sidebar-menu flex-column" data-lte-toggle="treeview" data-accordion="false" id="navigation">
+
+        <li class="nav-item">
+          <a href="{% url 'core:index' %}" class="nav-link">
+            <i class="nav-icon bi bi-speedometer"></i>
+            <p>Dashboard</p>
+          </a>
+        </li>
+
+        <li class="nav-item">
+          <a href="{% url 'academica:lista' %}" class="nav-link">
+            <i class="nav-icon bi bi-mortarboard"></i>
+            <p>Académica</p>
+          </a>
+        </li>
+
+        <li class="nav-item">
+          <a href="{% url 'alertas:lista' %}"class="nav-link">
+            <i class="nav-icon bi bi-exclamation-triangle"></i>
+            <p>Alertas</p>
+          </a>
+        </li>
+
+        <li class="nav-item">
+          <a href="{% url 'certificados:lista' %}" class="nav-link">
+            <i class="nav-icon bi bi-patch-check"></i>
+            <p>Certificados</p>
+          </a>
+        </li>
+
+        <li class="nav-item">
+          <a href="{% url 'concursos:lista' %}" class="nav-link">
+            <i class="nav-icon bi bi-people"></i>
+            <p>Concursos</p>
+          </a>
+        </li>
+
+        <li class="nav-item">
+          <a href="{% url 'designaciones:lista' %}" class="nav-link">
+            <i class="nav-icon bi bi-file-earmark-person"></i>
+            <p>Designaciones</p>
+          </a>
+        </li>
+
+        <li class="nav-item">
+          <a href="{% url 'docentes:lista' %}" class="nav-link">
+            <i class="nav-icon bi bi-person-badge"></i>
+            <p>Docentes</p>
+          </a>
+        </li>
+
+        <li class="nav-item">
+          <a href="{% url 'licencias:lista' %}" class="nav-link">
+            <i class="nav-icon bi bi-calendar2-week"></i>
+            <p>Licencias</p>
+          </a>
+        </li>
+
+        <li class="nav-item">
+          <a href="{% url 'reportes:lista' %}" class="nav-link">
+            <i class="nav-icon bi bi-bar-chart"></i>
+            <p>Reportes</p>
+          </a>
+        </li>
+
+        <li class="nav-item">
+          <a href="{% url 'usuarios:lista' %}" class="nav-link">
+            <i class="nav-icon bi bi-person-gear"></i>
+            <p>Usuarios</p>
+          </a>
+        </li>
+
+      </ul>
+    </nav>
+  </div>
+</aside>

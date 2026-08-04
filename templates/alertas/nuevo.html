@@ -1,0 +1,615 @@
+{% extends "base.html" %}
+
+{% block title %}Nueva alerta{% endblock %}
+
+
+
+{% block content_header %}
+
+<div class="row">
+
+
+    <div class="col-sm-6">
+
+
+        <h3 class="mb-0">
+
+            <i class="bi bi-bell-plus me-2"></i>
+
+            Nueva alerta
+
+        </h3>
+
+
+    </div>
+
+
+
+
+
+    <div class="col-sm-6">
+
+
+        <ol class="breadcrumb float-sm-end">
+
+
+            <li class="breadcrumb-item">
+
+                <a href="{% url 'core:index' %}">
+                    Inicio
+                </a>
+
+            </li>
+
+
+
+
+            <li class="breadcrumb-item">
+
+                <a href="{% url 'alertas:lista' %}">
+                    Alertas
+                </a>
+
+            </li>
+
+
+
+
+
+            <li class="breadcrumb-item active">
+
+                Nueva
+
+            </li>
+
+
+
+
+        </ol>
+
+
+    </div>
+
+
+</div>
+
+
+{% endblock %}
+
+
+
+
+
+
+
+
+{% block content %}
+
+
+
+
+
+
+
+<div class="row mb-3">
+
+
+    <div class="col">
+
+
+        <a href="{% url 'alertas:lista' %}" class="btn btn-secondary">
+
+
+            <i class="bi bi-arrow-left"></i>
+
+
+            Volver
+
+
+
+        </a>
+
+
+
+    </div>
+
+
+
+</div>
+
+
+
+
+
+
+
+
+<div class="row justify-content-center">
+
+
+
+
+
+    <div class="col-lg-8">
+
+
+
+
+
+
+        <div class="card">
+
+
+
+
+
+
+            <div class="card-header">
+
+
+                <h5 class="mb-0">
+
+
+                    <i class="bi bi-exclamation-triangle me-2"></i>
+
+
+                    Información de la alerta
+
+
+
+                </h5>
+
+
+
+            </div>
+
+
+
+
+
+
+
+
+            <div class="card-body">
+
+
+
+
+
+                <form>
+
+
+
+
+
+
+                    <div class="mb-3">
+
+
+                        <label class="form-label">
+
+                            Título
+
+                        </label>
+
+
+
+
+                        <input 
+                            type="text"
+                            class="form-control"
+                            placeholder="Ingrese el título de la alerta"
+                        >
+
+
+
+
+                    </div>
+
+
+
+
+
+
+
+
+                    <div class="mb-3">
+
+
+                        <label class="form-label">
+
+                            Descripción
+
+                        </label>
+
+
+
+
+                        <textarea 
+                            class="form-control"
+                            rows="4"
+                            placeholder="Ingrese la descripción de la alerta"
+                        ></textarea>
+
+
+
+
+                    </div>
+
+
+
+
+
+
+
+
+
+                    <div class="row">
+
+
+
+
+
+
+                        <div class="col-md-6 mb-3">
+
+
+                            <label class="form-label">
+
+                                Prioridad
+
+                            </label>
+
+
+
+
+
+                            <select class="form-select">
+
+
+
+                                <option selected disabled>
+
+                                    Seleccionar prioridad
+
+                                </option>
+
+
+
+
+
+                                <option>
+
+                                    Alta
+
+                                </option>
+
+
+
+
+
+                                <option>
+
+                                    Media
+
+                                </option>
+
+
+
+
+
+                                <option>
+
+                                    Baja
+
+                                </option>
+
+
+
+
+
+                            </select>
+
+
+
+
+                        </div>
+
+
+
+
+
+
+
+
+
+                        <div class="col-md-6 mb-3">
+
+
+                            <label class="form-label">
+
+                                Destinatario
+
+                            </label>
+
+
+
+
+
+                            <select class="form-select">
+
+
+
+
+
+                                <option selected disabled>
+
+                                    Seleccionar destinatario
+
+                                </option>
+
+
+
+
+
+                                <option>
+
+                                    Todos los usuarios
+
+                                </option>
+
+
+
+
+
+                                <option>
+
+                                    Docentes
+
+                                </option>
+
+
+
+
+
+                                <option>
+
+                                    Alumnos
+
+                                </option>
+
+
+
+
+
+                            </select>
+
+
+
+
+
+                        </div>
+
+
+
+
+
+
+                    </div>
+
+
+
+
+
+
+
+
+
+                    <div class="row">
+
+
+
+
+
+
+                        <div class="col-md-6 mb-3">
+
+
+                            <label class="form-label">
+
+                                Fecha
+
+                            </label>
+
+
+
+
+
+                            <input 
+                                type="date"
+                                class="form-control"
+                            >
+
+
+
+
+
+                        </div>
+
+
+
+
+
+
+
+
+                        <div class="col-md-6 mb-3">
+
+
+                            <label class="form-label">
+
+                                Estado
+
+                            </label>
+
+
+
+
+
+                            <select class="form-select">
+
+
+
+
+
+                                <option selected>
+
+                                    Activa
+
+                                </option>
+
+
+
+
+
+                                <option>
+
+                                    Pendiente
+
+                                </option>
+
+
+
+
+
+                                <option>
+
+                                    Resuelta
+
+                                </option>
+
+
+
+
+
+                            </select>
+
+
+
+
+
+                        </div>
+
+
+
+
+
+
+
+                    </div>
+
+
+
+
+
+
+
+
+
+                    <div class="text-end mt-3">
+
+
+
+
+
+                        <button 
+                            type="button"
+                            class="btn btn-secondary"
+                        >
+
+
+
+                            <i class="bi bi-x-circle"></i>
+
+
+                            Cancelar
+
+
+
+
+                        </button>
+
+
+
+
+
+
+
+                        <button 
+                            type="submit"
+                            class="btn btn-success"
+                        >
+
+
+
+
+                            <i class="bi bi-bell"></i>
+
+
+                            Crear alerta
+
+
+
+
+                        </button>
+
+
+
+
+
+                    </div>
+
+
+
+
+
+
+                </form>
+
+
+
+
+
+
+
+            </div>
+
+
+
+
+
+
+
+        </div>
+
+
+
+
+
+
+
+    </div>
+
+
+
+
+
+
+</div>
+
+
+
+
+
+
+{% endblock %}

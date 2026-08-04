@@ -1,0 +1,364 @@
+{% extends "base.html" %}
+
+{% block title %}Editar usuario{% endblock %}
+
+
+{% block content_header %}
+
+<div class="row">
+
+    <div class="col-sm-6">
+
+        <h3 class="mb-0">
+            <i class="bi bi-pencil-square me-2"></i>
+            Editar usuario
+        </h3>
+
+    </div>
+
+
+    <div class="col-sm-6">
+
+        <ol class="breadcrumb float-sm-end">
+
+            <li class="breadcrumb-item">
+                <a href="{% url 'core:index' %}">
+                    Inicio
+                </a>
+            </li>
+
+            <li class="breadcrumb-item">
+                <a href="{% url 'usuarios:lista' %}">
+                    Usuarios
+                </a>
+            </li>
+
+            <li class="breadcrumb-item active">
+                Editar
+            </li>
+
+        </ol>
+
+    </div>
+
+</div>
+
+{% endblock %}
+
+
+
+{% block content %}
+
+
+<div class="row mb-3">
+
+    <div class="col">
+
+        <a href="{% url 'usuarios:lista' %}" class="btn btn-secondary">
+
+            <i class="bi bi-arrow-left"></i>
+            Volver
+
+        </a>
+
+    </div>
+
+</div>
+
+
+
+<div class="row">
+
+
+    <div class="col-lg-8">
+
+
+        <div class="card">
+
+
+            <div class="card-header">
+
+                <h5 class="mb-0">
+
+                    <i class="bi bi-person me-2"></i>
+
+                    Información personal
+
+                </h5>
+
+            </div>
+
+
+
+            <div class="card-body">
+
+
+                <form>
+
+
+                    <div class="row">
+
+
+                        <div class="col-md-6 mb-3">
+
+                            <label class="form-label">
+                                Nombre
+                            </label>
+
+                            <input 
+                                type="text"
+                                class="form-control"
+                                value="Trinidad"
+                            >
+
+                        </div>
+
+
+
+                        <div class="col-md-6 mb-3">
+
+                            <label class="form-label">
+                                Apellido
+                            </label>
+
+                            <input 
+                                type="text"
+                                class="form-control"
+                                value="Perea"
+                            >
+
+                        </div>
+
+
+                    </div>
+
+
+
+                    <div class="row">
+
+
+                        <div class="col-md-6 mb-3">
+
+                            <label class="form-label">
+                                Correo electrónico
+                            </label>
+
+                            <input 
+                                type="email"
+                                class="form-control"
+                                value="tperea@colegio.edu.ar"
+                            >
+
+                        </div>
+
+
+
+                        <div class="col-md-6 mb-3">
+
+                            <label class="form-label">
+                                Usuario
+                            </label>
+
+                            <input 
+                                type="text"
+                                class="form-control"
+                                value="tperea"
+                            >
+
+                        </div>
+
+
+                    </div>
+
+
+
+                    <div class="row">
+
+
+                        <div class="col-md-6 mb-3">
+
+
+                            <label class="form-label">
+                                Rol
+                            </label>
+
+
+                            <select class="form-select">
+
+
+                                <option>
+                                    Administrador
+                                </option>
+
+
+                                <option>
+                                    Docente
+                                </option>
+
+
+                                <option>
+                                    Usuario
+                                </option>
+
+
+                            </select>
+
+
+                        </div>
+
+
+
+                        <div class="col-md-6 mb-3">
+
+
+                            <label class="form-label">
+                                Estado
+                            </label>
+
+
+                            <select class="form-select">
+
+
+                                <option>
+                                    Activo
+                                </option>
+
+
+                                <option>
+                                    Inactivo
+                                </option>
+
+
+                            </select>
+
+
+                        </div>
+
+
+                    </div>
+
+
+
+                    <div class="text-end">
+
+
+                        <button 
+                            type="button"
+                            class="btn btn-secondary"
+                        >
+
+                            <i class="bi bi-x-circle"></i>
+                            Cancelar
+
+                        </button>
+
+
+
+                        <button 
+                            type="submit"
+                            class="btn btn-primary"
+                        >
+
+                            <i class="bi bi-save"></i>
+                            Guardar cambios
+
+                        </button>
+
+
+                    </div>
+
+
+
+                </form>
+
+
+            </div>
+
+
+        </div>
+
+
+    </div>
+
+
+
+
+
+    <div class="col-lg-4">
+
+
+        <div class="card">
+
+
+            <div class="card-body text-center">
+
+
+                <i class="bi bi-person-circle display-1 text-primary"></i>
+
+
+                <h4 class="mt-3">
+
+                    Trinidad Perea
+
+                </h4>
+
+
+                <span class="badge text-bg-success">
+
+                    Activo
+
+                </span>
+
+
+            </div>
+
+
+        </div>
+
+
+
+        <div class="card mt-3">
+
+
+            <div class="card-header">
+
+                <h5 class="mb-0">
+
+                    <i class="bi bi-shield-lock me-2"></i>
+
+                    Seguridad
+
+                </h5>
+
+            </div>
+
+
+
+            <div class="card-body">
+
+
+                <button 
+                    type="button"
+                    class="btn btn-outline-warning w-100"
+                >
+
+                    <i class="bi bi-key"></i>
+
+                    Cambiar contraseña
+
+                </button>
+
+
+            </div>
+
+
+        </div>
+
+
+    </div>
+
+
+</div>
+
+
+{% endblock %}

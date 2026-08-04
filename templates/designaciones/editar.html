@@ -1,0 +1,605 @@
+{% extends "base.html" %}
+
+{% block title %}Editar designación{% endblock %}
+
+
+
+{% block content_header %}
+
+<div class="row">
+
+
+    <div class="col-sm-6">
+
+        <h3 class="mb-0">
+
+            <i class="bi bi-pencil-square me-2"></i>
+
+            Editar designación
+
+        </h3>
+
+    </div>
+
+
+
+    <div class="col-sm-6">
+
+
+        <ol class="breadcrumb float-sm-end">
+
+
+            <li class="breadcrumb-item">
+
+                <a href="{% url 'core:index' %}">
+                    Inicio
+                </a>
+
+            </li>
+
+
+
+            <li class="breadcrumb-item">
+
+                <a href="{% url 'designaciones:lista' %}">
+                    Designaciones
+                </a>
+
+            </li>
+
+
+
+            <li class="breadcrumb-item active">
+
+                Editar
+
+            </li>
+
+
+        </ol>
+
+
+    </div>
+
+
+</div>
+
+
+{% endblock %}
+
+
+
+
+
+
+
+{% block content %}
+
+
+
+
+<div class="row mb-3">
+
+
+    <div class="col">
+
+
+        <a href="{% url 'designaciones:lista' %}" class="btn btn-secondary">
+
+
+            <i class="bi bi-arrow-left"></i>
+
+            Volver
+
+
+        </a>
+
+
+    </div>
+
+
+</div>
+
+
+
+
+
+
+
+<div class="row">
+
+
+
+
+
+    <div class="col-lg-8">
+
+
+
+        <div class="card">
+
+
+
+            <div class="card-header">
+
+
+                <h5 class="mb-0">
+
+
+                    <i class="bi bi-person-workspace me-2"></i>
+
+
+                    Información de la designación
+
+
+                </h5>
+
+
+            </div>
+
+
+
+
+
+
+            <div class="card-body">
+
+
+
+                <form>
+
+
+
+
+
+                    <div class="row">
+
+
+
+                        <div class="col-md-6 mb-3">
+
+
+                            <label class="form-label">
+
+                                Docente
+
+                            </label>
+
+
+
+                            <select class="form-select">
+
+
+                                <option selected>
+
+                                    María González
+
+                                </option>
+
+
+                                <option>
+
+                                    Juan Pérez
+
+                                </option>
+
+
+                                <option>
+
+                                    Ana Rodríguez
+
+                                </option>
+
+
+                            </select>
+
+
+
+                        </div>
+
+
+
+
+
+
+                        <div class="col-md-6 mb-3">
+
+
+                            <label class="form-label">
+
+                                Cargo
+
+                            </label>
+
+
+
+                            <select class="form-select">
+
+
+                                <option selected>
+
+                                    Profesora titular
+
+                                </option>
+
+
+                                <option>
+
+                                    Profesora suplente
+
+                                </option>
+
+
+                                <option>
+
+                                    Auxiliar docente
+
+                                </option>
+
+
+
+                            </select>
+
+
+
+                        </div>
+
+
+
+                    </div>
+
+
+
+
+
+
+
+
+                    <div class="row">
+
+
+
+                        <div class="col-md-6 mb-3">
+
+
+                            <label class="form-label">
+
+                                Curso
+
+                            </label>
+
+
+
+                            <select class="form-select">
+
+
+                                <option selected>
+
+                                    3° A - Matemática
+
+                                </option>
+
+
+                                <option>
+
+                                    3° B - Matemática
+
+                                </option>
+
+
+                                <option>
+
+                                    5° A - Historia
+
+                                </option>
+
+
+
+                            </select>
+
+
+
+                        </div>
+
+
+
+
+
+
+                        <div class="col-md-6 mb-3">
+
+
+                            <label class="form-label">
+
+                                Horas semanales
+
+                            </label>
+
+
+
+                            <input 
+                                type="number"
+                                class="form-control"
+                                value="6"
+                            >
+
+
+
+                        </div>
+
+
+
+                    </div>
+
+
+
+
+
+
+
+
+                    <div class="row">
+
+
+
+                        <div class="col-md-6 mb-3">
+
+
+                            <label class="form-label">
+
+                                Estado
+
+                            </label>
+
+
+
+                            <select class="form-select">
+
+
+                                <option selected>
+
+                                    Activa
+
+                                </option>
+
+
+                                <option>
+
+                                    Finalizada
+
+                                </option>
+
+
+                                <option>
+
+                                    Suspendida
+
+                                </option>
+
+
+
+                            </select>
+
+
+
+                        </div>
+
+
+
+                    </div>
+
+
+
+
+
+
+
+
+
+                    <div class="text-end mt-3">
+
+
+
+                        <button 
+                            type="button"
+                            class="btn btn-secondary"
+                        >
+
+
+                            <i class="bi bi-x-circle"></i>
+
+                            Cancelar
+
+
+                        </button>
+
+
+
+
+
+
+                        <button 
+                            type="submit"
+                            class="btn btn-primary"
+                        >
+
+
+                            <i class="bi bi-save"></i>
+
+                            Guardar cambios
+
+
+                        </button>
+
+
+
+                    </div>
+
+
+
+
+
+
+                </form>
+
+
+
+
+            </div>
+
+
+        </div>
+
+
+
+
+    </div>
+
+
+
+
+
+
+
+    <div class="col-lg-4">
+
+
+
+
+
+        <div class="card">
+
+
+
+            <div class="card-body text-center">
+
+
+
+                <i class="bi bi-person-badge display-1 text-primary"></i>
+
+
+
+                <h4 class="mt-3">
+
+                    María González
+
+                </h4>
+
+
+
+                <p class="text-muted">
+
+                    Profesora titular
+
+                </p>
+
+
+
+
+                <span class="badge text-bg-success">
+
+                    Activa
+
+                </span>
+
+
+
+            </div>
+
+
+
+        </div>
+
+
+
+
+
+
+
+        <div class="card mt-3">
+
+
+
+            <div class="card-header">
+
+
+                <h5 class="mb-0">
+
+
+                    <i class="bi bi-info-circle me-2"></i>
+
+
+                    Resumen
+
+
+                </h5>
+
+
+            </div>
+
+
+
+
+
+
+            <div class="card-body">
+
+
+
+                <p>
+
+                    <strong>Curso:</strong>
+
+                    3° A
+
+                </p>
+
+
+
+
+                <p>
+
+                    <strong>Materia:</strong>
+
+                    Matemática
+
+                </p>
+
+
+
+
+
+                <p>
+
+                    <strong>Horas:</strong>
+
+                    6 semanales
+
+                </p>
+
+
+
+            </div>
+
+
+
+        </div>
+
+
+
+
+
+
+    </div>
+
+
+
+
+
+</div>
+
+
+
+
+
+{% endblock %}

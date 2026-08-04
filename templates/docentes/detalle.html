@@ -1,0 +1,220 @@
+{% extends "base.html" %}
+
+{% block title %}Detalle del docente{% endblock %}
+
+{% block content_header %}
+
+<div class="row">
+
+    <div class="col-sm-6">
+
+        <h3 class="mb-0">
+            <i class="bi bi-person-vcard me-2"></i>
+            Detalle del docente
+        </h3>
+
+    </div>
+
+    <div class="col-sm-6">
+
+        <ol class="breadcrumb float-sm-end">
+
+            <li class="breadcrumb-item">
+                <a href="{% url 'core:index' %}">Inicio</a>
+            </li>
+
+            <li class="breadcrumb-item">
+                <a href="{% url 'docentes:lista' %}">Docentes</a>
+            </li>
+
+            <li class="breadcrumb-item active">
+                Detalle
+            </li>
+
+        </ol>
+
+    </div>
+
+</div>
+
+{% endblock %}
+
+{% block content %}
+
+<div class="row mb-3">
+
+    <div class="col">
+
+        <a href="{% url 'docentes:lista' %}" class="btn btn-secondary">
+
+            <i class="bi bi-arrow-left"></i>
+            Volver
+
+        </a>
+
+        <a href="{% url 'docentes:editar' 1 %}" class="btn btn-warning">
+
+            <i class="bi bi-pencil-square"></i>
+            Editar
+
+        </a>
+
+        <button class="btn btn-danger">
+
+            <i class="bi bi-trash"></i>
+            Eliminar
+
+        </button>
+
+    </div>
+
+</div>
+
+
+<div class="row">
+
+    <div class="col-md-4">
+
+        <div class="card">
+
+            <div class="card-body text-center">
+
+                <img
+                    src="https://placehold.co/180x180"
+                    class="rounded-circle mb-3"
+                    alt="Docente"
+                >
+
+                <h4>María González</h4>
+
+                <p class="text-muted">
+                    Profesora de Matemática
+                </p>
+
+                <span class="badge text-bg-success">
+                    Activo
+                </span>
+
+            </div>
+
+        </div>
+
+    </div>
+
+    <div class="col-md-8">
+
+        <div class="card">
+
+            <div class="card-header">
+
+                <h5 class="mb-0">
+
+                    <i class="bi bi-person"></i>
+
+                    Datos personales
+
+                </h5>
+
+            </div>
+
+            <div class="card-body">
+
+                <div class="row">
+
+                    <div class="col-md-6">
+
+                        <p><strong>DNI:</strong> 32145678</p>
+
+                        <p><strong>CUIL:</strong> 27-32145678-4</p>
+
+                        <p><strong>Fecha de nacimiento:</strong> 15/08/1986</p>
+
+                    </div>
+
+                    <div class="col-md-6">
+
+                        <p><strong>Sexo:</strong> Femenino</p>
+
+                        <p><strong>Estado civil:</strong> Casada</p>
+
+                        <p><strong>Nacionalidad:</strong> Argentina</p>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+
+        <div class="card">
+
+            <div class="card-header">
+
+                <h5 class="mb-0">
+
+                    <i class="bi bi-envelope"></i>
+
+                    Información de contacto
+
+                </h5>
+
+            </div>
+
+            <div class="card-body">
+
+                <p><strong>Correo:</strong> mgonzalez@colegio.edu</p>
+
+                <p><strong>Teléfono:</strong> 2615551234</p>
+
+                <p><strong>Dirección:</strong> Av. San Martín 1234, Mendoza</p>
+
+            </div>
+
+        </div>
+
+        <div class="card">
+
+            <div class="card-header">
+
+                <h5 class="mb-0">
+
+                    <i class="bi bi-briefcase"></i>
+
+                    Información laboral
+
+                </h5>
+
+            </div>
+
+            <div class="card-body">
+
+                <div class="row">
+
+                    <div class="col-md-6">
+
+                        <p><strong>Cargo:</strong> Profesor</p>
+
+                        <p><strong>Título:</strong> Profesor de Matemática</p>
+
+                    </div>
+
+                    <div class="col-md-6">
+
+                        <p><strong>Fecha de ingreso:</strong> 01/03/2018</p>
+
+                        <p><strong>Antigüedad:</strong> 8 años</p>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+{% endblock %}
