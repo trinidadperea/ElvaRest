@@ -1,0 +1,83 @@
+package com.elvarest.cliente.services;
+
+import auth.AuthService;
+import com.elvarest.cliente.exceptions.ErrorServiceException;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.client.RestTemplate;
+
+import java.io.Serializable;
+import java.util.Arrays;
+import java.util.List;
+
+public abstract class BaseService<T, ID> {
+
+    protected final RestTemplate restTemplate = new RestTemplate();
+    protected final String apiUrl;
+    protected final Class<T> dtoClass;
+
+    @Autowired
+    protected AuthService authService; //para acceder al token JWT
+
+    protected BaseService(String apiUrl, Class<T> dtoClass) {
+        this.apiUrl = apiUrl;
+        this.dtoClass = dtoClass;
+    }
+
+    public List<T> listarActivos() {
+        HttpEntity<Void> entity = new HttpEntity<>(authService.authHeaders());
+
+        ResponseEntity<T[]> response = restTemplate.exchange(
+                apiUrl,
+                HttpMethod.GET,
+                entity,
+                getArrayType()
+        );
+        return Arrays.asList(response.getBody());
+    }
+
+    @SuppressWarnings("unchecked")
+    private Class<T[]> getArrayType() {
+        return (Class<T[]>) java.lang.reflect.Array.newInstance(dtoClass, 0).getClass();
+    }
+
+    public T obtener(ID id) {
+        HttpEntity<Void> entity = new HttpEntity<>(authService.authHeaders());
+        ResponseEntity<T> response = restTemplate.exchange(
+                apiUrl + "/" + id,
+                HttpMethod.GET,
+                entity,
+                dtoClass
+        );
+        return response.getBody();
+    }
+
+    public T alta(T dto) {
+        HttpEntity<T> entity = new HttpEntity<>(dto, authService.authHeaders());
+        ResponseEntity<T> response = restTemplate.exchange(
+                apiUrl,
+                HttpMethod.POST,
+                entity,
+                dtoClass
+        );
+        return response.getBody();
+    }
+
+    public void modificar(ID id, T dto) {
+        HttpEntity<T> entity = new HttpEntity<>(dto, authService.authHeaders());
+        restTemplate.exchange(apiUrl + "/" + id, HttpMethod.PUT, entity, Void.class);
+    }
+
+    public void bajaLogica(ID id) {
+        HttpEntity<Void> entity = new HttpEntity<>(authService.authHeaders());
+        restTemplate.exchange(apiUrl + "/" + id, HttpMethod.DELETE, entity, Void.class);
+    }
+
+    protected void validar(T entidad) throws ErrorServiceException {}
+    protected void preAlta(T entidad) throws ErrorServiceException {}
+    protected void postAlta(T entidad)throws ErrorServiceException {}
+    protected void preModificacion(T entidad)throws ErrorServiceException {}
+    protected void preBaja(ID id)throws ErrorServiceException {}
+}

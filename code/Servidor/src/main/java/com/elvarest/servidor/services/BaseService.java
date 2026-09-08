@@ -4,11 +4,10 @@ import com.elvarest.servidor.entities.BaseEntity;
 import com.elvarest.servidor.exceptions.ErrorServiceException;
 import com.elvarest.servidor.repositories.BaseRepository;
 
-import java.io.Serializable;
 import java.util.List;
 import java.util.Optional;
 
-public abstract class BaseService<T extends BaseEntity, ID extends Serializable> {
+public abstract class BaseService<T extends BaseEntity<ID>, ID> {
 
     protected final BaseRepository<T, ID> repository;
 

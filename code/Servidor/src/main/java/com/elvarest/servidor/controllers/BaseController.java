@@ -7,12 +7,11 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.io.Serializable;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
-public abstract class BaseController<T extends BaseEntity, ID extends Serializable> {
+public abstract class BaseController<T extends BaseEntity<ID>, ID> {
 
     protected final BaseService<T, ID> service;
 
