@@ -1,5 +1,6 @@
 package com.elvarest.servidor.entities;
 
+import com.elvarest.servidor.entities.enums.CaracterDesignacion;
 import com.elvarest.servidor.entities.enums.EstadoDesignacion;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
@@ -27,6 +28,9 @@ public class Designacion extends BaseEntity<Long>{
 
     @Column(nullable = false)
     private String origenVacancia;
+
+    @Enumerated(EnumType.STRING)
+    private CaracterDesignacion caracterDesignacion;
 
     @Enumerated(EnumType.STRING)
     private EstadoDesignacion estadoDesignacion;
