@@ -1,31 +1,16 @@
 package com.elvarest.cliente.controllers;
 
+import com.elvarest.cliente.dto.LicenciaDTO;
+import com.elvarest.cliente.services.LicenciaService;
 import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 
 @Controller
 @RequestMapping("/licencias")
-public class LicenciaController {
+public class LicenciaController extends BaseController<LicenciaDTO, Long> {
 
-    @GetMapping
-    public String listar() {
-        return "licencias/lista";
-    }
-
-    @GetMapping("/nuevo")
-    public String nuevo() {
-        return "licencias/nuevo";
-    }
-
-    @GetMapping("/{id}")
-    public String detalle(@PathVariable Long id) {
-        return "licencias/detalle";
-    }
-
-    @GetMapping("/{id}/editar")
-    public String editar(@PathVariable Long id) {
-        return "licencias/editar";
+    public LicenciaController(LicenciaService service) {
+        super(service);
+        initController(new LicenciaDTO(), "Lista de licencias", "Editar licencia", "licencias/");
     }
 }

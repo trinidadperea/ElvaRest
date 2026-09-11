@@ -1,0 +1,9 @@
+<!doctype html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org" th:replace="~{base :: layout('Academica', ~{::#encabezado}, ~{::#contenido})}">
+<section id="encabezado"><h3>Academica</h3></section>
+<section id="contenido"><a class="btn btn-primary mb-3" th:href="@{/academica/nuevo}">Nuevo curso</a>
+  <table class="table"><thead><tr><th>Anio</th><th>Seccion</th><th>Acciones</th></tr></thead>
+  <tbody><tr th:each="item : ${items}"><td th:text="${item.anio}"></td><td th:text="${item.seccion}"></td>
+    <td><a class="btn btn-sm btn-info" th:href="@{/academica/{id}(id=${item.id})}">Ver</a> <a class="btn btn-sm btn-warning" th:href="@{/academica/{id}/editar(id=${item.id})}">Editar</a> <a class="btn btn-sm btn-danger" th:href="@{/academica/baja/{id}(id=${item.id})}">Eliminar</a></td>
+  </tr></tbody></table>
+</section></html>

@@ -18,8 +18,10 @@ public abstract class BaseController<T extends Identifiable<ID>, ID> {
     protected final BaseService<T, ID> service;
     private String nameClass = "";
     protected String viewList = "";
+    protected String viewCreate = "";
     protected String redirectList = "";
     protected String viewEdit = "";
+    protected String viewDetail = "";
     protected T entity;
     protected String nameEntityLower;
     protected Model model;
@@ -43,8 +45,10 @@ public abstract class BaseController<T extends Identifiable<ID>, ID> {
         this.nameEntityLower = nameClass.toLowerCase();
 
         // asignamos las vistas usando la ruta que nos hayan pasado desde el controllador hijo
-        this.viewList = viewBasePath + "l" + nameClass;
-        this.viewEdit = viewBasePath + "e" + nameClass;
+        this.viewList = viewBasePath + "lista";
+        this.viewCreate = viewBasePath + "nuevo";
+        this.viewEdit = viewBasePath + "editar";
+        this.viewDetail = viewBasePath + "detalle";
 
         // 2. Lee el @RequestMapping de la clase hija (ej: "/admin/pais")
         try {
@@ -77,12 +81,13 @@ public abstract class BaseController<T extends Identifiable<ID>, ID> {
             this.model.addAttribute("titleList", titleList);
             this.model.addAttribute("nameEntityLower", nameEntityLower);
         } catch (Exception e) {
+            model.addAttribute("items", List.of());
             model.addAttribute("msgError", "Error de Sistema");
         }
         return viewList;
     }
 
-    @GetMapping("/alta")
+    @GetMapping({"/alta", "/nuevo"})
     public String crear(Model model) {
         try {
             this.model = model;
@@ -92,13 +97,13 @@ public abstract class BaseController<T extends Identifiable<ID>, ID> {
             this.model.addAttribute("titleEdit", titleEdit);
             this.model.addAttribute("nameEntityLower", nameEntityLower);
             preAlta();
-            return viewEdit;
+            return viewCreate;
         } catch (ErrorServiceException e) {
             model.addAttribute("msgError", e.getMessage());
-            return viewEdit;
+            return viewCreate;
         } catch (Exception e) {
             model.addAttribute("msgError", "Error de Sistema");
-            return viewEdit;
+            return viewCreate;
         }
     }
 
@@ -115,17 +120,22 @@ public abstract class BaseController<T extends Identifiable<ID>, ID> {
             this.model.addAttribute("titleEdit", titleEdit);
             this.model.addAttribute("nameEntityLower", nameEntityLower);
             preModificacion();
-            return viewEdit;
+            return viewDetail;
         } catch (ErrorServiceException e) {
             model.addAttribute("msgError", e.getMessage());
-            return viewEdit;
+            return viewDetail;
         } catch (Exception e) {
             model.addAttribute("msgError", "Error de Sistema");
-            return viewEdit;
+            return viewDetail;
         }
     }
 
-    @GetMapping("/modificar/{id}")
+    @GetMapping("/{id}")
+    public String detalle(@PathVariable ID id, Model model) {
+        return consultar(id, model);
+    }
+
+    @GetMapping({"/modificar/{id}", "/{id}/editar"})
     public String editar(@PathVariable ID id, Model model) {
         try {
             this.model = model;

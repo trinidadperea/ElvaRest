@@ -1,0 +1,9 @@
+<!doctype html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org" th:replace="~{base :: layout('Editar licencia', ~{::#encabezado}, ~{::#contenido})}">
+<section id="encabezado"><h3>Editar licencia</h3></section>
+<section id="contenido"><form method="post" th:action="@{/licencias/actualizar}" th:object="${item}">
+  <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"><input type="hidden" th:field="*{id}">
+  <div class="mb-3"><label>Tipo</label><input class="form-control" th:field="*{tipo}" required></div><div class="mb-3"><label>Fecha de inicio</label><input class="form-control" type="date" th:field="*{fechaInicio}" required></div><div class="mb-3"><label>Fecha de fin</label><input class="form-control" type="date" th:field="*{fechaFin}" required></div>
+  <label class="form-check"><input class="form-check-input" type="checkbox" th:field="*{renovable}"> Renovable</label>
+  <div class="mt-3"><a class="btn btn-secondary" th:href="@{/licencias}">Cancelar</a><button class="btn btn-primary">Guardar</button></div>
+</form></section></html>

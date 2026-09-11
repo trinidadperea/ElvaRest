@@ -1,0 +1,9 @@
+<!doctype html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org" th:replace="~{base :: layout('Usuarios', ~{::#encabezado}, ~{::#contenido})}">
+<section id="encabezado"><h3>Usuarios</h3></section>
+<section id="contenido"><a class="btn btn-primary mb-3" th:href="@{/usuarios/nuevo}">Nuevo usuario</a>
+  <table class="table"><thead><tr><th>Nombre</th><th>Usuario</th><th>Correo</th><th>Rol</th><th>Acciones</th></tr></thead>
+  <tbody><tr th:each="item : ${items}"><td th:text="${item.apellido + ', ' + item.nombre}"></td><td th:text="${item.nombreUsuario}"></td><td th:text="${item.correoElectronico}"></td><td th:text="${item.rol}"></td>
+    <td><a class="btn btn-sm btn-info" th:href="@{/usuarios/{id}(id=${item.id})}">Ver</a> <a class="btn btn-sm btn-warning" th:href="@{/usuarios/{id}/editar(id=${item.id})}">Editar</a> <a class="btn btn-sm btn-danger" th:href="@{/usuarios/baja/{id}(id=${item.id})}">Eliminar</a></td>
+  </tr></tbody></table>
+</section></html>

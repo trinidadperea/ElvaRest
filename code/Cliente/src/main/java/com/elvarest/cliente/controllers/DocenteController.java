@@ -1,31 +1,16 @@
 package com.elvarest.cliente.controllers;
 
+import com.elvarest.cliente.dto.DocenteDTO;
+import com.elvarest.cliente.services.DocenteService;
 import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 
 @Controller
 @RequestMapping("/docentes")
-public class DocenteController {
+public class DocenteController extends BaseController<DocenteDTO, Long> {
 
-    @GetMapping
-    public String listar() {
-        return "docentes/lista";
-    }
-
-    @GetMapping("/nuevo")
-    public String nuevo() {
-        return "docentes/nuevo";
-    }
-
-    @GetMapping("/{id}")
-    public String detalle(@PathVariable Long id) {
-        return "docentes/detalle";
-    }
-
-    @GetMapping("/{id}/editar")
-    public String editar(@PathVariable Long id) {
-        return "docentes/editar";
+    public DocenteController(DocenteService service) {
+        super(service);
+        initController(new DocenteDTO(), "Lista de docentes", "Editar docente", "docentes/");
     }
 }

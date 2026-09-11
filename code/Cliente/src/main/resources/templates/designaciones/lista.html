@@ -1,0 +1,9 @@
+<!doctype html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org" th:replace="~{base :: layout('Designaciones', ~{::#encabezado}, ~{::#contenido})}">
+<section id="encabezado"><h3>Designaciones</h3></section>
+<section id="contenido"><a class="btn btn-primary mb-3" th:href="@{/designaciones/nuevo}">Nueva designacion</a>
+  <table class="table"><thead><tr><th>Origen</th><th>Inicio</th><th>Estado</th><th>Acciones</th></tr></thead>
+  <tbody><tr th:each="item : ${items}"><td th:text="${item.origenVacancia}"></td><td th:text="${item.fechaInicioEfectiva}"></td><td th:text="${item.estadoDesignacion}"></td>
+    <td><a class="btn btn-sm btn-info" th:href="@{/designaciones/{id}(id=${item.id})}">Ver</a> <a class="btn btn-sm btn-warning" th:href="@{/designaciones/{id}/editar(id=${item.id})}">Editar</a> <a class="btn btn-sm btn-danger" th:href="@{/designaciones/baja/{id}(id=${item.id})}">Eliminar</a></td>
+  </tr></tbody></table>
+</section></html>

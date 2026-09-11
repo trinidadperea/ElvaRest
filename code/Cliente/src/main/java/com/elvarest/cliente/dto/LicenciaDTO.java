@@ -4,10 +4,14 @@ import jakarta.persistence.Column;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import lombok.Getter;
+import lombok.Setter;
 import org.springframework.format.annotation.DateTimeFormat;
 
 import java.time.LocalDate;
 
+@Getter
+@Setter
 public class LicenciaDTO extends BaseDTO{
     private String tipo;
     @DateTimeFormat(pattern = "yyyy-MM-dd")

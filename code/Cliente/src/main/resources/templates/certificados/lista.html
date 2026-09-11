@@ -1,0 +1,15 @@
+<!doctype html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{base :: layout('Certificados', ~{::#encabezado}, ~{::#contenido})}">
+<section id="encabezado"><h3>Certificados</h3></section>
+<section id="contenido">
+  <a class="btn btn-primary mb-3" th:href="@{/certificados/nuevo}">Nuevo certificado</a>
+  <table class="table"><thead><tr><th>Fecha</th><th>Presentado</th><th>Acciones</th></tr></thead>
+    <tbody><tr th:each="item : ${items}">
+      <td th:text="${item.fechaEmision}"></td><td th:text="${item.presentado ? 'Si' : 'No'}"></td>
+      <td><a class="btn btn-sm btn-info" th:href="@{/certificados/{id}(id=${item.id})}">Ver</a>
+        <a class="btn btn-sm btn-warning" th:href="@{/certificados/{id}/editar(id=${item.id})}">Editar</a>
+        <a class="btn btn-sm btn-danger" th:href="@{/certificados/baja/{id}(id=${item.id})}">Eliminar</a></td>
+    </tr></tbody>
+  </table>
+</section></html>

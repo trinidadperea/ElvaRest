@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{base :: layout('Alertas', ~{::#encabezado}, ~{::#contenido})}">
+<section id="encabezado"><h3>Alertas</h3></section>
+<section id="contenido">
+  <a class="btn btn-primary mb-3" th:href="@{/alertas/nuevo}">Nueva alerta</a>
+  <div th:if="${msgError}" class="alert alert-danger" th:text="${msgError}"></div>
+  <table class="table">
+    <thead><tr><th>Mensaje</th><th>Fecha</th><th>Prioridad</th><th>Acciones</th></tr></thead>
+    <tbody>
+      <tr th:each="item : ${items}">
+        <td th:text="${item.mensaje}"></td>
+        <td th:text="${item.fechaEmision}"></td>
+        <td th:text="${item.prioridad}"></td>
+        <td>
+          <a class="btn btn-sm btn-info" th:href="@{/alertas/{id}(id=${item.id})}">Ver</a>
+          <a class="btn btn-sm btn-warning" th:href="@{/alertas/{id}/editar(id=${item.id})}">Editar</a>
+          <a class="btn btn-sm btn-danger" th:href="@{/alertas/baja/{id}(id=${item.id})}">Eliminar</a>
+        </td>
+      </tr>
+    </tbody>
+  </table>
+</section>
+</html>

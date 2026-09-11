@@ -1,31 +1,16 @@
 package com.elvarest.cliente.controllers;
 
+import com.elvarest.cliente.dto.DesignacionDTO;
+import com.elvarest.cliente.services.DesignacionService;
 import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 
 @Controller
 @RequestMapping("/designaciones")
-public class DesignacionController {
+public class DesignacionController extends BaseController<DesignacionDTO, Long> {
 
-    @GetMapping
-    public String listar() {
-        return "designaciones/lista";
-    }
-
-    @GetMapping("/nuevo")
-    public String nuevo() {
-        return "designaciones/nuevo";
-    }
-
-    @GetMapping("/{id}")
-    public String detalle(@PathVariable Long id) {
-        return "designaciones/detalle";
-    }
-
-    @GetMapping("/{id}/editar")
-    public String editar(@PathVariable Long id) {
-        return "designaciones/editar";
+    public DesignacionController(DesignacionService service) {
+        super(service);
+        initController(new DesignacionDTO(), "Lista de designaciones", "Editar designación", "designaciones/");
     }
 }

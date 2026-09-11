@@ -1,0 +1,11 @@
+<!doctype html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{base :: layout('Editar certificado', ~{::#encabezado}, ~{::#contenido})}">
+<section id="encabezado"><h3>Editar certificado</h3></section>
+<section id="contenido"><form method="post" th:action="@{/certificados/actualizar}" th:object="${item}">
+  <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"><input type="hidden" th:field="*{id}">
+  <div class="mb-3"><label>Fecha de emision</label><input class="form-control" type="date" th:field="*{fechaEmision}" required></div>
+  <label class="form-check"><input class="form-check-input" type="checkbox" th:field="*{requiereVencimiento}"> Requiere vencimiento</label>
+  <label class="form-check"><input class="form-check-input" type="checkbox" th:field="*{presentado}"> Presentado</label>
+  <div class="mt-3"><a class="btn btn-secondary" th:href="@{/certificados}">Cancelar</a><button class="btn btn-primary">Guardar</button></div>
+</form></section></html>

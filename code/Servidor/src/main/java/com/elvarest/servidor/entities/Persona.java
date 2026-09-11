@@ -36,8 +36,4 @@ public abstract class Persona extends BaseEntity<Long> {
     @Column(nullable = false)
     private String correoElectronico;
 
-    private boolean eliminado;
-
-
 }
-

@@ -13,10 +13,6 @@ import java.time.LocalDate;
 @Entity
 public class Licencia extends BaseEntity<Long> {
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
-
     @Column(nullable = false)
     private String tipo;
 

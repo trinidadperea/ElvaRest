@@ -1,0 +1,2 @@
+<!doctype html><html lang="es" xmlns:th="http://www.thymeleaf.org" th:replace="~{base :: layout('Detalle de alerta', ~{::#encabezado}, ~{::#contenido})}">
+<section id="encabezado"><h3>Detalle de alerta</h3></section><section id="contenido"><dl><dt>Mensaje</dt><dd th:text="${item.mensaje}"></dd><dt>Fecha</dt><dd th:text="${item.fechaEmision}"></dd><dt>Prioridad</dt><dd th:text="${item.prioridad}"></dd></dl><a class="btn btn-secondary" th:href="@{/alertas}">Volver</a><a class="btn btn-warning" th:href="@{/alertas/{id}/editar(id=${item.id})}">Editar</a></section></html>

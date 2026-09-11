@@ -1,31 +1,16 @@
 package com.elvarest.cliente.controllers;
 
+import com.elvarest.cliente.dto.AlertaDTO;
+import com.elvarest.cliente.services.AlertaService;
 import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 
 @Controller
 @RequestMapping("/alertas")
-public class AlertaController {
+public class AlertaController extends BaseController<AlertaDTO, Long> {
 
-    @GetMapping
-    public String listar() {
-        return "alertas/lista";
-    }
-
-    @GetMapping("/nuevo")
-    public String nuevo() {
-        return "alertas/nuevo";
-    }
-
-    @GetMapping("/{id}")
-    public String detalle(@PathVariable Long id) {
-        return "alertas/detalle";
-    }
-
-    @GetMapping("/{id}/editar")
-    public String editar(@PathVariable Long id) {
-        return "alertas/editar";
+    public AlertaController(AlertaService service) {
+        super(service);
+        initController(new AlertaDTO(), "Lista de alertas", "Editar alerta", "alertas/");
     }
 }

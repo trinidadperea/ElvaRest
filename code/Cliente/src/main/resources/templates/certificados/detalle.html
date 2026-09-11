@@ -1,0 +1,2 @@
+<!doctype html><html lang="es" xmlns:th="http://www.thymeleaf.org" th:replace="~{base :: layout('Detalle de certificado', ~{::#encabezado}, ~{::#contenido})}">
+<section id="encabezado"><h3>Detalle de certificado</h3></section><section id="contenido"><dl><dt>Fecha</dt><dd th:text="${item.fechaEmision}"></dd><dt>Presentado</dt><dd th:text="${item.presentado}"></dd></dl><a class="btn btn-secondary" th:href="@{/certificados}">Volver</a><a class="btn btn-warning" th:href="@{/certificados/{id}/editar(id=${item.id})}">Editar</a></section></html>

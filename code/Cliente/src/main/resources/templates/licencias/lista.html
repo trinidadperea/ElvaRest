@@ -1,0 +1,9 @@
+<!doctype html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org" th:replace="~{base :: layout('Licencias', ~{::#encabezado}, ~{::#contenido})}">
+<section id="encabezado"><h3>Licencias</h3></section>
+<section id="contenido"><a class="btn btn-primary mb-3" th:href="@{/licencias/nuevo}">Nueva licencia</a>
+  <table class="table"><thead><tr><th>Tipo</th><th>Desde</th><th>Hasta</th><th>Renovable</th><th>Acciones</th></tr></thead>
+  <tbody><tr th:each="item : ${items}"><td th:text="${item.tipo}"></td><td th:text="${item.fechaInicio}"></td><td th:text="${item.fechaFin}"></td><td th:text="${item.renovable ? 'Si' : 'No'}"></td>
+    <td><a class="btn btn-sm btn-info" th:href="@{/licencias/{id}(id=${item.id})}">Ver</a> <a class="btn btn-sm btn-warning" th:href="@{/licencias/{id}/editar(id=${item.id})}">Editar</a> <a class="btn btn-sm btn-danger" th:href="@{/licencias/baja/{id}(id=${item.id})}">Eliminar</a></td>
+  </tr></tbody></table>
+</section></html>

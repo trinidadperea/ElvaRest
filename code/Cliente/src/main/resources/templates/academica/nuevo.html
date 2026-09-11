@@ -1,0 +1,9 @@
+<!doctype html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org" th:replace="~{base :: layout('Nuevo curso', ~{::#encabezado}, ~{::#contenido})}">
+<section id="encabezado"><h3>Nuevo curso</h3></section>
+<section id="contenido"><form method="post" th:action="@{/academica/actualizar}" th:object="${item}">
+  <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
+  <div class="mb-3"><label>Anio</label><input class="form-control" type="number" th:field="*{anio}" required></div>
+  <div class="mb-3"><label>Seccion</label><input class="form-control" th:field="*{seccion}" required></div>
+  <a class="btn btn-secondary" th:href="@{/academica}">Cancelar</a><button class="btn btn-primary">Guardar</button>
+</form></section></html>

@@ -1,4 +1,4 @@
-package auth;
+package com.elvarest.cliente.auth;
 
 import org.springframework.http.*;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;

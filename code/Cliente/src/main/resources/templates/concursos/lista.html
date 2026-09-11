@@ -1,0 +1,10 @@
+<!doctype html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{base :: layout('Concursos', ~{::#encabezado}, ~{::#contenido})}">
+<section id="encabezado"><h3>Concursos</h3></section>
+<section id="contenido"><a class="btn btn-primary mb-3" th:href="@{/concursos/nuevo}">Nuevo concurso</a>
+  <table class="table"><thead><tr><th>Descripcion</th><th>Apertura</th><th>Cierre</th><th>Estado</th><th>Acciones</th></tr></thead>
+    <tbody><tr th:each="item : ${items}"><td th:text="${item.descripcion}"></td><td th:text="${item.fechaApertura}"></td><td th:text="${item.fechaCierre}"></td><td th:text="${item.estadoConcurso}"></td>
+      <td><a class="btn btn-sm btn-info" th:href="@{/concursos/{id}(id=${item.id})}">Ver</a> <a class="btn btn-sm btn-warning" th:href="@{/concursos/{id}/editar(id=${item.id})}">Editar</a> <a class="btn btn-sm btn-danger" th:href="@{/concursos/baja/{id}(id=${item.id})}">Eliminar</a></td>
+    </tr></tbody></table>
+</section></html>

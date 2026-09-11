@@ -1,32 +1,16 @@
 package com.elvarest.cliente.controllers;
 
+import com.elvarest.cliente.dto.ConcursoDTO;
+import com.elvarest.cliente.services.ConcursoService;
 import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 
 @Controller
 @RequestMapping("/concursos")
-public class ConcursoController {
+public class ConcursoController extends BaseController<ConcursoDTO, Long> {
 
-    @GetMapping
-    public String listar() {
-        return "concursos/lista";
+    public ConcursoController(ConcursoService service) {
+        super(service);
+        initController(new ConcursoDTO(), "Lista de concursos", "Editar concurso", "concursos/");
     }
-
-    @GetMapping("/nuevo")
-    public String nuevo() {
-        return "concursos/nuevo";
-    }
-
-    @GetMapping("/{id}")
-    public String detalle(@PathVariable Long id) {
-        return "concursos/detalle";
-    }
-
-    @GetMapping("/{id}/editar")
-    public String editar(@PathVariable Long id) {
-        return "concursos/editar";
-    }
-
 }

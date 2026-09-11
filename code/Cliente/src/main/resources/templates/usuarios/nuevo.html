@@ -1,0 +1,12 @@
+<!doctype html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org" th:replace="~{base :: layout('Nuevo usuario', ~{::#encabezado}, ~{::#contenido})}">
+<section id="encabezado"><h3>Nuevo usuario</h3></section>
+<section id="contenido"><form method="post" th:action="@{/usuarios/actualizar}" th:object="${item}">
+  <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
+  <div class="mb-3"><label>Nombre</label><input class="form-control" th:field="*{nombre}" required></div><div class="mb-3"><label>Apellido</label><input class="form-control" th:field="*{apellido}" required></div>
+  <div class="mb-3"><label>Fecha de nacimiento</label><input class="form-control" type="date" th:field="*{fechaNacimiento}" required></div><div class="mb-3"><label>Documento</label><input class="form-control" th:field="*{numeroDocumento}" required></div>
+  <div class="mb-3"><label>Telefono</label><input class="form-control" th:field="*{telefono}" required></div><div class="mb-3"><label>Correo</label><input class="form-control" type="email" th:field="*{correoElectronico}" required></div>
+  <div class="mb-3"><label>Usuario</label><input class="form-control" th:field="*{nombreUsuario}" required></div><div class="mb-3"><label>Contrasena</label><input class="form-control" type="password" th:field="*{contraseña}" required></div>
+  <div class="mb-3"><label>Rol</label><select class="form-select" th:field="*{rol}" required><option value="">Seleccione</option><option th:each="value : ${T(com.elvarest.cliente.dto.enums.Rol).values()}" th:value="${value}" th:text="${value}"></option></select></div>
+  <a class="btn btn-secondary" th:href="@{/usuarios}">Cancelar</a><button class="btn btn-primary">Guardar</button>
+</form></section></html>

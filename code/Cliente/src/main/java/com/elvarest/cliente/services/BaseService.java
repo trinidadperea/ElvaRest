@@ -1,6 +1,6 @@
 package com.elvarest.cliente.services;
 
-import auth.AuthService;
+import com.elvarest.cliente.auth.AuthService;
 import com.elvarest.cliente.exceptions.ErrorServiceException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpEntity;
@@ -8,7 +8,6 @@ import org.springframework.http.HttpMethod;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.client.RestTemplate;
 
-import java.io.Serializable;
 import java.util.Arrays;
 import java.util.List;
 
