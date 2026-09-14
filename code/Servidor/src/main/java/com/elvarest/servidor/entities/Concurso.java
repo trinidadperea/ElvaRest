@@ -7,8 +7,6 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDate;
-import java.util.ArrayList;
-import java.util.List;
 
 @Data
 @NoArgsConstructor
@@ -24,12 +22,9 @@ public class Concurso extends BaseEntity<Long>{
 
     private String descripcion;
 
+    @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private EstadoConcurso estadoConcurso;
-
-    @OneToMany
-    @JoinColumn(name = "concurso_id")
-    private List<Docente> docentes = new ArrayList<>();
 
     @ManyToOne
     @JoinColumn(name = "cargo_id")
