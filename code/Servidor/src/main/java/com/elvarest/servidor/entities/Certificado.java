@@ -26,6 +26,6 @@ public class Certificado extends BaseEntity<Long> {
     private Docente docente;
 
     @ManyToOne
-    @JoinColumn(name = "tipo_certificado_codigo")
+    @JoinColumn(name = "tipo_certificado_id")
     private TipoCertificado tipoCertificado;
 }

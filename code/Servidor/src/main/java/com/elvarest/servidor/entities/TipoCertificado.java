@@ -12,7 +12,7 @@ import lombok.NoArgsConstructor;
 @Entity
 public class TipoCertificado extends BaseEntity<Long> {
 
-    @Column(nullable = false, unique = true)
+    @Column(nullable = false, unique = true, updatable = false)
     private String codigo;
 
     @Column(nullable = false)
