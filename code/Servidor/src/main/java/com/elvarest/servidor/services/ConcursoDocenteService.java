@@ -4,10 +4,34 @@ import com.elvarest.servidor.entities.ConcursoDocente;
 import com.elvarest.servidor.repositories.ConcursoDocenteRepository;
 import org.springframework.stereotype.Service;
 
-@Service
-public class ConcursoDocenteService extends BaseService<ConcursoDocente, Long> {
+import java.util.List;
 
-    public ConcursoDocenteService(ConcursoDocenteRepository repository) {
-        super(repository);
+@Service
+public class ConcursoDocenteService
+        extends BaseService<ConcursoDocente, Long> {
+
+    private final ConcursoDocenteRepository concursoDocenteRepository;
+
+    public ConcursoDocenteService(
+            ConcursoDocenteRepository concursoDocenteRepository) {
+
+        super(concursoDocenteRepository);
+        this.concursoDocenteRepository = concursoDocenteRepository;
+    }
+
+    public List<ConcursoDocente> obtenerOrdenMerito(Long concursoId) {
+        return concursoDocenteRepository
+                .findByConcursoIdOrderByDocentePuntajeDesc(concursoId);
+    }
+
+    public boolean docenteYaPostulado(
+            Long concursoId,
+            Long docenteId) {
+
+        return concursoDocenteRepository
+                .existsByConcursoIdAndDocenteId(
+                        concursoId,
+                        docenteId
+                );
     }
 }

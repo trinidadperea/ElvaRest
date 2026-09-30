@@ -12,7 +12,7 @@ import java.time.LocalDate;
 @NoArgsConstructor
 @AllArgsConstructor
 @Entity
-public class Concurso extends BaseEntity<Long>{
+public class Concurso extends BaseEntity<Long> {
 
     @Column(nullable = false)
     private LocalDate fechaApertura;
@@ -29,4 +29,12 @@ public class Concurso extends BaseEntity<Long>{
     @ManyToOne
     @JoinColumn(name = "cargo_id")
     private Cargo cargo;
+
+    public boolean estaVigente() {
+        LocalDate hoy = LocalDate.now();
+
+        return estadoConcurso == EstadoConcurso.EN_PROCESO
+                && !hoy.isBefore(fechaApertura)
+                && !hoy.isAfter(fechaCierre);
+    }
 }

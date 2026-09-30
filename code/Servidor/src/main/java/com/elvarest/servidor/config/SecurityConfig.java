@@ -22,6 +22,7 @@ public class SecurityConfig {
                                 "/designaciones/**",
                                 "/docentes/**",
                                 "/licencias/**",
+                                "/reportes/**",
                                 "/usuarios/**"
                         ).permitAll()
                         .anyRequest().authenticated()
