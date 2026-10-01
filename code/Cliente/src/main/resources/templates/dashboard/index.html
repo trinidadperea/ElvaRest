@@ -20,7 +20,7 @@
     <div class="col-lg-3 col-6">
         <div class="small-box text-bg-primary">
             <div class="inner">
-                <h3>0</h3>
+                <h3 th:text="${cantidadDocentes}">0</h3>
                 <p>Docentes</p>
             </div>
             <div class="small-box-icon">
@@ -32,7 +32,7 @@
     <div class="col-lg-3 col-6">
         <div class="small-box text-bg-success">
             <div class="inner">
-                <h3>0</h3>
+                <h3 th:text="${cantidadAlertas}">0</h3>
                 <p>Alertas</p>
             </div>
             <div class="small-box-icon">
@@ -44,11 +44,11 @@
     <div class="col-lg-3 col-6">
         <div class="small-box text-bg-warning">
             <div class="inner">
-                <h3>0</h3>
-                <p>Usuarios</p>
+                <h3 th:text="${cantidadConcursos}">0</h3>
+                <p>Concursos</p>
             </div>
             <div class="small-box-icon">
-                <i class="bi bi-people"></i>
+                <i class="bi bi-trophy"></i>
             </div>
         </div>
     </div>
@@ -56,11 +56,11 @@
     <div class="col-lg-3 col-6">
         <div class="small-box text-bg-danger">
             <div class="inner">
-                <h3>0</h3>
-                <p>Licencias</p>
+                <h3 th:text="${cantidadCargos}">0</h3>
+                <p>Cargos</p>
             </div>
             <div class="small-box-icon">
-                <i class="bi bi-calendar2-week"></i>
+                <i class="bi bi-briefcase"></i>
             </div>
         </div>
     </div>

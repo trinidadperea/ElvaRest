@@ -5,6 +5,14 @@
 <section id="contenido"><form method="post" th:action="@{/certificados/actualizar}" th:object="${item}">
   <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
   <div class="mb-3"><label>Fecha de emision</label><input class="form-control" type="date" th:field="*{fechaEmision}" required></div>
+  <div class="mb-3"><label>Docente</label><select class="form-select" th:field="*{docente.id}" required>
+    <option value="">Seleccione un docente</option>
+    <option th:each="docente : ${docentes}" th:value="${docente.id}" th:text="${docente.apellido + ', ' + docente.nombre}"></option>
+  </select></div>
+  <div class="mb-3"><label>Tipo de certificado</label><select class="form-select" th:field="*{tipoCertificado.id}" required>
+    <option value="">Seleccione un tipo</option>
+    <option th:each="tipo : ${tiposCertificado}" th:value="${tipo.id}" th:text="${tipo.nombre}"></option>
+  </select></div>
   <label class="form-check"><input class="form-check-input" type="checkbox" th:field="*{requiereVencimiento}"> Requiere vencimiento</label>
   <label class="form-check"><input class="form-check-input" type="checkbox" th:field="*{presentado}"> Presentado</label>
   <div class="mt-3"><a class="btn btn-secondary" th:href="@{/certificados}">Cancelar</a><button class="btn btn-primary">Guardar</button></div>

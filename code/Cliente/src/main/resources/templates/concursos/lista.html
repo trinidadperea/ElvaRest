@@ -3,8 +3,40 @@
       th:replace="~{base :: layout('Concursos', ~{::#encabezado}, ~{::#contenido})}">
 <section id="encabezado"><h3>Concursos</h3></section>
 <section id="contenido"><a class="btn btn-primary mb-3" th:href="@{/concursos/nuevo}">Nuevo concurso</a>
-  <table class="table"><thead><tr><th>Descripcion</th><th>Apertura</th><th>Cierre</th><th>Estado</th><th>Acciones</th></tr></thead>
-    <tbody><tr th:each="item : ${items}"><td th:text="${item.descripcion}"></td><td th:text="${item.fechaApertura}"></td><td th:text="${item.fechaCierre}"></td><td th:text="${item.estadoConcurso}"></td>
-      <td><a class="btn btn-sm btn-info" th:href="@{/concursos/{id}(id=${item.id})}">Ver</a> <a class="btn btn-sm btn-warning" th:href="@{/concursos/{id}/editar(id=${item.id})}">Editar</a> <a class="btn btn-sm btn-danger" th:href="@{/concursos/baja/{id}(id=${item.id})}">Eliminar</a></td>
-    </tr></tbody></table>
+  <div th:if="${msgError}" class="alert alert-danger" th:text="${msgError}"></div>
+  <div th:if="${msgExito}" class="alert alert-success" th:text="${msgExito}"></div>
+  <div class="table-responsive">
+    <table class="table">
+      <thead><tr><th>Descripción</th><th>Apertura</th><th>Cierre</th><th>Estado</th><th>Postulantes</th><th>Docente ganador</th><th>Acciones</th></tr></thead>
+      <tbody>
+      <tr th:each="item : ${items}">
+        <td th:text="${item.descripcion}"></td>
+        <td th:text="${item.fechaApertura}"></td>
+        <td th:text="${item.fechaCierre}"></td>
+        <td><span class="badge rounded-pill"
+                  th:classappend="${item.estadoConcurso == T(com.elvarest.cliente.dto.enums.EstadoConcurso).EN_PROCESO ? 'text-bg-primary' : 'text-bg-secondary'}"
+                  th:text="${item.estadoConcurso == T(com.elvarest.cliente.dto.enums.EstadoConcurso).EN_PROCESO ? 'En proceso' : 'Finalizado'}"></span></td>
+        <td><span class="badge rounded-pill text-bg-light text-primary"
+                  th:text="${cantidadPostulantes[item.id]} + ' postulantes'"></span></td>
+        <td th:if="${item.estadoConcurso == T(com.elvarest.cliente.dto.enums.EstadoConcurso).FINALIZADO}"
+            th:text="${ganadores[item.id] != null and ganadores[item.id].docente != null ? ganadores[item.id].docente.apellido + ', ' + ganadores[item.id].docente.nombre : 'Pendiente de selección'}"></td>
+        <td th:unless="${item.estadoConcurso == T(com.elvarest.cliente.dto.enums.EstadoConcurso).FINALIZADO}">—</td>
+        <td class="text-nowrap">
+          <a class="btn btn-sm btn-info" th:href="@{/concursos/{id}(id=${item.id})}">Ver</a>
+          <a class="btn btn-sm btn-warning" th:href="@{/concursos/{id}/editar(id=${item.id})}">Editar</a>
+          <a class="btn btn-sm btn-danger" th:href="@{/concursos/baja/{id}(id=${item.id})}">Eliminar</a>
+          <a th:if="${item.estadoConcurso == T(com.elvarest.cliente.dto.enums.EstadoConcurso).FINALIZADO and ganadores[item.id] == null and cantidadPostulantes[item.id] > 0}"
+             class="btn btn-sm btn-outline-primary" th:href="@{/concursos/{id}/ganador(id=${item.id})}">
+            Seleccionar ganador
+          </a>
+          <a th:if="${item.estadoConcurso == T(com.elvarest.cliente.dto.enums.EstadoConcurso).FINALIZADO and ganadores[item.id] != null}"
+             class="btn btn-sm btn-success" th:href="@{/concursos/{id}/agregar-cargo(id=${item.id})}">
+            <i class="bi bi-briefcase me-1"></i>Agregar cargo
+          </a>
+        </td>
+      </tr>
+      <tr th:if="${#lists.isEmpty(items)}"><td colspan="7" class="text-center text-secondary py-5">Aún no hay concursos para mostrar.</td></tr>
+      </tbody>
+    </table>
+  </div>
 </section></html>

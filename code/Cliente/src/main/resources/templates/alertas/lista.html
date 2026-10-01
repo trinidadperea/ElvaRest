@@ -1,24 +1,52 @@
 <!doctype html>
 <html lang="es" xmlns:th="http://www.thymeleaf.org"
       th:replace="~{base :: layout('Alertas', ~{::#encabezado}, ~{::#contenido})}">
-<section id="encabezado"><h3>Alertas</h3></section>
+<section id="encabezado"><h3>Centro de alertas</h3></section>
 <section id="contenido">
-  <a class="btn btn-primary mb-3" th:href="@{/alertas/nuevo}">Nueva alerta</a>
+  <div class="alerts-heading">
+    <p class="text-secondary mb-0">Avisos importantes para el seguimiento de la comunidad educativa.</p>
+    <a class="btn btn-primary" th:href="@{/alertas/nuevo}">
+      <i class="bi bi-plus-lg me-1"></i>Nueva alerta
+    </a>
+  </div>
   <div th:if="${msgError}" class="alert alert-danger" th:text="${msgError}"></div>
-  <table class="table">
-    <thead><tr><th>Mensaje</th><th>Fecha</th><th>Prioridad</th><th>Acciones</th></tr></thead>
-    <tbody>
-      <tr th:each="item : ${items}">
-        <td th:text="${item.mensaje}"></td>
-        <td th:text="${item.fechaEmision}"></td>
-        <td th:text="${item.prioridad}"></td>
-        <td>
-          <a class="btn btn-sm btn-info" th:href="@{/alertas/{id}(id=${item.id})}">Ver</a>
-          <a class="btn btn-sm btn-warning" th:href="@{/alertas/{id}/editar(id=${item.id})}">Editar</a>
-          <a class="btn btn-sm btn-danger" th:href="@{/alertas/baja/{id}(id=${item.id})}">Eliminar</a>
-        </td>
-      </tr>
-    </tbody>
-  </table>
+  <div th:if="${msgExito}" class="alert alert-success" th:text="${msgExito}"></div>
+  <div class="alerts-list">
+    <article class="school-alert-card"
+             th:each="item : ${items}"
+             th:classappend="${item.prioridad == T(com.elvarest.cliente.dto.enums.PrioridadAlerta).ALTA ? ' school-alert-high' : ' school-alert-medium'}">
+      <div class="school-alert-icon" aria-hidden="true">
+        <i th:class="${item.prioridad == T(com.elvarest.cliente.dto.enums.PrioridadAlerta).ALTA ? 'bi bi-exclamation-triangle-fill' : 'bi bi-info-circle-fill'}"></i>
+      </div>
+      <div class="school-alert-content">
+        <div class="school-alert-meta">
+          <span class="badge rounded-pill"
+                th:classappend="${item.prioridad == T(com.elvarest.cliente.dto.enums.PrioridadAlerta).ALTA ? ' badge-priority-high' : ' badge-priority-medium'}"
+                th:text="${item.prioridad == T(com.elvarest.cliente.dto.enums.PrioridadAlerta).ALTA ? 'Prioridad alta' : 'Prioridad media'}"></span>
+          <span class="badge rounded-pill"
+                th:classappend="${item.leida ? ' badge-alert-read' : ' badge-alert-unread'}"
+                th:text="${item.leida ? 'Leída' : 'Pendiente de lectura'}"></span>
+          <span class="school-alert-date"><i class="bi bi-calendar3 me-1"></i><time th:text="${item.fechaEmision}"></time></span>
+        </div>
+        <p class="school-alert-message" th:text="${item.mensaje}"></p>
+        <div class="school-alert-actions">
+          <a class="btn btn-sm btn-outline-primary" th:href="@{/alertas/{id}(id=${item.id})}">
+            <i class="bi bi-eye me-1"></i>Ver aviso
+          </a>
+          <a class="btn btn-sm btn-outline-secondary" th:href="@{/alertas/{id}/editar(id=${item.id})}">
+            <i class="bi bi-pencil me-1"></i>Editar
+          </a>
+          <a class="btn btn-sm btn-outline-danger" th:href="@{/alertas/baja/{id}(id=${item.id})}">
+            <i class="bi bi-trash me-1"></i>Eliminar
+          </a>
+        </div>
+      </div>
+    </article>
+    <div th:if="${#lists.isEmpty(items)}" class="school-alert-empty">
+      <span class="school-alert-empty-icon"><i class="bi bi-bell-slash"></i></span>
+      <h4>Todo tranquilo por aquí</h4>
+      <p class="mb-0">No hay avisos escolares registrados. Las nuevas alertas aparecerán en esta sección.</p>
+    </div>
+  </div>
 </section>
 </html>

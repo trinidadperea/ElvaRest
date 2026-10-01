@@ -1,2 +1,39 @@
 <!doctype html><html lang="es" xmlns:th="http://www.thymeleaf.org" th:replace="~{base :: layout('Detalle del docente', ~{::#encabezado}, ~{::#contenido})}">
-<section id="encabezado"><h3>Detalle del docente</h3></section><section id="contenido"><dl><dt>Nombre</dt><dd th:text="${item.apellido + ', ' + item.nombre}"></dd><dt>Documento</dt><dd th:text="${item.numeroDocumento}"></dd><dt>Area</dt><dd th:text="${item.area}"></dd><dt>Activo</dt><dd th:text="${item.activo}"></dd></dl><a class="btn btn-secondary" th:href="@{/docentes}">Volver</a><a class="btn btn-warning" th:href="@{/docentes/{id}/editar(id=${item.id})}">Editar</a></section></html>
+<section id="encabezado"><h3>Perfil del docente</h3></section>
+<section id="contenido">
+  <dl>
+    <dt>Nombre</dt><dd th:text="${item.apellido + ', ' + item.nombre}"></dd>
+    <dt>Documento</dt><dd th:text="${item.numeroDocumento}"></dd>
+    <dt>Área</dt><dd th:text="${item.area}"></dd>
+    <dt>Activo</dt><dd th:text="${item.activo ? 'Sí' : 'No'}"></dd>
+  </dl>
+  <div class="d-flex justify-content-between align-items-center mt-4 mb-3">
+    <h4 class="mb-0">Certificados asociados</h4>
+    <a class="btn btn-primary" th:href="@{/certificados/nuevo/docente/{id}(id=${item.id})}">
+      <i class="bi bi-plus-lg me-1"></i>Agregar certificado
+    </a>
+  </div>
+  <div class="table-responsive">
+    <table class="table">
+      <thead><tr><th>Tipo de certificado</th><th>Fecha de emisión</th><th>Vencimiento</th><th>Presentado</th><th>Acciones</th></tr></thead>
+      <tbody>
+      <tr th:each="certificado : ${certificados}">
+        <td th:text="${certificado.tipoCertificado != null ? certificado.tipoCertificado.nombre : 'Sin tipo'}"></td>
+        <td th:text="${certificado.fechaEmision}"></td>
+        <td th:text="${certificado.requiereVencimiento ? 'Requiere vencimiento' : 'Sin vencimiento'}"></td>
+        <td th:text="${certificado.presentado ? 'Sí' : 'No'}"></td>
+        <td>
+          <a class="btn btn-sm btn-info" aria-label="Ver certificado" th:href="@{/certificados/{id}(id=${certificado.id})}">Ver</a>
+          <a class="btn btn-sm btn-warning" aria-label="Editar certificado" th:href="@{/certificados/{id}/editar(id=${certificado.id})}">Editar</a>
+        </td>
+      </tr>
+      <tr th:if="${#lists.isEmpty(certificados)}">
+        <td colspan="5" class="text-center text-secondary py-4">Este docente aún no tiene certificados asociados.</td>
+      </tr>
+      </tbody>
+    </table>
+  </div>
+  <a class="btn btn-secondary mt-3" th:href="@{/docentes}">Volver</a>
+  <a class="btn btn-warning mt-3" th:href="@{/docentes/{id}/editar(id=${item.id})}">Editar docente</a>
+</section>
+</html>

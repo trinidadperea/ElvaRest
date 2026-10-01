@@ -15,8 +15,10 @@ public class SecurityConfig {
                 .authorizeHttpRequests(authorize -> authorize
                         .requestMatchers(
                                 "/alertas/**",
+                                "/cargos/**",
                                 "/certificados/**",
                                 "/concursos/**",
+                                "/concursos-docentes/**",
                                 "/designaciones/**",
                                 "/docentes/**",
                                 "/licencias/**",

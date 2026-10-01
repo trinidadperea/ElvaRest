@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{base :: layout('Seleccionar ganador', ~{::#encabezado}, ~{::#contenido})}">
+<section id="encabezado"><h3>Seleccionar docente ganador</h3></section>
+<section id="contenido">
+  <div class="card mb-3">
+    <div class="card-body">
+      <strong>Concurso:</strong> <span th:text="${concurso.descripcion}"></span>
+    </div>
+  </div>
+  <form method="post" th:action="@{/concursos/{id}/ganador(id=${concurso.id})}">
+    <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
+    <div class="mb-3">
+      <label for="postulacionId">Postulante ganador</label>
+      <select id="postulacionId" class="form-select" name="postulacionId" required>
+        <option value="">Seleccione el docente ganador</option>
+        <option th:each="postulacion : ${postulantes}" th:value="${postulacion.id}"
+                th:text="${postulacion.docente.apellido + ', ' + postulacion.docente.nombre + ' - DNI ' + postulacion.docente.numeroDocumento}"></option>
+      </select>
+    </div>
+    <div class="d-flex gap-2 mt-3">
+      <a class="btn btn-secondary" th:href="@{/concursos/list}">Cancelar</a>
+      <button class="btn btn-primary">Guardar ganador</button>
+    </div>
+  </form>
+</section>
+</html>

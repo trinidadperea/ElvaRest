@@ -16,4 +16,5 @@ public class ConcursoDocenteDTO extends BaseDTO{
     private LocalDate fechaEmision;
     private ConcursoDTO concurso;
     private DocenteDTO docente;
+    private boolean ganador;
 }

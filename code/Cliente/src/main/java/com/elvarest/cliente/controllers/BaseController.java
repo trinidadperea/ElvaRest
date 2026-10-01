@@ -81,8 +81,9 @@ public abstract class BaseController<T extends Identifiable<ID>, ID> {
             this.model.addAttribute("titleList", titleList);
             this.model.addAttribute("nameEntityLower", nameEntityLower);
         } catch (Exception e) {
+            e.printStackTrace();
             model.addAttribute("items", List.of());
-            model.addAttribute("msgError", "Error de Sistema");
+            model.addAttribute("msgError", "No se pudo recuperar el listado: " + e.getMessage());
         }
         return viewList;
     }
@@ -115,6 +116,7 @@ public abstract class BaseController<T extends Identifiable<ID>, ID> {
             if (found == null)
                 throw new IllegalArgumentException("No encontrado: " + id);
 
+            postConsulta(found);
             this.model.addAttribute("item", found);
             this.model.addAttribute("isDisabled", true);
             this.model.addAttribute("titleEdit", titleEdit);
@@ -224,6 +226,9 @@ public abstract class BaseController<T extends Identifiable<ID>, ID> {
     }
 
     protected void preModificacion() throws ErrorServiceException {
+    }
+
+    protected void postConsulta(T found) throws ErrorServiceException {
     }
 
     protected void preBaja() throws ErrorServiceException {

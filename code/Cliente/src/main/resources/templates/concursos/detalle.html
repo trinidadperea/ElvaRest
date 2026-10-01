@@ -1,2 +1,29 @@
-<!doctype html><html lang="es" xmlns:th="http://www.thymeleaf.org" th:replace="~{base :: layout('Detalle de concurso', ~{::#encabezado}, ~{::#contenido})}">
-<section id="encabezado"><h3>Detalle de concurso</h3></section><section id="contenido"><dl><dt>Descripcion</dt><dd th:text="${item.descripcion}"></dd><dt>Apertura</dt><dd th:text="${item.fechaApertura}"></dd><dt>Cierre</dt><dd th:text="${item.fechaCierre}"></dd><dt>Estado</dt><dd th:text="${item.estadoConcurso}"></dd></dl><a class="btn btn-secondary" th:href="@{/concursos}">Volver</a><a class="btn btn-warning" th:href="@{/concursos/{id}/editar(id=${item.id})}">Editar</a></section></html>
+<!doctype html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{base :: layout('Detalle de concurso', ~{::#encabezado}, ~{::#contenido})}">
+<section id="encabezado"><h3>Detalle de concurso</h3></section>
+<section id="contenido">
+  <div th:if="${msgError}" class="alert alert-danger" th:text="${msgError}"></div>
+  <div th:if="${msgExito}" class="alert alert-success" th:text="${msgExito}"></div>
+  <dl>
+    <dt>Descripción</dt><dd th:text="${item.descripcion}"></dd>
+    <dt>Apertura</dt><dd th:text="${item.fechaApertura}"></dd>
+    <dt>Cierre</dt><dd th:text="${item.fechaCierre}"></dd>
+    <dt>Estado</dt><dd th:text="${item.estadoConcurso == T(com.elvarest.cliente.dto.enums.EstadoConcurso).EN_PROCESO ? 'En proceso' : 'Finalizado'}"></dd>
+    <dt>Postulantes</dt><dd th:text="${cantidadPostulantes}"></dd>
+    <dt th:if="${item.estadoConcurso == T(com.elvarest.cliente.dto.enums.EstadoConcurso).FINALIZADO}">Docente ganador</dt>
+    <dd th:if="${item.estadoConcurso == T(com.elvarest.cliente.dto.enums.EstadoConcurso).FINALIZADO}"
+        th:text="${ganador != null and ganador.docente != null ? ganador.docente.apellido + ', ' + ganador.docente.nombre : 'Pendiente de selección'}"></dd>
+  </dl>
+  <div class="d-flex flex-wrap gap-2 mt-3">
+    <a class="btn btn-secondary" th:href="@{/concursos/list}">Volver</a>
+    <a class="btn btn-warning" th:href="@{/concursos/{id}/editar(id=${item.id})}">Editar</a>
+    <a th:if="${item.estadoConcurso == T(com.elvarest.cliente.dto.enums.EstadoConcurso).EN_PROCESO}"
+       class="btn btn-primary" th:href="@{/concursos/{id}/postular(id=${item.id})}">
+      <i class="bi bi-person-plus me-1"></i>Postular docente
+    </a>
+    <a th:if="${item.estadoConcurso == T(com.elvarest.cliente.dto.enums.EstadoConcurso).FINALIZADO and ganador == null and cantidadPostulantes > 0}"
+       class="btn btn-outline-primary" th:href="@{/concursos/{id}/ganador(id=${item.id})}">Seleccionar ganador</a>
+  </div>
+</section>
+</html>

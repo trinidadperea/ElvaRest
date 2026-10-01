@@ -23,4 +23,6 @@ public class ConcursoDocente extends BaseEntity<Long> {
     @ManyToOne
     @JoinColumn(name = "docente_id", nullable = false)
     private Docente docente;
+
+    private boolean ganador;
 }

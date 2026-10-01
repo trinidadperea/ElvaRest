@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{base :: layout('Gestión de cargos', ~{::#encabezado}, ~{::#contenido})}">
+<section id="encabezado"><h3>Gestión de cargos</h3></section>
+<section id="contenido">
+  <div class="table-responsive">
+    <table class="table">
+      <thead>
+      <tr>
+        <th>Docente</th>
+        <th>Materia/curso</th>
+        <th>Tipo de cargo</th>
+        <th>Fecha inicio</th>
+        <th>Fecha fin</th>
+        <th>Estado</th>
+        <th class="text-end">Acciones</th>
+      </tr>
+      </thead>
+      <tbody>
+      <th:block th:each="cargo : ${items}">
+        <tr th:each="designacion : ${cargo.designaciones}">
+          <td th:text="${designacion.docente != null ? designacion.docente.apellido + ', ' + designacion.docente.nombre : 'Sin docente asignado'}"></td>
+          <td>
+            <span th:text="${cargo.materia != null ? cargo.materia.nombre : 'Sin materia'}"></span>
+            <small class="d-block text-secondary"
+                   th:if="${cargo.materia != null and cargo.materia.curso != null}"
+                   th:text="${cargo.materia.curso.anio + '° ' + cargo.materia.curso.seccion}"></small>
+          </td>
+          <td>
+            <span class="badge rounded-pill"
+                  th:classappend="${#strings.toString(designacion.caracterDesignacion) == 'EFECTIVO' ? 'text-bg-primary' :
+                    (#strings.toString(designacion.caracterDesignacion) == 'INTERINO' ? 'text-bg-info' :
+                    (#strings.toString(designacion.caracterDesignacion) == 'REEMPLAZANTE' ? 'text-bg-warning' :
+                    (#strings.toString(designacion.caracterDesignacion) == 'SUPLENTE' ? 'text-bg-success' : 'text-bg-dark')))}"
+                  th:text="${designacion.caracterDesignacion}"></span>
+          </td>
+          <td th:text="${designacion.fechaInicioEfectiva}"></td>
+          <td th:text="${designacion.fechaFinDefinitiva != null ? designacion.fechaFinDefinitiva : designacion.fechaFinEstimada}"></td>
+          <td>
+            <span class="badge rounded-pill"
+                  th:classappend="${#strings.toString(designacion.estadoDesignacion) == 'ACTIVO' ? 'text-bg-success' :
+                    (#strings.toString(designacion.estadoDesignacion) == 'PENDIENTE' ? 'text-bg-warning' : 'text-bg-secondary')}"
+                  th:text="${designacion.estadoDesignacion}"></span>
+          </td>
+          <td class="text-end">
+            <a class="btn btn-sm btn-info" aria-label="Ver cargo"
+               th:href="@{/designaciones/{id}(id=${designacion.id})}">Ver</a>
+            <a class="btn btn-sm btn-warning" aria-label="Editar cargo"
+               th:href="@{/designaciones/{id}/editar(id=${designacion.id})}">Editar</a>
+            <a class="btn btn-sm btn-danger" aria-label="Eliminar cargo"
+               th:href="@{/designaciones/baja/{id}(id=${designacion.id})}">Eliminar</a>
+          </td>
+        </tr>
+        <tr th:if="${#lists.isEmpty(cargo.designaciones)}">
+          <td colspan="7" class="text-center text-secondary">Cargo sin designaciones asociadas.</td>
+        </tr>
+      </th:block>
+      <tr th:if="${#lists.isEmpty(items)}">
+        <td colspan="7" class="text-center text-secondary py-5">Aún no hay cargos registrados.</td>
+      </tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+</html>

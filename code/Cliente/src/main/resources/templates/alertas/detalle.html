@@ -1,2 +1,32 @@
-<!doctype html><html lang="es" xmlns:th="http://www.thymeleaf.org" th:replace="~{base :: layout('Detalle de alerta', ~{::#encabezado}, ~{::#contenido})}">
-<section id="encabezado"><h3>Detalle de alerta</h3></section><section id="contenido"><dl><dt>Mensaje</dt><dd th:text="${item.mensaje}"></dd><dt>Fecha</dt><dd th:text="${item.fechaEmision}"></dd><dt>Prioridad</dt><dd th:text="${item.prioridad}"></dd></dl><a class="btn btn-secondary" th:href="@{/alertas}">Volver</a><a class="btn btn-warning" th:href="@{/alertas/{id}/editar(id=${item.id})}">Editar</a></section></html>
+<!doctype html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{base :: layout('Detalle de alerta', ~{::#encabezado}, ~{::#contenido})}">
+<section id="encabezado"><h3>Detalle del aviso escolar</h3></section>
+<section id="contenido">
+  <article class="school-alert-detail"
+           th:classappend="${item.prioridad == T(com.elvarest.cliente.dto.enums.PrioridadAlerta).ALTA ? ' school-alert-high' : ' school-alert-medium'}">
+    <div class="school-alert-icon" aria-hidden="true">
+      <i th:class="${item.prioridad == T(com.elvarest.cliente.dto.enums.PrioridadAlerta).ALTA ? 'bi bi-exclamation-triangle-fill' : 'bi bi-info-circle-fill'}"></i>
+    </div>
+    <div class="school-alert-content">
+      <div class="school-alert-meta">
+        <span class="badge rounded-pill"
+              th:classappend="${item.prioridad == T(com.elvarest.cliente.dto.enums.PrioridadAlerta).ALTA ? ' badge-priority-high' : ' badge-priority-medium'}"
+              th:text="${item.prioridad == T(com.elvarest.cliente.dto.enums.PrioridadAlerta).ALTA ? 'Prioridad alta' : 'Prioridad media'}"></span>
+        <span class="badge rounded-pill"
+              th:classappend="${item.leida ? ' badge-alert-read' : ' badge-alert-unread'}"
+              th:text="${item.leida ? 'Leída' : 'Pendiente de lectura'}"></span>
+      </div>
+      <p class="school-alert-detail-message" th:text="${item.mensaje}"></p>
+      <p class="school-alert-date mb-0">
+        <i class="bi bi-calendar3 me-1"></i>Emitida el
+        <time th:text="${item.fechaEmision}"></time>
+      </p>
+    </div>
+  </article>
+  <div class="d-flex flex-wrap gap-2 mt-3">
+    <a class="btn btn-secondary" th:href="@{/alertas/list}"><i class="bi bi-arrow-left me-1"></i>Volver a alertas</a>
+    <a class="btn btn-primary" th:href="@{/alertas/{id}/editar(id=${item.id})}"><i class="bi bi-pencil me-1"></i>Editar aviso</a>
+  </div>
+</section>
+</html>

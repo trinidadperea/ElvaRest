@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{base :: layout('Postular docente', ~{::#encabezado}, ~{::#contenido})}">
+<section id="encabezado"><h3>Postular docente</h3></section>
+<section id="contenido">
+  <div class="card mb-3">
+    <div class="card-body">
+      <strong>Concurso:</strong> <span th:text="${concurso.descripcion}"></span>
+    </div>
+  </div>
+  <form method="post" th:action="@{/concursos/{id}/postular(id=${concurso.id})}" th:object="${item}">
+    <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
+    <div class="mb-3">
+      <label for="docenteId">Docente activo</label>
+      <select id="docenteId" class="form-select" th:field="*{docente.id}" required>
+        <option value="">Seleccione un docente</option>
+        <option th:each="docente : ${docentes}" th:value="${docente.id}"
+                th:text="${docente.apellido + ', ' + docente.nombre + ' - DNI ' + docente.numeroDocumento}"></option>
+      </select>
+    </div>
+    <p th:if="${#lists.isEmpty(docentes)}" class="text-secondary">No hay docentes activos disponibles para postular.</p>
+    <div class="d-flex gap-2 mt-3">
+      <a class="btn btn-secondary" th:href="@{/concursos/list}">Cancelar</a>
+      <button class="btn btn-primary" th:disabled="${#lists.isEmpty(docentes)}">Postular docente</button>
+    </div>
+  </form>
+</section>
+</html>

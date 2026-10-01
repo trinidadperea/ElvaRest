@@ -1,8 +1,11 @@
-<aside class="app-sidebar bg-body-secondary shadow" data-bs-theme="dark" th:fragment="sidebar">
+<aside class="app-sidebar" data-bs-theme="light" th:fragment="sidebar">
   <div class="sidebar-brand">
     <a th:href="@{/}" class="brand-link">
       <img th:src="@{/adminlte/img/AdminLTELogo.png}" alt="Gestión de Concursos Docentes" class="brand-image opacity-75 shadow">
-      <span class="brand-text fw-light">Concursos Docentes</span>
+      <span class="brand-text">
+        <span class="brand-title">SGD</span>
+        <small>Gestión institucional</small>
+      </span>
     </a>
   </div>
 
@@ -10,6 +13,7 @@
     <nav class="mt-2" aria-label="Menú principal">
       <ul class="nav sidebar-menu flex-column" data-lte-toggle="treeview" data-accordion="false" id="navigation">
 
+        <li class="nav-header">INSTITUCIÓN</li>
         <li class="nav-item">
           <a th:href="@{/}" class="nav-link">
             <i class="nav-icon bi bi-speedometer"></i>
@@ -17,24 +21,11 @@
           </a>
         </li>
 
-        <li class="nav-item">
-          <a th:href="@{/academica}" class="nav-link">
-            <i class="nav-icon bi bi-mortarboard"></i>
-            <p>Académica</p>
-          </a>
-        </li>
-
+        <li class="nav-header">GESTIÓN ACADÉMICA</li>
         <li class="nav-item">
           <a th:href="@{/alertas}" class="nav-link">
             <i class="nav-icon bi bi-exclamation-triangle"></i>
             <p>Alertas</p>
-          </a>
-        </li>
-
-        <li class="nav-item">
-          <a th:href="@{/certificados}" class="nav-link">
-            <i class="nav-icon bi bi-patch-check"></i>
-            <p>Certificados</p>
           </a>
         </li>
 
@@ -46,9 +37,9 @@
         </li>
 
         <li class="nav-item">
-          <a th:href="@{/designaciones}" class="nav-link">
-            <i class="nav-icon bi bi-file-earmark-person"></i>
-            <p>Designaciones</p>
+          <a th:href="@{/cargos}" class="nav-link">
+            <i class="nav-icon bi bi-briefcase"></i>
+            <p>Cargos</p>
           </a>
         </li>
 
@@ -56,13 +47,6 @@
           <a th:href="@{/docentes}" class="nav-link">
             <i class="nav-icon bi bi-person-badge"></i>
             <p>Docentes</p>
-          </a>
-        </li>
-
-        <li class="nav-item">
-          <a th:href="@{/licencias}" class="nav-link">
-            <i class="nav-icon bi bi-calendar2-week"></i>
-            <p>Licencias</p>
           </a>
         </li>
 
