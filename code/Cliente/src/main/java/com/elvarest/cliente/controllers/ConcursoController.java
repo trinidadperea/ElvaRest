@@ -5,13 +5,16 @@ import com.elvarest.cliente.dto.ConcursoDTO;
 import com.elvarest.cliente.dto.ConcursoDocenteDTO;
 import com.elvarest.cliente.dto.DesignacionDTO;
 import com.elvarest.cliente.dto.DocenteDTO;
+import com.elvarest.cliente.dto.enums.CaracterDesignacion;
 import com.elvarest.cliente.dto.enums.EstadoConcurso;
 import com.elvarest.cliente.dto.enums.EstadoDesignacion;
+import com.elvarest.cliente.dto.enums.EstadoPostulacion;
 import com.elvarest.cliente.services.CargoService;
 import com.elvarest.cliente.services.ConcursoDocenteService;
 import com.elvarest.cliente.services.ConcursoService;
 import com.elvarest.cliente.services.DesignacionService;
 import com.elvarest.cliente.services.DocenteService;
+import com.elvarest.cliente.services.FlujoConcursoService;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -20,6 +23,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import java.time.LocalDate;
@@ -29,6 +33,16 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
+/**
+ * Controlador del módulo de concursos con el flujo de toma de horas:
+ * 1) registrar / modificar toma de horas,
+ * 2) validar certificados,
+ * 3) confirmar toma de posesión (o declarar inefectivo),
+ * 4) cierre y rellamado.
+ *
+ * Los datos del flujo (estado de postulación, horas, certificados, observaciones y
+ * datos de rellamado) se persisten en el Servidor.
+ */
 @Controller
 @RequestMapping("/concursos")
 public class ConcursoController extends BaseController<ConcursoDTO, Long> {
@@ -37,45 +51,69 @@ public class ConcursoController extends BaseController<ConcursoDTO, Long> {
     private final DocenteService docenteService;
     private final CargoService cargoService;
     private final DesignacionService designacionService;
+    private final FlujoConcursoService flujoService;
 
     public ConcursoController(ConcursoService service, ConcursoDocenteService concursoDocenteService,
                               DocenteService docenteService, CargoService cargoService,
-                              DesignacionService designacionService) {
+                              DesignacionService designacionService,
+                              FlujoConcursoService flujoService) {
         super(service);
         this.concursoDocenteService = concursoDocenteService;
         this.docenteService = docenteService;
         this.cargoService = cargoService;
         this.designacionService = designacionService;
+        this.flujoService = flujoService;
         initController(new ConcursoDTO(), "Lista de concursos", "Editar concurso", "concursos/");
     }
+
+    // ------------------------------------------------------------------
+    // Listado y detalle
+    // ------------------------------------------------------------------
 
     @Override
     @GetMapping("/list")
     public String listar(Model model) {
         try {
             List<ConcursoDTO> concursos = service.listarActivos();
+            concursos.forEach(this::aplicarTransicionEstado);
+            List<ConcursoDocenteDTO> postulaciones = concursoDocenteService.listarActivos();
             Map<Long, Integer> cantidadPostulantes = new HashMap<>();
             Map<Long, ConcursoDocenteDTO> ganadores = new HashMap<>();
-            concursoDocenteService.listarActivos().forEach(postulacion -> {
-                if (postulacion.getConcurso() == null || postulacion.getConcurso().getId() == null) {
-                    return;
+            Map<Long, Integer> horasTotalesMap = new HashMap<>();
+            Map<Long, Integer> horasDisponiblesMap = new HashMap<>();
+
+            for (ConcursoDTO concurso : concursos) {
+                List<ConcursoDocenteDTO> propias = postulaciones.stream()
+                        .filter(postulacion -> postulacion.getConcurso() != null
+                                && Objects.equals(postulacion.getConcurso().getId(), concurso.getId()))
+                        .toList();
+                int vigentes = (int) propias.stream().filter(postulacion -> !estadoEfectivo(postulacion).isCancelado()).count();
+                cantidadPostulantes.put(concurso.getId(), vigentes);
+                propias.stream().filter(ConcursoDocenteDTO::isGanador).findFirst()
+                        .ifPresent(ganador -> ganadores.put(concurso.getId(), ganador));
+                Integer total = horasTotalesDe(concurso);
+                if (total != null) {
+                    horasTotalesMap.put(concurso.getId(), total);
                 }
-                Long concursoId = postulacion.getConcurso().getId();
-                cantidadPostulantes.merge(concursoId, 1, Integer::sum);
-                if (postulacion.isGanador()) {
-                    ganadores.put(concursoId, postulacion);
+                Integer disponibles = horasDisponiblesDe(concurso, propias);
+                if (disponibles != null) {
+                    horasDisponiblesMap.put(concurso.getId(), disponibles);
                 }
-            });
-            concursos.forEach(concurso -> cantidadPostulantes.putIfAbsent(concurso.getId(), 0));
+            }
+
             model.addAttribute("items", concursos);
             model.addAttribute("cantidadPostulantes", cantidadPostulantes);
             model.addAttribute("ganadores", ganadores);
+            model.addAttribute("horasTotalesMap", horasTotalesMap);
+            model.addAttribute("horasDisponiblesMap", horasDisponiblesMap);
             model.addAttribute("titleList", titleList);
             model.addAttribute("nameEntityLower", nameEntityLower);
         } catch (Exception e) {
             model.addAttribute("items", List.of());
             model.addAttribute("cantidadPostulantes", Map.of());
             model.addAttribute("ganadores", Map.of());
+            model.addAttribute("horasTotalesMap", Map.of());
+            model.addAttribute("horasDisponiblesMap", Map.of());
             model.addAttribute("msgError", "No se pudo recuperar el listado de concursos: " + e.getMessage());
         }
         return viewList;
@@ -83,7 +121,79 @@ public class ConcursoController extends BaseController<ConcursoDTO, Long> {
 
     @Override
     protected void postConsulta(ConcursoDTO concurso) {
+        aplicarTransicionEstado(concurso);
         List<ConcursoDocenteDTO> postulantes = postulantesDelConcurso(concurso.getId());
+        Map<Long, EstadoPostulacion> estadosPostulacion = new HashMap<>();
+        Map<Long, Integer> horasPostulacion = new HashMap<>();
+        Map<Long, String> observaciones = new HashMap<>();
+        List<ConcursoDocenteDTO> pendientesCertificados = new ArrayList<>();
+        List<ConcursoDocenteDTO> pendientesPosesion = new ArrayList<>();
+        int designados = 0;
+        int canceladas = 0;
+
+        for (ConcursoDocenteDTO postulante : postulantes) {
+            if (postulante.getId() == null) {
+                continue;
+            }
+            EstadoPostulacion estado = estadoEfectivo(postulante);
+            estadosPostulacion.put(postulante.getId(), estado);
+            Integer horas = horasEfectivas(postulante);
+            if (horas != null) {
+                horasPostulacion.put(postulante.getId(), horas);
+            }
+            String observacion = postulante.getObservacion();
+            if (observacion != null && !observacion.isBlank()) {
+                observaciones.put(postulante.getId(), observacion);
+            }
+            if (estado == EstadoPostulacion.PENDIENTE_CERTIFICADOS) {
+                pendientesCertificados.add(postulante);
+            } else if (estado == EstadoPostulacion.DESIGNADO_PENDIENTE_POSESION) {
+                pendientesPosesion.add(postulante);
+            } else if (estado == EstadoPostulacion.DESIGNACION_DEFINITIVA) {
+                designados++;
+            } else {
+                canceladas++;
+            }
+        }
+
+        Integer horasTotales = horasTotalesDe(concurso);
+        int horasAsignadas = horasAsignadas(postulantes);
+        Integer horasDisponibles = horasDisponiblesDe(concurso, postulantes);
+        int porcentaje = 0;
+        if (horasTotales != null && horasTotales > 0) {
+            porcentaje = Math.min(100, (int) Math.round(horasAsignadas * 100.0 / horasTotales));
+        }
+        boolean cerrado = esCerrado(concurso);
+        boolean listoParaCierre = esListoParaCierre(concurso, postulantes);
+
+        ConcursoDTO concursoOrigen = null;
+        if (concurso.getConcursoOrigenId() != null) {
+            try {
+                concursoOrigen = service.obtener(concurso.getConcursoOrigenId());
+            } catch (Exception ignored) {
+                concursoOrigen = null;
+            }
+        }
+
+        // Atributos del flujo nuevo
+        model.addAttribute("postulantes", postulantes);
+        model.addAttribute("estadosPostulacion", estadosPostulacion);
+        model.addAttribute("horasPostulacion", horasPostulacion);
+        model.addAttribute("observaciones", observaciones);
+        model.addAttribute("pendientesCertificados", pendientesCertificados);
+        model.addAttribute("pendientesPosesion", pendientesPosesion);
+        model.addAttribute("designados", designados);
+        model.addAttribute("canceladas", canceladas);
+        model.addAttribute("horasTotales", horasTotales);
+        model.addAttribute("horasAsignadas", horasAsignadas);
+        model.addAttribute("horasDisponibles", horasDisponibles);
+        model.addAttribute("porcentajeHoras", porcentaje);
+        model.addAttribute("cerrado", cerrado);
+        model.addAttribute("listoParaCierre", listoParaCierre);
+        model.addAttribute("esRellamado", flujoService.esRellamado(concurso));
+        model.addAttribute("concursoOrigen", concursoOrigen);
+
+        // Compatibilidad con nombres anteriores del detalle
         model.addAttribute("cantidadPostulantes", postulantes.size());
         model.addAttribute("ganador", postulantes.stream()
                 .filter(ConcursoDocenteDTO::isGanador)
@@ -91,21 +201,200 @@ public class ConcursoController extends BaseController<ConcursoDTO, Long> {
                 .orElse(null));
     }
 
+    // ------------------------------------------------------------------
+    // Alta / edición de concursos
+    // ------------------------------------------------------------------
+
+    @Override
+    protected void preAlta() {
+        model.addAttribute("cargos", cargoService.listarActivos());
+    }
+
+    /**
+     * Alta de concurso desde "Cargo → Ver → Abrir concurso para este cargo":
+     * el cargo viene fijado por contexto y no se puede modificar en el formulario.
+     */
+    @GetMapping("/nuevo-desde-cargo/{cargoId}")
+    public String crearDesdeCargo(@PathVariable Long cargoId, Model model, RedirectAttributes attributes) {
+        try {
+            CargoDTO cargo = cargoService.obtener(cargoId);
+            if (cargo == null) {
+                throw new IllegalArgumentException("No se encontró el cargo.");
+            }
+            ConcursoDTO concurso = new ConcursoDTO();
+            concurso.setCargo(cargo);
+            concurso.setCargoFijado(true);
+            this.model = model;
+            model.addAttribute("item", concurso);
+            model.addAttribute("isDisabled", false);
+            model.addAttribute("titleEdit", titleEdit);
+            model.addAttribute("nameEntityLower", nameEntityLower);
+            return viewCreate;
+        } catch (RuntimeException e) {
+            attributes.addFlashAttribute("msgError", e.getMessage());
+            return "redirect:/cargos/" + cargoId;
+        }
+    }
+
+    @Override
+    protected void preModificacion() {
+        if (model == null) {
+            return;
+        }
+        if (!model.containsAttribute("cargos")) {
+            model.addAttribute("cargos", cargoService.listarActivos());
+        }
+        // Al editar, si no hay fecha/hora de concurso se propone la fecha de cierre registrada
+        Object item = model.getAttribute("item");
+        Object disabled = model.getAttribute("isDisabled");
+        if (item instanceof ConcursoDTO concurso && Boolean.FALSE.equals(disabled)
+                && concurso.getFechaConcurso() == null && concurso.getFechaCierre() != null) {
+            concurso.setFechaConcurso(concurso.getFechaCierre().atStartOfDay());
+        }
+    }
+
+    /**
+     * Reemplaza el guardado genérico para normalizar los campos del flujo:
+     * fecha del concurso, horas totales (cargo como respaldo) y datos de rellamado.
+     */
+    @Override
+    @PostMapping("/actualizar")
+    public String actualizar(@ModelAttribute("item") ConcursoDTO entidad,
+                             @RequestParam(value = "file", required = false) MultipartFile file,
+                             RedirectAttributes attributes, Model model) {
+        try {
+            this.model = model;
+            if (entidad.getOrigenVacancia() != null) {
+                String origenVacancia = entidad.getOrigenVacancia().trim();
+                entidad.setOrigenVacancia(origenVacancia.isEmpty() ? null : origenVacancia);
+            }
+            if (entidad.getCargo() != null && entidad.getCargo().getId() == null) {
+                entidad.setCargo(null);
+            }
+            if (entidad.getFechaConcurso() != null) {
+                entidad.setFechaCierre(entidad.getFechaConcurso().toLocalDate());
+            }
+            if (entidad.getId() == null) {
+                // Regla de estado: todo concurso nuevo nace PUBLICADO; el estado no se selecciona manualmente.
+                entidad.setEstadoConcurso(EstadoConcurso.PUBLICADO);
+                if (entidad.getDescripcion() == null || entidad.getDescripcion().isBlank()) {
+                    throw new IllegalArgumentException("La descripción del concurso es obligatoria.");
+                }
+                if (entidad.getConcursoOrigenId() != null) {
+                    // Alta como rellamado: hereda cargo y horas remanentes del concurso origen
+                    ConcursoDTO origen = obtenerConcurso(entidad.getConcursoOrigenId());
+                    if (!esCerrado(origen)) {
+                        throw new IllegalArgumentException("El concurso origen debe estar cerrado para generar un rellamado.");
+                    }
+                    List<ConcursoDocenteDTO> postulantesOrigen = postulantesDelConcurso(origen.getId());
+                    Integer remanentes = horasDisponiblesDe(origen, postulantesOrigen);
+                    if (remanentes == null || remanentes <= 0) {
+                        throw new IllegalArgumentException("El concurso origen no tiene horas remanentes para transferir.");
+                    }
+                    entidad.setCargo(origen.getCargo());
+                    entidad.setCaracterDesignacion(origen.getCaracterDesignacion());
+                    // El rellamado cubre la misma vacancia: hereda el origen capturado en el concurso original.
+                    entidad.setOrigenVacancia(origen.getOrigenVacancia());
+                    entidad.setEsRellamado(true);
+                    entidad.setHorasTotales(remanentes);
+                    // Las horas remanentes quedan transferidas al rellamado: el origen queda sin disponibles.
+                    origen.setHorasTransferidas(remanentes);
+                    service.modificar(origen.getId(), origen);
+                } else {
+                    // Alta directa: el cargo, la fecha del concurso y la designación son obligatorios.
+                    if (entidad.getCargo() == null) {
+                        throw new IllegalArgumentException("Seleccione el cargo vacante del concurso.");
+                    }
+                    if (entidad.getFechaConcurso() == null) {
+                        throw new IllegalArgumentException("Indique la fecha y hora del concurso.");
+                    }
+                    if (entidad.getCaracterDesignacion() == null) {
+                        throw new IllegalArgumentException("Seleccione la designación (carácter de designación) del concurso.");
+                    }
+                    if (entidad.getOrigenVacancia() == null) {
+                        throw new IllegalArgumentException("Indique el origen de la vacancia del concurso.");
+                    }
+                    entidad.setEsRellamado(false);
+                }
+                if (entidad.getFechaApertura() == null) {
+                    entidad.setFechaApertura(LocalDate.now());
+                }
+                if ((entidad.getHorasTotales() == null || entidad.getHorasTotales() <= 0)
+                        && entidad.getCargo() != null && entidad.getCargo().getCargaHoraria() > 0) {
+                    entidad.setHorasTotales(entidad.getCargo().getCargaHoraria());
+                }
+                if (entidad.getHorasTotales() == null || entidad.getHorasTotales() <= 0) {
+                    throw new IllegalArgumentException("El concurso no tiene horas totales: indique las horas totales o complete la carga horaria del cargo.");
+                }
+                service.alta(entidad);
+            } else {
+                // En edición el formulario no envía estado, fechas ni datos de rellamado: se preservan los valores actuales.
+                ConcursoDTO actual = null;
+                try {
+                    actual = service.obtener(entidad.getId());
+                } catch (RuntimeException ignored) {
+                    actual = null;
+                }
+                if (actual != null) {
+                    if (entidad.getEstadoConcurso() == null) {
+                        entidad.setEstadoConcurso(actual.getEstadoConcurso());
+                    }
+                    if (entidad.getFechaApertura() == null) {
+                        entidad.setFechaApertura(actual.getFechaApertura());
+                    }
+                    if (entidad.getFechaCierre() == null) {
+                        entidad.setFechaCierre(actual.getFechaCierre());
+                    }
+                    if (entidad.getHorasTotales() == null) {
+                        entidad.setHorasTotales(actual.getHorasTotales());
+                    }
+                    if (entidad.getHorasTransferidas() == null) {
+                        entidad.setHorasTransferidas(actual.getHorasTransferidas());
+                    }
+                    entidad.setEsRellamado(actual.getEsRellamado());
+                    entidad.setConcursoOrigenId(actual.getConcursoOrigenId());
+                }
+                service.modificar(entidad.getId(), entidad);
+            }
+
+            attributes.addFlashAttribute("msgExito", "La acción fue realizada correctamente.");
+            return redirectList;
+        } catch (RuntimeException e) {
+            model.addAttribute("msgError", e.getMessage());
+            model.addAttribute("item", entidad);
+            model.addAttribute("isDisabled", false);
+            model.addAttribute("titleEdit", titleEdit);
+            model.addAttribute("nameEntityLower", nameEntityLower);
+            model.addAttribute("cargos", cargoService.listarActivos());
+            if (entidad.getId() == null) {
+                return viewCreate;
+            }
+            return viewEdit;
+        }
+    }
+
+    // ------------------------------------------------------------------
+    // Paso 1: registrar / modificar toma de horas
+    // ------------------------------------------------------------------
+
     @GetMapping("/{concursoId}/postular")
     public String mostrarFormularioPostulacion(@PathVariable Long concursoId, Model model,
                                                RedirectAttributes attributes) {
         try {
             ConcursoDTO concurso = obtenerConcurso(concursoId);
-            validarEnProceso(concurso);
+            validarAbierto(concurso, "no se pueden registrar tomas de horas");
+            List<ConcursoDocenteDTO> postulantes = postulantesDelConcurso(concursoId);
             ConcursoDocenteDTO postulacion = new ConcursoDocenteDTO();
             postulacion.setConcurso(concurso);
             model.addAttribute("item", postulacion);
             model.addAttribute("concurso", concurso);
-            model.addAttribute("docentes", docentesDisponibles(concursoId));
+            model.addAttribute("docentes", docentesDisponiblesParaPostular(concurso, postulantes));
+            model.addAttribute("horasTotales", horasTotalesDe(concurso));
+            model.addAttribute("horasDisponibles", horasDisponiblesDe(concurso, postulantes));
             return "concursos/postular";
         } catch (RuntimeException e) {
             attributes.addFlashAttribute("msgError", e.getMessage());
-            return "redirect:/concursos/list";
+            return "redirect:/concursos/" + concursoId;
         }
     }
 
@@ -115,7 +404,7 @@ public class ConcursoController extends BaseController<ConcursoDTO, Long> {
                            RedirectAttributes attributes) {
         try {
             ConcursoDTO concurso = obtenerConcurso(concursoId);
-            validarEnProceso(concurso);
+            validarAbierto(concurso, "no se pueden registrar tomas de horas");
             Long docenteId = postulacion.getDocente() == null ? null : postulacion.getDocente().getId();
             if (docenteId == null) {
                 throw new IllegalArgumentException("Debe seleccionar un docente.");
@@ -123,28 +412,445 @@ public class ConcursoController extends BaseController<ConcursoDTO, Long> {
             boolean docenteActivo = docenteService.listarActivos().stream()
                     .anyMatch(docente -> Objects.equals(docente.getId(), docenteId));
             if (!docenteActivo) {
-                throw new IllegalArgumentException("Solo se pueden postular docentes activos.");
+                throw new IllegalArgumentException("Solo se pueden registrar docentes activos.");
             }
-            boolean yaPostulado = concursoDocenteService.listarActivos().stream()
-                    .anyMatch(actual -> actual.getConcurso() != null
-                            && Objects.equals(actual.getConcurso().getId(), concursoId)
+            List<ConcursoDocenteDTO> postulantes = postulantesDelConcurso(concursoId);
+            boolean yaPostulado = postulantes.stream()
+                    .anyMatch(actual -> !estadoEfectivo(actual).isCancelado()
                             && actual.getDocente() != null
                             && Objects.equals(actual.getDocente().getId(), docenteId));
             if (yaPostulado) {
-                throw new IllegalArgumentException("El docente ya está postulado a este concurso.");
+                throw new IllegalArgumentException("El docente ya tiene una toma de horas vigente en este concurso.");
+            }
+            boolean designacionEfectivaOrigen = docentesConDesignacionEfectivaDelOrigen(concurso).stream()
+                    .anyMatch(docente -> Objects.equals(docente.getId(), docenteId));
+            if (designacionEfectivaOrigen) {
+                throw new IllegalArgumentException("El docente ya obtuvo una designación efectiva en el concurso origen para este mismo cargo, materia y curso: no puede volver a seleccionarse en el rellamado.");
+            }
+            boolean designacionActivaDelCargo = docentesConDesignacionActivaDelCargo(concurso).stream()
+                    .anyMatch(docente -> Objects.equals(docente.getId(), docenteId));
+            if (designacionActivaDelCargo) {
+                throw new IllegalArgumentException("El docente tiene una designación efectiva vigente en este mismo cargo, materia y curso: no puede postularse a su propio reemplazo.");
+            }
+            Integer horasElegidas = postulacion.getHorasElegidas();
+            if (horasElegidas == null || horasElegidas < 1) {
+                throw new IllegalArgumentException("Indique la cantidad de horas tomadas (mínimo 1).");
+            }
+            Integer disponibles = horasDisponiblesDe(concurso, postulantes);
+            if (disponibles != null && horasElegidas > disponibles) {
+                throw new IllegalArgumentException("Solo hay " + disponibles + " horas disponibles en el concurso.");
             }
             DocenteDTO docente = docenteService.obtener(docenteId);
             postulacion.setConcurso(concurso);
             postulacion.setDocente(docente);
             postulacion.setFechaEmision(LocalDate.now());
             postulacion.setGanador(false);
+            postulacion.setEstadoPostulacion(EstadoPostulacion.PENDIENTE_CERTIFICADOS);
             concursoDocenteService.alta(postulacion);
-            attributes.addFlashAttribute("msgExito", "El docente fue postulado correctamente.");
+            attributes.addFlashAttribute("msgExito", "Toma de horas registrada: " + horasElegidas + " h reservadas para "
+                    + docente.getApellido() + ", " + docente.getNombre() + ". Estado: pendiente de certificados.");
         } catch (RuntimeException e) {
             attributes.addFlashAttribute("msgError", e.getMessage());
         }
         return "redirect:/concursos/" + concursoId;
     }
+
+    @GetMapping("/{concursoId}/postulaciones/{postulacionId}/horas")
+    public String mostrarFormularioHoras(@PathVariable Long concursoId, @PathVariable Long postulacionId,
+                                         Model model, RedirectAttributes attributes) {
+        try {
+            ConcursoDTO concurso = obtenerConcurso(concursoId);
+            ConcursoDocenteDTO postulacion = obtenerPostulacion(concursoId, postulacionId);
+            validarModificacionHoras(concurso, postulacion);
+            List<ConcursoDocenteDTO> postulantes = postulantesDelConcurso(concursoId);
+            Integer actuales = horasEfectivas(postulacion);
+            Integer disponibles = horasDisponiblesDe(concurso, postulantes);
+            model.addAttribute("concurso", concurso);
+            model.addAttribute("postulacion", postulacion);
+            model.addAttribute("horasActuales", actuales == null ? 0 : actuales);
+            model.addAttribute("horasDisponibles", disponibles);
+            model.addAttribute("horasMaximas", disponibles == null || actuales == null ? null : actuales + disponibles);
+            model.addAttribute("estadoPostulacion", estadoEfectivo(postulacion));
+            return "concursos/modificar-horas";
+        } catch (RuntimeException e) {
+            attributes.addFlashAttribute("msgError", e.getMessage());
+            return "redirect:/concursos/" + concursoId;
+        }
+    }
+
+    @PostMapping("/{concursoId}/postulaciones/{postulacionId}/horas")
+    public String modificarHoras(@PathVariable Long concursoId, @PathVariable Long postulacionId,
+                                 @RequestParam(value = "horasNuevas", required = false) Integer horasNuevas,
+                                 RedirectAttributes attributes) {
+        try {
+            ConcursoDTO concurso = obtenerConcurso(concursoId);
+            ConcursoDocenteDTO postulacion = obtenerPostulacion(concursoId, postulacionId);
+            validarModificacionHoras(concurso, postulacion);
+            if (horasNuevas == null || horasNuevas < 1) {
+                throw new IllegalArgumentException("Indique una cantidad de horas válida (mínimo 1).");
+            }
+            List<ConcursoDocenteDTO> postulantes = postulantesDelConcurso(concursoId);
+            Integer disponibles = horasDisponiblesDe(concurso, postulantes);
+            Integer actuales = horasEfectivas(postulacion);
+            if (disponibles != null) {
+                int maximo = (actuales == null ? 0 : actuales) + disponibles;
+                if (horasNuevas > maximo) {
+                    throw new IllegalArgumentException("El máximo permitido es " + maximo
+                            + " h (horas actuales del docente + horas disponibles del concurso).");
+                }
+            }
+            // Persistir las horas en el Servidor.
+            postulacion.setHorasElegidas(horasNuevas);
+            concursoDocenteService.modificar(postulacion.getId(), postulacion);
+            Integer nuevasDisponibles = horasDisponiblesDe(concurso, postulantesDelConcurso(concursoId));
+            attributes.addFlashAttribute("msgExito", "Horas actualizadas a " + horasNuevas + " h. Horas disponibles ahora: "
+                    + (nuevasDisponibles == null ? "—" : nuevasDisponibles + " h") + ".");
+        } catch (RuntimeException e) {
+            attributes.addFlashAttribute("msgError", e.getMessage());
+        }
+        return "redirect:/concursos/" + concursoId;
+    }
+
+    // ------------------------------------------------------------------
+    // Paso 2: validar certificados
+    // ------------------------------------------------------------------
+
+    @GetMapping("/{concursoId}/postulaciones/{postulacionId}/certificados")
+    public String mostrarFormularioCertificados(@PathVariable Long concursoId, @PathVariable Long postulacionId,
+                                                Model model, RedirectAttributes attributes) {
+        try {
+            ConcursoDTO concurso = obtenerConcurso(concursoId);
+            ConcursoDocenteDTO postulacion = obtenerPostulacion(concursoId, postulacionId);
+            validarAbierto(concurso, "no se pueden validar certificados");
+            if (estadoEfectivo(postulacion) != EstadoPostulacion.PENDIENTE_CERTIFICADOS) {
+                throw new IllegalArgumentException("La postulación no está pendiente de certificados.");
+            }
+            model.addAttribute("concurso", concurso);
+            model.addAttribute("postulacion", postulacion);
+            model.addAttribute("horasPostulacion", horasEfectivas(postulacion));
+            model.addAttribute("datos", postulacion);
+            return "concursos/validar-certificados";
+        } catch (RuntimeException e) {
+            attributes.addFlashAttribute("msgError", e.getMessage());
+            return "redirect:/concursos/" + concursoId;
+        }
+    }
+
+    @PostMapping("/{concursoId}/postulaciones/{postulacionId}/certificados")
+    public String validarCertificados(@PathVariable Long concursoId, @PathVariable Long postulacionId,
+                                      @RequestParam(value = "recibidos", required = false) Boolean recibidos,
+                                      @RequestParam(value = "requiereVencimiento", required = false) Boolean requiereVencimiento,
+                                      @RequestParam(value = "mesesVigencia", required = false) Integer mesesVigencia,
+                                      @RequestParam(value = "decision", required = false) String decision,
+                                      @RequestParam(value = "observacion", required = false) String observacion,
+                                      Model model, RedirectAttributes attributes) {
+        try {
+            ConcursoDTO concurso = obtenerConcurso(concursoId);
+            ConcursoDocenteDTO postulacion = obtenerPostulacion(concursoId, postulacionId);
+            validarAbierto(concurso, "no se pueden validar certificados");
+            if (estadoEfectivo(postulacion) != EstadoPostulacion.PENDIENTE_CERTIFICADOS) {
+                throw new IllegalArgumentException("La postulación no está pendiente de certificados.");
+            }
+            boolean aprobar = "APROBAR".equalsIgnoreCase(decision);
+            boolean rechazar = "RECHAZAR".equalsIgnoreCase(decision);
+            if (!aprobar && !rechazar) {
+                throw new IllegalArgumentException("Seleccione Aprobar o Rechazar la certificación.");
+            }
+            if (aprobar) {
+                if (!Boolean.TRUE.equals(recibidos)) {
+                    throw new IllegalArgumentException("No se puede aprobar: indique que los certificados fueron recibidos.");
+                }
+                if (Boolean.TRUE.equals(requiereVencimiento) && (mesesVigencia == null || mesesVigencia < 1)) {
+                    // Punto 5.6: no se cierra la ventana con un redirect; se vuelve a mostrar el formulario
+                    // conservando lo ya cargado para que el usuario pueda corregir los meses de vigencia.
+                    postulacion.setCertificadosRecibidos(recibidos);
+                    postulacion.setRequiereVencimientoCertificados(requiereVencimiento);
+                    if (observacion != null && !observacion.isBlank()) {
+                        postulacion.setObservacion(observacion.trim());
+                    }
+                    model.addAttribute("concurso", concurso);
+                    model.addAttribute("postulacion", postulacion);
+                    model.addAttribute("horasPostulacion", horasEfectivas(postulacion));
+                    model.addAttribute("datos", postulacion);
+                    model.addAttribute("msgError", "Indique los meses de vigencia de los certificados (mínimo 1).");
+                    return "concursos/validar-certificados";
+                }
+            }
+
+            postulacion.setCertificadosRecibidos(recibidos);
+            postulacion.setRequiereVencimientoCertificados(requiereVencimiento);
+            postulacion.setMesesVigencia(Boolean.TRUE.equals(requiereVencimiento) ? mesesVigencia : null);
+            if (observacion != null && !observacion.isBlank()) {
+                postulacion.setObservacion(observacion.trim());
+            }
+
+            if (aprobar) {
+                postulacion.setEstadoPostulacion(EstadoPostulacion.DESIGNADO_PENDIENTE_POSESION);
+                concursoDocenteService.modificar(postulacion.getId(), postulacion);
+                attributes.addFlashAttribute("msgExito", "Certificación aprobada: el docente queda pendiente de la toma de posesión.");
+            } else {
+                postulacion.setEstadoPostulacion(EstadoPostulacion.CANCELADO_INEFECTIVO);
+                if (postulacion.getObservacion() == null || postulacion.getObservacion().isBlank()) {
+                    postulacion.setObservacion("Certificados rechazados / no presentados.");
+                }
+                concursoDocenteService.modificar(postulacion.getId(), postulacion);
+                Integer liberadas = horasEfectivas(postulacion);
+                attributes.addFlashAttribute("msgExito", "Se canceló la reserva del docente"
+                        + (liberadas != null ? " y se restituyeron " + liberadas + " h al concurso." : "."));
+            }
+        } catch (RuntimeException e) {
+            attributes.addFlashAttribute("msgError", e.getMessage());
+        }
+        return "redirect:/concursos/" + concursoId;
+    }
+
+    // ------------------------------------------------------------------
+    // Paso 3: confirmación de toma de posesión / declarar inefectivo
+    // ------------------------------------------------------------------
+
+    @GetMapping("/{concursoId}/postulaciones/{postulacionId}/posesion")
+    public String mostrarFormularioPosesion(@PathVariable Long concursoId, @PathVariable Long postulacionId,
+                                            Model model, RedirectAttributes attributes) {
+        try {
+            ConcursoDTO concurso = obtenerConcurso(concursoId);
+            ConcursoDocenteDTO postulacion = obtenerPostulacion(concursoId, postulacionId);
+            validarAbierto(concurso, "no se puede confirmar la toma de posesión");
+            if (estadoEfectivo(postulacion) != EstadoPostulacion.DESIGNADO_PENDIENTE_POSESION) {
+                throw new IllegalArgumentException("La postulación no está pendiente de toma de posesión.");
+            }
+            LocalDate hoy = LocalDate.now();
+            DesignacionDTO designacion = new DesignacionDTO();
+            designacion.setDocente(postulacion.getDocente());
+            designacion.setFechaInicioEfectiva(hoy);
+            designacion.setFechaFinDefinitiva(hoy.plusYears(1));
+            model.addAttribute("concurso", concurso);
+            model.addAttribute("postulacion", postulacion);
+            model.addAttribute("horasPostulacion", horasEfectivas(postulacion));
+            model.addAttribute("item", designacion);
+            return "concursos/posesion";
+        } catch (RuntimeException e) {
+            attributes.addFlashAttribute("msgError", e.getMessage());
+            return "redirect:/concursos/" + concursoId;
+        }
+    }
+
+    @PostMapping("/{concursoId}/postulaciones/{postulacionId}/posesion")
+    public String confirmarPosesion(@PathVariable Long concursoId, @PathVariable Long postulacionId,
+                                    @ModelAttribute("item") DesignacionDTO designacion,
+                                    RedirectAttributes attributes) {
+        try {
+            ConcursoDTO concurso = obtenerConcurso(concursoId);
+            ConcursoDocenteDTO postulacion = obtenerPostulacion(concursoId, postulacionId);
+            validarAbierto(concurso, "no se puede confirmar la toma de posesión");
+            if (estadoEfectivo(postulacion) != EstadoPostulacion.DESIGNADO_PENDIENTE_POSESION) {
+                throw new IllegalArgumentException("La postulación no está pendiente de toma de posesión.");
+            }
+            if (designacion.getFechaInicioEfectiva() == null || designacion.getFechaFinDefinitiva() == null) {
+                throw new IllegalArgumentException("Complete las fechas de inicio efectiva y de fin definitiva.");
+            }
+            if (concurso.getCaracterDesignacion() == null) {
+                throw new IllegalArgumentException("El concurso no tiene un carácter de designación definido. Complete el carácter del concurso antes de confirmar la toma de posesión.");
+            }
+            designacion.setDocente(postulacion.getDocente());
+            designacion.setCaracterDesignacion(concurso.getCaracterDesignacion());
+            designacion.setEstadoDesignacion(EstadoDesignacion.ACTIVO);
+            designacion.setOrigenVacancia(origenVacanciaDelConcurso(concurso));
+            designacion.setConcursoId(concursoId);
+
+            CargoDTO cargo = concurso.getCargo() != null ? cargoService.obtener(concurso.getCargo().getId()) : null;
+            validarDesignacionVigente(cargo, designacion.getDocente());
+
+            DesignacionDTO nuevaDesignacion = designacionService.alta(designacion);
+
+            if (cargo != null && nuevaDesignacion != null) {
+                if (cargo.getDesignaciones() == null) {
+                    cargo.setDesignaciones(new ArrayList<>());
+                }
+                cargo.getDesignaciones().add(nuevaDesignacion);
+                cargoService.modificar(cargo.getId(), cargo);
+            }
+
+            postulacion.setGanador(true);
+            postulacion.setEstadoPostulacion(EstadoPostulacion.DESIGNACION_DEFINITIVA);
+            concursoDocenteService.modificar(postulacion.getId(), postulacion);
+
+            List<ConcursoDocenteDTO> postulantes = postulantesDelConcurso(concursoId);
+            if (esListoParaCierre(concurso, postulantes)) {
+                concurso.setEstadoConcurso(EstadoConcurso.FINALIZADO);
+                service.modificar(concurso.getId(), concurso);
+                attributes.addFlashAttribute("msgExito", "Toma de posesión confirmada. El concurso se cerró automáticamente: todas sus horas quedaron con designación definitiva.");
+            } else {
+                attributes.addFlashAttribute("msgExito", "Toma de posesión confirmada: la designación quedó activa (designación definitiva).");
+            }
+        } catch (RuntimeException e) {
+            attributes.addFlashAttribute("msgError", e.getMessage());
+        }
+        return "redirect:/concursos/" + concursoId;
+    }
+
+    @GetMapping("/{concursoId}/postulaciones/{postulacionId}/inefectivo")
+    public String mostrarFormularioInefectivo(@PathVariable Long concursoId, @PathVariable Long postulacionId,
+                                              Model model, RedirectAttributes attributes) {
+        try {
+            ConcursoDTO concurso = obtenerConcurso(concursoId);
+            ConcursoDocenteDTO postulacion = obtenerPostulacion(concursoId, postulacionId);
+            validarAbierto(concurso, "no se puede declarar inefectivo");
+            if (estadoEfectivo(postulacion) != EstadoPostulacion.DESIGNADO_PENDIENTE_POSESION) {
+                throw new IllegalArgumentException("Solo se puede declarar inefectivo a docentes pendientes de toma de posesión.");
+            }
+            model.addAttribute("concurso", concurso);
+            model.addAttribute("postulacion", postulacion);
+            model.addAttribute("horasPostulacion", horasEfectivas(postulacion));
+            return "concursos/inefectivo";
+        } catch (RuntimeException e) {
+            attributes.addFlashAttribute("msgError", e.getMessage());
+            return "redirect:/concursos/" + concursoId;
+        }
+    }
+
+    @PostMapping("/{concursoId}/postulaciones/{postulacionId}/inefectivo")
+    public String declararInefectivo(@PathVariable Long concursoId, @PathVariable Long postulacionId,
+                                     @RequestParam(value = "observacion", required = false) String observacion,
+                                     RedirectAttributes attributes) {
+        try {
+            ConcursoDTO concurso = obtenerConcurso(concursoId);
+            ConcursoDocenteDTO postulacion = obtenerPostulacion(concursoId, postulacionId);
+            validarAbierto(concurso, "no se puede declarar inefectivo");
+            if (estadoEfectivo(postulacion) != EstadoPostulacion.DESIGNADO_PENDIENTE_POSESION) {
+                throw new IllegalArgumentException("Solo se puede declarar inefectivo a docentes pendientes de toma de posesión.");
+            }
+            postulacion.setEstadoPostulacion(EstadoPostulacion.CANCELADO_INEFECTIVO);
+            postulacion.setObservacion(observacion != null && !observacion.isBlank()
+                    ? observacion.trim()
+                    : "No se presentó a la toma de posesión.");
+            concursoDocenteService.modificar(postulacion.getId(), postulacion);
+            Integer liberadas = horasEfectivas(postulacion);
+            attributes.addFlashAttribute("msgExito", "Se declaró inefectivo al docente"
+                    + (liberadas != null ? "; " + liberadas + " h volvieron a estar disponibles." : "."));
+        } catch (RuntimeException e) {
+            attributes.addFlashAttribute("msgError", e.getMessage());
+        }
+        return "redirect:/concursos/" + concursoId;
+    }
+
+    // ------------------------------------------------------------------
+    // Paso 4: cierre y rellamado
+    // ------------------------------------------------------------------
+
+    @PostMapping("/{concursoId}/cerrar")
+    public String cerrarConcurso(@PathVariable Long concursoId, RedirectAttributes attributes) {
+        try {
+            ConcursoDTO concurso = obtenerConcurso(concursoId);
+            if (esCerrado(concurso)) {
+                throw new IllegalArgumentException("El concurso ya está cerrado.");
+            }
+            List<ConcursoDocenteDTO> postulantes = postulantesDelConcurso(concursoId);
+            long pendientesValidacion = postulantes.stream()
+                    .filter(postulacion -> estadoEfectivo(postulacion) == EstadoPostulacion.PENDIENTE_CERTIFICADOS)
+                    .count();
+            if (pendientesValidacion > 0) {
+                throw new IllegalArgumentException("No se puede cerrar el concurso: hay " + pendientesValidacion
+                        + " docente(s) pendientes de validación de certificados.");
+            }
+            concurso.setEstadoConcurso(EstadoConcurso.FINALIZADO);
+            service.modificar(concurso.getId(), concurso);
+            Integer disponibles = horasDisponiblesDe(concurso, postulantes);
+            if (disponibles != null && disponibles > 0) {
+                attributes.addFlashAttribute("msgInfo", "El concurso quedó cerrado con " + disponibles
+                        + " h libres. Puede abrir un nuevo concurso asociado (rellamado).");
+            } else {
+                attributes.addFlashAttribute("msgExito", "El concurso fue cerrado.");
+            }
+        } catch (RuntimeException e) {
+            attributes.addFlashAttribute("msgError", e.getMessage());
+        }
+        return "redirect:/concursos/" + concursoId;
+    }
+
+    @GetMapping("/{concursoId}/rellamado")
+    public String mostrarFormularioRellamado(@PathVariable Long concursoId, Model model,
+                                             RedirectAttributes attributes) {
+        try {
+            ConcursoDTO concurso = obtenerConcurso(concursoId);
+            if (!esCerrado(concurso)) {
+                throw new IllegalArgumentException("Cierre primero el concurso para generar el rellamado con las horas remanentes.");
+            }
+            Integer disponibles = horasDisponiblesDe(concurso, postulantesDelConcurso(concursoId));
+            if (disponibles == null || disponibles <= 0) {
+                throw new IllegalArgumentException("No hay horas remanentes para un rellamado.");
+            }
+            ConcursoDTO rellamado = new ConcursoDTO();
+            rellamado.setDescripcion("Rellamado – " + concurso.getDescripcion());
+            rellamado.setFechaApertura(LocalDate.now());
+            rellamado.setHorasTotales(disponibles);
+            rellamado.setCargo(concurso.getCargo());
+            rellamado.setCaracterDesignacion(concurso.getCaracterDesignacion());
+            rellamado.setEstadoConcurso(EstadoConcurso.PUBLICADO);
+            rellamado.setEsRellamado(true);
+            rellamado.setConcursoOrigenId(concurso.getId());
+            model.addAttribute("concurso", concurso);
+            model.addAttribute("horasRemanentes", disponibles);
+            model.addAttribute("item", rellamado);
+            return "concursos/rellamado";
+        } catch (RuntimeException e) {
+            attributes.addFlashAttribute("msgError", e.getMessage());
+            return "redirect:/concursos/" + concursoId;
+        }
+    }
+
+    @PostMapping("/{concursoId}/rellamado")
+    public String crearRellamado(@PathVariable Long concursoId,
+                                 @ModelAttribute("item") ConcursoDTO rellamado,
+                                 RedirectAttributes attributes) {
+        Long nuevoId = null;
+        try {
+            ConcursoDTO origen = obtenerConcurso(concursoId);
+            if (!esCerrado(origen)) {
+                throw new IllegalArgumentException("Cierre primero el concurso para generar el rellamado con las horas remanentes.");
+            }
+            Integer disponibles = horasDisponiblesDe(origen, postulantesDelConcurso(concursoId));
+            if (disponibles == null || disponibles <= 0) {
+                throw new IllegalArgumentException("No hay horas remanentes para un rellamado.");
+            }
+            if (rellamado.getDescripcion() == null || rellamado.getDescripcion().isBlank()) {
+                rellamado.setDescripcion("Rellamado – " + origen.getDescripcion());
+            }
+            if (rellamado.getFechaConcurso() == null) {
+                throw new IllegalArgumentException("Indique la fecha y hora del concurso.");
+            }
+            if (rellamado.getFechaApertura() == null) {
+                rellamado.setFechaApertura(LocalDate.now());
+            }
+            rellamado.setId(null);
+            rellamado.setCargo(origen.getCargo());
+            // El carácter no se selecciona en el formulario: el rellamado siempre conserva el del concurso origen.
+            rellamado.setCaracterDesignacion(origen.getCaracterDesignacion());
+            rellamado.setHorasTotales(disponibles);
+            rellamado.setEstadoConcurso(EstadoConcurso.PUBLICADO);
+            rellamado.setEsRellamado(true);
+            rellamado.setConcursoOrigenId(origen.getId());
+            // El rellamado cubre la misma vacancia: hereda el origen capturado en el concurso original.
+            rellamado.setOrigenVacancia(origen.getOrigenVacancia());
+            if (rellamado.getFechaConcurso() != null) {
+                rellamado.setFechaCierre(rellamado.getFechaConcurso().toLocalDate());
+            }
+            ConcursoDTO creado = service.alta(rellamado);
+            nuevoId = creado != null ? creado.getId() : null;
+            // Las horas remanentes quedan transferidas: el origen cierra definitivamente sin disponibles.
+            origen.setHorasTransferidas(disponibles);
+            service.modificar(origen.getId(), origen);
+            attributes.addFlashAttribute("msgExito", "Se creó el concurso de rellamado con " + disponibles
+                    + " h. El concurso original quedó cerrado definitivamente.");
+        } catch (RuntimeException e) {
+            attributes.addFlashAttribute("msgError", e.getMessage());
+            return "redirect:/concursos/" + concursoId;
+        }
+        return nuevoId != null ? "redirect:/concursos/" + nuevoId : "redirect:/concursos/" + concursoId;
+    }
+
+    // ------------------------------------------------------------------
+    // Rutas legacy (se mantienen para no romper enlaces existentes)
+    // ------------------------------------------------------------------
 
     @GetMapping("/{concursoId}/ganador")
     public String mostrarFormularioGanador(@PathVariable Long concursoId, Model model,
@@ -189,7 +895,7 @@ public class ConcursoController extends BaseController<ConcursoDTO, Long> {
 
     @GetMapping("/{concursoId}/agregar-cargo")
     public String mostrarFormularioCargo(@PathVariable Long concursoId, Model model,
-                                        RedirectAttributes attributes) {
+                                         RedirectAttributes attributes) {
         try {
             ConcursoDTO concurso = obtenerConcurso(concursoId);
             validarFinalizado(concurso);
@@ -201,12 +907,11 @@ public class ConcursoController extends BaseController<ConcursoDTO, Long> {
             DesignacionDTO designacion = new DesignacionDTO();
             designacion.setDocente(ganador.getDocente());
             designacion.setFechaInicioEfectiva(hoy);
-            designacion.setFechaFinEstimada(hoy.plusYears(1));
-            designacion.setOrigenVacancia("Concurso: " + concurso.getDescripcion());
+            designacion.setFechaFinDefinitiva(hoy.plusYears(1));
+            designacion.setOrigenVacancia(origenVacanciaDelConcurso(concurso));
             model.addAttribute("item", designacion);
             model.addAttribute("concurso", concurso);
-            model.addAttribute("tipoDesignaciones",
-                    com.elvarest.cliente.dto.enums.CaracterDesignacion.values());
+            model.addAttribute("tipoDesignaciones", CaracterDesignacion.values());
             model.addAttribute("estadosDesignacion", EstadoDesignacion.values());
             return "concursos/agregar-cargo";
         } catch (RuntimeException e) {
@@ -229,15 +934,15 @@ public class ConcursoController extends BaseController<ConcursoDTO, Long> {
             if (concurso.getCargo() == null) {
                 throw new IllegalArgumentException("El concurso no tiene un cargo asociado.");
             }
-            if (designacion.getFechaInicioEfectiva() == null || designacion.getFechaFinEstimada() == null
+            if (designacion.getFechaInicioEfectiva() == null || designacion.getFechaFinDefinitiva() == null
                     || designacion.getCaracterDesignacion() == null) {
                 throw new IllegalArgumentException("Complete las fechas y el tipo de cargo.");
             }
             designacion.setDocente(ganador.getDocente());
-            designacion.setFechaFinDefinitiva(designacion.getFechaFinEstimada());
             designacion.setEstadoDesignacion(
                     designacion.getEstadoDesignacion() == null ? EstadoDesignacion.PENDIENTE : designacion.getEstadoDesignacion());
-            designacion.setOrigenVacancia("Concurso: " + concurso.getDescripcion());
+            designacion.setOrigenVacancia(origenVacanciaDelConcurso(concurso));
+            designacion.setConcursoId(concursoId);
             DesignacionDTO nuevaDesignacion = designacionService.alta(designacion);
 
             CargoDTO cargo = cargoService.obtener(concurso.getCargo().getId());
@@ -256,17 +961,51 @@ public class ConcursoController extends BaseController<ConcursoDTO, Long> {
         return "redirect:/concursos/list";
     }
 
+    // ------------------------------------------------------------------
+    // Helpers del flujo
+    // ------------------------------------------------------------------
+
+    /**
+     * Origen de vacancia que hereda una designación creada desde el concurso: el capturado en el
+     * concurso o, para concursos anteriores al campo, el formato histórico "Concurso: <descripción>".
+     */
+    private String origenVacanciaDelConcurso(ConcursoDTO concurso) {
+        String origen = concurso.getOrigenVacancia();
+        if (origen != null && !origen.isBlank()) {
+            return origen;
+        }
+        return "Concurso: " + concurso.getDescripcion();
+    }
+
     private ConcursoDTO obtenerConcurso(Long concursoId) {
         ConcursoDTO concurso = service.obtener(concursoId);
         if (concurso == null) {
             throw new IllegalArgumentException("No se encontró el concurso.");
         }
+        aplicarTransicionEstado(concurso);
         return concurso;
     }
 
-    private void validarEnProceso(ConcursoDTO concurso) {
-        if (concurso.getEstadoConcurso() != EstadoConcurso.EN_PROCESO) {
-            throw new IllegalArgumentException("Solo se pueden postular docentes a concursos en proceso.");
+    private ConcursoDocenteDTO obtenerPostulacion(Long concursoId, Long postulacionId) {
+        return postulantesDelConcurso(concursoId).stream()
+                .filter(postulacion -> Objects.equals(postulacion.getId(), postulacionId))
+                .findFirst()
+                .orElseThrow(() -> new IllegalArgumentException("La postulación no pertenece a este concurso."));
+    }
+
+    private void validarAbierto(ConcursoDTO concurso, String accion) {
+        if (esCerrado(concurso)) {
+            throw new IllegalArgumentException("El concurso está cerrado: " + accion + ".");
+        }
+    }
+
+    private void validarModificacionHoras(ConcursoDTO concurso, ConcursoDocenteDTO postulacion) {
+        if (esCerrado(concurso)) {
+            throw new IllegalArgumentException("El concurso está cerrado: no se pueden modificar horas.");
+        }
+        EstadoPostulacion estado = estadoEfectivo(postulacion);
+        if (estado == EstadoPostulacion.CANCELADO_INEFECTIVO || estado == EstadoPostulacion.DESIGNACION_DEFINITIVA) {
+            throw new IllegalArgumentException("Solo se pueden modificar horas de postulaciones pendientes de certificados o de posesión.");
         }
     }
 
@@ -276,21 +1015,171 @@ public class ConcursoController extends BaseController<ConcursoDTO, Long> {
         }
     }
 
-    private List<DocenteDTO> docentesDisponibles(Long concursoId) {
-        List<Long> postulados = postulantesDelConcurso(concursoId).stream()
-                .filter(postulacion -> postulacion.getDocente() != null)
-                .map(postulacion -> postulacion.getDocente().getId())
+    /** Un docente solo puede tener una designación vigente (activa o pendiente) por cargo. */
+    private void validarDesignacionVigente(CargoDTO cargo, DocenteDTO docente) {
+        if (cargo == null || cargo.getDesignaciones() == null || docente == null) {
+            return;
+        }
+        boolean vigente = cargo.getDesignaciones().stream()
+                .anyMatch(designacion -> designacion.getDocente() != null
+                        && Objects.equals(designacion.getDocente().getId(), docente.getId())
+                        && (designacion.getEstadoDesignacion() == EstadoDesignacion.ACTIVO
+                        || designacion.getEstadoDesignacion() == EstadoDesignacion.PENDIENTE));
+        if (vigente) {
+            throw new IllegalArgumentException("El docente ya posee una designación vigente para este cargo.");
+        }
+    }
+
+    private boolean esCerrado(ConcursoDTO concurso) {
+        return flujoService.esCerrado(concurso);
+    }
+
+    /**
+     * Regla de estado: un concurso PUBLICADO pasa a EN_PROCESO cuando llega la fecha del
+     * concurso (persistida como fechaCierre). El cambio se persiste al primer acceso; si la
+     * persistencia falla, se refleja igual en pantalla y se reintenta en el próximo acceso.
+     */
+    private void aplicarTransicionEstado(ConcursoDTO concurso) {
+        if (concurso == null || concurso.getEstadoConcurso() != EstadoConcurso.PUBLICADO
+                || concurso.getFechaCierre() == null || concurso.getFechaCierre().isAfter(LocalDate.now())) {
+            return;
+        }
+        concurso.setEstadoConcurso(EstadoConcurso.EN_PROCESO);
+        try {
+            service.modificar(concurso.getId(), concurso);
+        } catch (RuntimeException ignored) {
+            // El estado calculado ya quedó reflejado en memoria.
+        }
+    }
+
+    /** Estado efectivo de una postulación: DTO persistido -> derivado del ganador (registros históricos). */
+    private EstadoPostulacion estadoEfectivo(ConcursoDocenteDTO postulacion) {
+        return flujoService.estadoEfectivo(postulacion);
+    }
+
+    /** Horas efectivas de una postulación (persistidas en el Servidor). */
+    private Integer horasEfectivas(ConcursoDocenteDTO postulacion) {
+        return flujoService.horasEfectivas(postulacion);
+    }
+
+    /** Horas totales del concurso: DTO persistido -> carga horaria del cargo (respaldo). */
+    private Integer horasTotalesDe(ConcursoDTO concurso) {
+        return flujoService.horasTotalesDe(concurso);
+    }
+
+    private int horasAsignadas(List<ConcursoDocenteDTO> postulaciones) {
+        return flujoService.horasAsignadas(postulaciones);
+    }
+
+    /** Horas disponibles: total − asignadas − transferidas a un rellamado, nunca menor a 0. */
+    private Integer horasDisponiblesDe(ConcursoDTO concurso, List<ConcursoDocenteDTO> postulaciones) {
+        return flujoService.horasDisponiblesDe(concurso, postulaciones);
+    }
+
+    private boolean esListoParaCierre(ConcursoDTO concurso, List<ConcursoDocenteDTO> postulaciones) {
+        return flujoService.esListoParaCierre(concurso, postulaciones);
+    }
+
+    private List<DocenteDTO> docentesDisponibles(List<ConcursoDocenteDTO> postulantes) {
+        List<Long> ocupados = postulantes.stream()
+                .filter(postulacion -> !estadoEfectivo(postulacion).isCancelado())
+                .map(ConcursoDocenteDTO::getDocente)
+                .filter(Objects::nonNull)
+                .map(DocenteDTO::getId)
                 .toList();
         return docenteService.listarActivos().stream()
-                .filter(docente -> !postulados.contains(docente.getId()))
+                .filter(docente -> !ocupados.contains(docente.getId()))
+                .toList();
+    }
+
+    /**
+     * Docentes habilitados para postular: excluye a quienes tienen una designación efectiva vigente
+     * en el mismo cargo del concurso —y por lo tanto misma materia y curso— (regla general), y en
+     * rellamados también a quienes obtuvieron designación efectiva en el concurso origen.
+     */
+    private List<DocenteDTO> docentesDisponiblesParaPostular(ConcursoDTO concurso, List<ConcursoDocenteDTO> postulantes) {
+        List<DocenteDTO> disponibles = docentesDisponibles(postulantes);
+        List<DocenteDTO> excluidosDocentes = new ArrayList<>(docentesConDesignacionActivaDelCargo(concurso));
+        excluidosDocentes.addAll(docentesConDesignacionEfectivaDelOrigen(concurso));
+        List<Long> excluidos = excluidosDocentes.stream()
+                .map(DocenteDTO::getId)
+                .distinct()
+                .toList();
+        if (excluidos.isEmpty()) {
+            return disponibles;
+        }
+        return disponibles.stream()
+                .filter(docente -> !excluidos.contains(docente.getId()))
+                .toList();
+    }
+
+    /**
+     * Regla general: un docente con una designación efectiva (ACTIVA) vigente en el mismo cargo del
+     * concurso —y por lo tanto misma materia y curso— está siendo reemplazado: no puede postularse
+     * a su propio reemplazo y no se ofrece en el selector. Devuelve vacío si el concurso no tiene
+     * cargo o no se pueden resolver las designaciones, para no alterar el resto de los casos.
+     */
+    private List<DocenteDTO> docentesConDesignacionActivaDelCargo(ConcursoDTO concurso) {
+        if (concurso.getCargo() == null || concurso.getCargo().getId() == null) {
+            return List.of();
+        }
+        CargoDTO cargo;
+        try {
+            cargo = cargoService.obtener(concurso.getCargo().getId());
+        } catch (RuntimeException e) {
+            return List.of();
+        }
+        if (cargo == null || cargo.getDesignaciones() == null) {
+            return List.of();
+        }
+        return cargo.getDesignaciones().stream()
+                .filter(designacion -> !Boolean.TRUE.equals(designacion.getEliminado()))
+                .filter(designacion -> designacion.getEstadoDesignacion() == EstadoDesignacion.ACTIVO)
+                .map(DesignacionDTO::getDocente)
+                .filter(Objects::nonNull)
+                .toList();
+    }
+
+    /**
+     * Regla de rellamados: un docente que ya obtuvo una designación efectiva (ACTIVA) en el concurso
+     * origen para el mismo cargo —y por lo tanto misma materia y curso— no puede volver a tomar horas
+     * en el rellamado. El vínculo rellamado->origen se lee del DTO persistido en el Servidor.
+     * Devuelve vacío si el concurso no es un rellamado o si no se puede
+     * determinar el origen, para no alterar el resto de los casos.
+     */
+    private List<DocenteDTO> docentesConDesignacionEfectivaDelOrigen(ConcursoDTO concurso) {
+        Boolean esRellamado = concurso.getEsRellamado();
+        Long concursoOrigenId = concurso.getConcursoOrigenId();
+        if (!Boolean.TRUE.equals(esRellamado) || concursoOrigenId == null || concurso.getCargo() == null) {
+            return List.of();
+        }
+        ConcursoDTO origen;
+        CargoDTO cargo;
+        try {
+            origen = obtenerConcurso(concursoOrigenId);
+            cargo = cargoService.obtener(concurso.getCargo().getId());
+        } catch (RuntimeException e) {
+            return List.of();
+        }
+        if (cargo == null || cargo.getDesignaciones() == null) {
+            return List.of();
+        }
+        // Las designaciones nuevas se reconocen por su vínculo directo con el concurso; las
+        // históricas conservan la comparación por el texto "Concurso: <descripción>".
+        String origenEsperado = origen.getDescripcion() != null ? "Concurso: " + origen.getDescripcion() : null;
+        return cargo.getDesignaciones().stream()
+                .filter(designacion -> !Boolean.TRUE.equals(designacion.getEliminado()))
+                .filter(designacion -> designacion.getEstadoDesignacion() == EstadoDesignacion.ACTIVO)
+                .filter(designacion -> designacion.getConcursoId() != null
+                        ? Objects.equals(designacion.getConcursoId(), origen.getId())
+                        : (origenEsperado != null && origenEsperado.equals(designacion.getOrigenVacancia())))
+                .map(DesignacionDTO::getDocente)
+                .filter(Objects::nonNull)
                 .toList();
     }
 
     private List<ConcursoDocenteDTO> postulantesDelConcurso(Long concursoId) {
-        return concursoDocenteService.listarActivos().stream()
-                .filter(postulacion -> postulacion.getConcurso() != null
-                        && Objects.equals(postulacion.getConcurso().getId(), concursoId))
-                .toList();
+        return flujoService.postulantesDelConcurso(concursoId);
     }
 
     private ConcursoDocenteDTO ganadorDelConcurso(Long concursoId) {

@@ -13,7 +13,4 @@ public class Curso extends BaseEntity<Long>{
 
     @Column(nullable = false)
     private int anio;
-
-    @Column(nullable = false)
-    private String seccion;
 }

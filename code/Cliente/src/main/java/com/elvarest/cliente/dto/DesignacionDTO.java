@@ -16,10 +16,10 @@ public class DesignacionDTO extends BaseDTO{
     @DateTimeFormat(pattern = "yyyy-MM-dd")
     private LocalDate fechaInicioEfectiva;
     @DateTimeFormat(pattern = "yyyy-MM-dd")
-    private LocalDate fechaFinEstimada;
-    @DateTimeFormat(pattern = "yyyy-MM-dd")
     private LocalDate fechaFinDefinitiva;
     private String origenVacancia;
+    /** Concurso del que nació la designación (nulo en las manuales). */
+    private Long concursoId;
     private CaracterDesignacion caracterDesignacion;
     private EstadoDesignacion estadoDesignacion;
     private DocenteDTO docente;

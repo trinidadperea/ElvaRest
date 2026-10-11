@@ -19,9 +19,12 @@ public class SecurityConfig {
                                 "/certificados/**",
                                 "/concursos/**",
                                 "/concursos-docentes/**",
+                                "/cursos/**",
                                 "/designaciones/**",
                                 "/docentes/**",
                                 "/licencias/**",
+                                "/materias/**",
+                                "/tipos-certificado/**",
                                 "/usuarios/**"
                         ).permitAll()
                         .anyRequest().authenticated()

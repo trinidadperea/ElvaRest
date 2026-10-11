@@ -20,14 +20,14 @@ public class Designacion extends BaseEntity<Long>{
     @Column(nullable = false)
     private LocalDate fechaInicioEfectiva;
 
-    @Column(nullable = false)
-    private LocalDate fechaFinEstimada;
-
-    @Column(nullable = false)
+    /** Fecha de fin real; queda vacía mientras la designación sigue vigente. */
     private LocalDate fechaFinDefinitiva;
 
     @Column(nullable = false)
     private String origenVacancia;
+
+    /** Concurso del que nació la designación (nulo en las manuales o históricas). */
+    private Long concursoId;
 
     @Enumerated(EnumType.STRING)
     private CaracterDesignacion caracterDesignacion;
@@ -35,7 +35,7 @@ public class Designacion extends BaseEntity<Long>{
     @Enumerated(EnumType.STRING)
     private EstadoDesignacion estadoDesignacion;
 
-    @OneToOne
+    @ManyToOne
     @JoinColumn(name = "docente_id")
     private Docente docente;
 

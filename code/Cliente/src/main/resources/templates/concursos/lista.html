@@ -1,42 +1,106 @@
 <!doctype html>
 <html lang="es" xmlns:th="http://www.thymeleaf.org"
-      th:replace="~{base :: layout('Concursos', ~{::#encabezado}, ~{::#contenido})}">
-<section id="encabezado"><h3>Concursos</h3></section>
-<section id="contenido"><a class="btn btn-primary mb-3" th:href="@{/concursos/nuevo}">Nuevo concurso</a>
-  <div th:if="${msgError}" class="alert alert-danger" th:text="${msgError}"></div>
-  <div th:if="${msgExito}" class="alert alert-success" th:text="${msgExito}"></div>
+      th:replace="~{base :: layout('Concursos', ~{::#encabezado}, ~{::#contenido}, '')}">
+<section id="encabezado">
+  <h3 data-subtitle="Toma de horas, certificados, toma de posesión y rellamados">Concursos</h3>
+</section>
+<section id="contenido">
+  <div class="list-toolbar">
+    <div class="toolbar-filters">
+      <input type="search" class="form-control toolbar-search" data-filter-input="#tablaConcursos"
+             placeholder="Buscar por cargo, designación o estado…" aria-label="Buscar concurso">
+    </div>
+    <a class="btn btn-primary" th:href="@{/concursos/nuevo}"><i class="bi bi-plus-lg me-1"></i>Nuevo concurso</a>
+  </div>
+
   <div class="table-responsive">
-    <table class="table">
-      <thead><tr><th>Descripción</th><th>Apertura</th><th>Cierre</th><th>Estado</th><th>Postulantes</th><th>Docente ganador</th><th>Acciones</th></tr></thead>
+    <table class="table" id="tablaConcursos">
+      <thead>
+      <tr>
+        <th>Descripción</th>
+        <th>Cargo</th>
+        <th>Designación</th>
+        <th>Estado</th>
+        <th>Horas</th>
+        <th>Docentes postulados</th>
+        <th class="text-end">Acciones</th>
+      </tr>
+      </thead>
       <tbody>
-      <tr th:each="item : ${items}">
-        <td th:text="${item.descripcion}"></td>
-        <td th:text="${item.fechaApertura}"></td>
-        <td th:text="${item.fechaCierre}"></td>
-        <td><span class="badge rounded-pill"
-                  th:classappend="${item.estadoConcurso == T(com.elvarest.cliente.dto.enums.EstadoConcurso).EN_PROCESO ? 'text-bg-primary' : 'text-bg-secondary'}"
-                  th:text="${item.estadoConcurso == T(com.elvarest.cliente.dto.enums.EstadoConcurso).EN_PROCESO ? 'En proceso' : 'Finalizado'}"></span></td>
-        <td><span class="badge rounded-pill text-bg-light text-primary"
-                  th:text="${cantidadPostulantes[item.id]} + ' postulantes'"></span></td>
-        <td th:if="${item.estadoConcurso == T(com.elvarest.cliente.dto.enums.EstadoConcurso).FINALIZADO}"
-            th:text="${ganadores[item.id] != null and ganadores[item.id].docente != null ? ganadores[item.id].docente.apellido + ', ' + ganadores[item.id].docente.nombre : 'Pendiente de selección'}"></td>
-        <td th:unless="${item.estadoConcurso == T(com.elvarest.cliente.dto.enums.EstadoConcurso).FINALIZADO}">—</td>
-        <td class="text-nowrap">
-          <a class="btn btn-sm btn-info" th:href="@{/concursos/{id}(id=${item.id})}">Ver</a>
-          <a class="btn btn-sm btn-warning" th:href="@{/concursos/{id}/editar(id=${item.id})}">Editar</a>
-          <a class="btn btn-sm btn-danger" th:href="@{/concursos/baja/{id}(id=${item.id})}">Eliminar</a>
-          <a th:if="${item.estadoConcurso == T(com.elvarest.cliente.dto.enums.EstadoConcurso).FINALIZADO and ganadores[item.id] == null and cantidadPostulantes[item.id] > 0}"
-             class="btn btn-sm btn-outline-primary" th:href="@{/concursos/{id}/ganador(id=${item.id})}">
-            Seleccionar ganador
-          </a>
-          <a th:if="${item.estadoConcurso == T(com.elvarest.cliente.dto.enums.EstadoConcurso).FINALIZADO and ganadores[item.id] != null}"
-             class="btn btn-sm btn-success" th:href="@{/concursos/{id}/agregar-cargo(id=${item.id})}">
-            <i class="bi bi-briefcase me-1"></i>Agregar cargo
-          </a>
+      <tr th:each="item : ${items}" data-filter-item>
+        <td>
+          <a class="fw-semibold text-decoration-none" th:href="@{/concursos/{id}(id=${item.id})}"
+             th:text="${item.descripcion}"></a>
+        </td>
+        <td>
+          <th:block th:if="${item.cargo != null}">
+            <a class="fw-semibold text-decoration-none" th:href="@{/cargos/{id}(id=${item.cargo.id})}"
+               th:text="${item.cargo.descripcion}"></a>
+            <span class="d-block text-secondary small" th:if="${item.cargo.materia != null}"
+                  th:text="${item.cargo.materia.nombre + (item.cargo.materia.curso != null ? ' · ' + item.cargo.materia.curso.anio + '° Año' : '')}"></span>
+            <span class="d-block text-secondary small" th:if="${item.cargo.materia == null}">Sin materia asignada</span>
+          </th:block>
+          <span class="text-secondary" th:if="${item.cargo == null}">Sin cargo</span>
+        </td>
+        <td>
+          <span th:if="${item.caracterDesignacion != null}" th:text="${item.caracterDesignacion}"></span>
+          <span class="text-secondary" th:if="${item.caracterDesignacion == null}">Sin definir</span>
+        </td>
+        <td>
+          <span class="badge rounded-pill"
+                th:classappend="${item.estadoConcurso == T(com.elvarest.cliente.dto.enums.EstadoConcurso).FINALIZADO ? 'text-bg-secondary' : 'text-bg-primary'}"
+                th:text="${item.estadoConcurso == T(com.elvarest.cliente.dto.enums.EstadoConcurso).PUBLICADO ? 'Publicado' : (item.estadoConcurso == T(com.elvarest.cliente.dto.enums.EstadoConcurso).EN_PROCESO ? 'Proceso' : 'Finalizado')}"></span>
+          <span class="badge text-bg-info ms-1" th:if="${item.esRellamado}">
+            <i class="bi bi-arrow-repeat me-1"></i>Rellamado
+          </span>
+          <span class="d-block text-secondary small mt-1"
+                th:text="${item.fechaConcurso != null ? #temporals.format(item.fechaConcurso, 'dd/MM/yyyy HH:mm') : (item.fechaCierre != null ? #temporals.format(item.fechaCierre, 'dd/MM/yyyy') : '—')}"></span>
+        </td>
+        <td>
+          <span th:if="${horasTotalesMap[item.id] != null}">
+            <span th:text="${(horasDisponiblesMap[item.id] != null ? horasDisponiblesMap[item.id] : '—') + ' / ' + horasTotalesMap[item.id] + ' h'}"></span>
+            <span class="text-secondary">libres/totales</span>
+          </span>
+          <span class="text-secondary" th:if="${horasTotalesMap[item.id] == null}">Sin configurar</span>
+        </td>
+        <td>
+          <span class="badge rounded-pill text-bg-light text-primary"
+                th:text="${(cantidadPostulantes[item.id] != null ? cantidadPostulantes[item.id] : 0)} + ' docente(s)'"></span>
+        </td>
+        <td>
+          <div class="table-actions">
+            <a class="btn btn-sm btn-outline-primary" th:href="@{/concursos/{id}(id=${item.id})}">
+              <i class="bi bi-eye"></i>Ver
+            </a>
+            <a class="btn btn-sm btn-outline-secondary" th:href="@{/concursos/{id}/editar(id=${item.id})}">
+              <i class="bi bi-pencil"></i>Editar
+            </a>
+            <a class="btn btn-sm btn-outline-danger" th:href="@{/concursos/baja/{id}(id=${item.id})}"
+               th:attr="data-confirm='¿Eliminar el concurso «' + ${item.descripcion} + '»? Se dará de baja y no aparecerá más en el listado.'">
+              <i class="bi bi-trash"></i>Eliminar
+            </a>
+          </div>
         </td>
       </tr>
-      <tr th:if="${#lists.isEmpty(items)}"><td colspan="7" class="text-center text-secondary py-5">Aún no hay concursos para mostrar.</td></tr>
+      <tr th:if="${#lists.isEmpty(items)}">
+        <td colspan="7">
+          <div class="empty-state">
+            <i class="bi bi-trophy"></i>
+            <p class="empty-title">Todavía no hay concursos</p>
+            <p>Cree un concurso para un cargo vacante y registre la toma de horas de los docentes.</p>
+            <a class="btn btn-primary mt-3" th:href="@{/concursos/nuevo}">
+              <i class="bi bi-plus-lg me-1"></i>Crear el primer concurso
+            </a>
+          </div>
+        </td>
+      </tr>
       </tbody>
     </table>
   </div>
-</section></html>
+  <div class="empty-state d-none mt-3" data-filter-empty="tablaConcursos">
+    <i class="bi bi-search"></i>
+    <p class="empty-title">Sin resultados</p>
+    <p>No hay concursos que coincidan con la búsqueda.</p>
+  </div>
+</section>
+</html>

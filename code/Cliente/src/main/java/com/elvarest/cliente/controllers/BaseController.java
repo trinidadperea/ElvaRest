@@ -109,7 +109,7 @@ public abstract class BaseController<T extends Identifiable<ID>, ID> {
     }
 
     @GetMapping("/consultar/{id}")
-    public String consultar(@PathVariable ID id, Model model) {
+    public String consultar(@PathVariable ID id, Model model, RedirectAttributes attributes) {
         try {
             this.model = model;
             T found = service.obtener(id);
@@ -124,21 +124,21 @@ public abstract class BaseController<T extends Identifiable<ID>, ID> {
             preModificacion();
             return viewDetail;
         } catch (ErrorServiceException e) {
-            model.addAttribute("msgError", e.getMessage());
-            return viewDetail;
+            attributes.addFlashAttribute("msgError", e.getMessage());
+            return redirectList;
         } catch (Exception e) {
-            model.addAttribute("msgError", "Error de Sistema");
-            return viewDetail;
+            attributes.addFlashAttribute("msgError", "Error de Sistema");
+            return redirectList;
         }
     }
 
     @GetMapping("/{id}")
-    public String detalle(@PathVariable ID id, Model model) {
-        return consultar(id, model);
+    public String detalle(@PathVariable ID id, Model model, RedirectAttributes attributes) {
+        return consultar(id, model, attributes);
     }
 
     @GetMapping({"/modificar/{id}", "/{id}/editar"})
-    public String editar(@PathVariable ID id, Model model) {
+    public String editar(@PathVariable ID id, Model model, RedirectAttributes attributes) {
         try {
             this.model = model;
             T found = service.obtener(id);
@@ -152,11 +152,11 @@ public abstract class BaseController<T extends Identifiable<ID>, ID> {
             preModificacion();
             return viewEdit;
         } catch (ErrorServiceException e) {
-            model.addAttribute("msgError", e.getMessage());
-            return viewEdit;
+            attributes.addFlashAttribute("msgError", e.getMessage());
+            return redirectList;
         } catch (Exception e) {
-            model.addAttribute("msgError", "Error de Sistema");
-            return viewEdit;
+            attributes.addFlashAttribute("msgError", "Error de Sistema");
+            return redirectList;
         }
     }
 
@@ -170,11 +170,11 @@ public abstract class BaseController<T extends Identifiable<ID>, ID> {
             attributes.addFlashAttribute("msgExito", "La acción fue realizada correctamente.");
             return redirectList;
         } catch (ErrorServiceException e) {
-            model.addAttribute("msgError", e.getMessage());
-            return viewEdit;
+            attributes.addFlashAttribute("msgError", e.getMessage());
+            return redirectList;
         } catch (Exception e) {
-            model.addAttribute("msgError", "Error de Sistema");
-            return viewEdit;
+            attributes.addFlashAttribute("msgError", "Error de Sistema");
+            return redirectList;
         }
     }
 
@@ -198,10 +198,32 @@ public abstract class BaseController<T extends Identifiable<ID>, ID> {
             return redirectList;
         } catch (ErrorServiceException e) {
             model.addAttribute("msgError", e.getMessage());
-            return viewEdit;
+            repoblarFormulario(entidad, model);
+            return entidad.getId() == null ? viewCreate : viewEdit;
         } catch (Exception e) {
             model.addAttribute("msgError", "Error de Sistema");
-            return viewEdit;
+            repoblarFormulario(entidad, model);
+            return entidad.getId() == null ? viewCreate : viewEdit;
+        }
+    }
+
+    /**
+     * Re-renderiza el formulario tras un error de alta o modificación,
+     * conservando los datos enviados y las listas de relaciones del formulario.
+     */
+    protected void repoblarFormulario(T entidad, Model model) {
+        this.model = model;
+        model.addAttribute("item", entidad);
+        model.addAttribute("isDisabled", false);
+        model.addAttribute("titleEdit", titleEdit);
+        model.addAttribute("nameEntityLower", nameEntityLower);
+        try {
+            if (entidad.getId() == null) {
+                preAlta();
+            } else {
+                preModificacion();
+            }
+        } catch (Exception ignored) {
         }
     }
 

@@ -39,15 +39,17 @@
             <i class="bi bi-person-circle" style="font-size: 3rem;"></i>
             <p>
               <span th:text="${#authentication != null ? #authentication.name : 'Usuario'}">Usuario</span>
-              <small th:text="${#authentication != null ? #authentication.name : ''}"></small>
+              <small th:text="${#authentication != null and #authentication.authorities != null and !#authentication.authorities.isEmpty()
+                              ? 'Rol: ' + #strings.replace(#authentication.authorities[0].authority, 'ROLE_', '')
+                              : 'Sesión activa'}">Sesión activa</small>
             </p>
           </li>
           <li class="user-footer">
-            <a href="#" class="btn btn-outline-secondary">Perfil</a>
+            <a th:href="@{/}" class="btn btn-outline-secondary"><i class="bi bi-speedometer2 me-1"></i>Dashboard</a>
             <form method="post" th:action="@{/logout}" class="d-inline float-end">
               <input type="hidden" th:if="${_csrf != null}"
                      th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
-              <button type="submit" class="btn btn-outline-danger">Salir</button>
+              <button type="submit" class="btn btn-outline-danger"><i class="bi bi-box-arrow-right me-1"></i>Salir</button>
             </form>
           </li>
         </ul>

@@ -1,6 +1,6 @@
 <!doctype html>
 <html lang="es" xmlns:th="http://www.thymeleaf.org"
-      th:replace="~{base :: layout('Agregar cargo', ~{::#encabezado}, ~{::#contenido})}">
+      th:replace="~{base :: layout('Agregar cargo', ~{::#encabezado}, ~{::#contenido}, '')}">
 <section id="encabezado"><h3>Agregar cargo al docente ganador</h3></section>
 <section id="contenido">
   <div class="card mb-3">
@@ -18,8 +18,8 @@
       <input class="form-control" type="date" th:field="*{fechaInicioEfectiva}" required>
     </div>
     <div class="mb-3">
-      <label>Fecha de fin estimada</label>
-      <input class="form-control" type="date" th:field="*{fechaFinEstimada}" required>
+      <label>Fecha de fin definitiva</label>
+      <input class="form-control" type="date" th:field="*{fechaFinDefinitiva}" required>
     </div>
     <div class="mb-3">
       <label>Tipo de cargo</label>

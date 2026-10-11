@@ -1,39 +1,214 @@
-<!doctype html><html lang="es" xmlns:th="http://www.thymeleaf.org" th:replace="~{base :: layout('Detalle del docente', ~{::#encabezado}, ~{::#contenido})}">
-<section id="encabezado"><h3>Perfil del docente</h3></section>
+<!doctype html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{base :: layout('Detalle del docente', ~{::#encabezado}, ~{::#contenido}, '')}">
+<section id="encabezado">
+  <h3 th:attr="data-subtitle=${item.area != null and !item.area.isBlank() ? 'Área: ' + item.area : 'Sin área asignada'}">
+    <span th:text="${item.apellido + ', ' + item.nombre}"></span></h3>
+</section>
 <section id="contenido">
-  <dl>
-    <dt>Nombre</dt><dd th:text="${item.apellido + ', ' + item.nombre}"></dd>
-    <dt>Documento</dt><dd th:text="${item.numeroDocumento}"></dd>
-    <dt>Área</dt><dd th:text="${item.area}"></dd>
-    <dt>Activo</dt><dd th:text="${item.activo ? 'Sí' : 'No'}"></dd>
-  </dl>
-  <div class="d-flex justify-content-between align-items-center mt-4 mb-3">
-    <h4 class="mb-0">Certificados asociados</h4>
-    <a class="btn btn-primary" th:href="@{/certificados/nuevo/docente/{id}(id=${item.id})}">
-      <i class="bi bi-plus-lg me-1"></i>Agregar certificado
-    </a>
+
+
+  <!-- ============ Datos personales ============ -->
+  <div class="card">
+    <div class="card-header d-flex align-items-center gap-2">
+      <h3 class="card-title mb-0">Datos personales</h3>
+      <span class="badge rounded-pill text-bg-info" th:if="${item.interno}">Interno</span>
+    </div>
+    <div class="card-body">
+      <div class="detail-grid">
+        <div class="detail-item">
+          <dt>Documento</dt>
+          <dd th:text="${item.numeroDocumento != null ? item.numeroDocumento : '—'}"></dd>
+        </div>
+        <div class="detail-item">
+          <dt>Fecha de nacimiento</dt>
+          <dd th:text="${item.fechaNacimiento != null ? #temporals.format(item.fechaNacimiento, 'dd/MM/yyyy') : '—'}"></dd>
+        </div>
+        <div class="detail-item">
+          <dt>Teléfono</dt>
+          <dd th:text="${item.telefono != null and !item.telefono.isBlank() ? item.telefono : '—'}"></dd>
+        </div>
+        <div class="detail-item">
+          <dt>Correo electrónico</dt>
+          <dd th:text="${item.correoElectronico != null and !item.correoElectronico.isBlank() ? item.correoElectronico : '—'}"></dd>
+        </div>
+        <div class="detail-item">
+          <dt>Área</dt>
+          <dd th:text="${item.area != null and !item.area.isBlank() ? item.area : '—'}"></dd>
+        </div>
+      </div>
+    </div>
   </div>
-  <div class="table-responsive">
-    <table class="table">
-      <thead><tr><th>Tipo de certificado</th><th>Fecha de emisión</th><th>Vencimiento</th><th>Presentado</th><th>Acciones</th></tr></thead>
-      <tbody>
-      <tr th:each="certificado : ${certificados}">
-        <td th:text="${certificado.tipoCertificado != null ? certificado.tipoCertificado.nombre : 'Sin tipo'}"></td>
-        <td th:text="${certificado.fechaEmision}"></td>
-        <td th:text="${certificado.requiereVencimiento ? 'Requiere vencimiento' : 'Sin vencimiento'}"></td>
-        <td th:text="${certificado.presentado ? 'Sí' : 'No'}"></td>
-        <td>
-          <a class="btn btn-sm btn-info" aria-label="Ver certificado" th:href="@{/certificados/{id}(id=${certificado.id})}">Ver</a>
-          <a class="btn btn-sm btn-warning" aria-label="Editar certificado" th:href="@{/certificados/{id}/editar(id=${certificado.id})}">Editar</a>
-        </td>
-      </tr>
-      <tr th:if="${#lists.isEmpty(certificados)}">
-        <td colspan="5" class="text-center text-secondary py-4">Este docente aún no tiene certificados asociados.</td>
-      </tr>
-      </tbody>
-    </table>
+
+  <!-- ============ Certificados ============ -->
+  <div class="card">
+    <div class="card-header d-flex align-items-center gap-2">
+      <h3 class="card-title mb-0">Certificados</h3>
+      <a class="btn btn-sm btn-primary ms-auto" th:href="@{/certificados/nuevo/docente/{id}(id=${item.id})}">
+        <i class="bi bi-plus-lg me-1"></i>Agregar certificado
+      </a>
+    </div>
+    <div class="card-body">
+      <div class="table-responsive" th:if="${!certificados.isEmpty()}">
+        <table class="table">
+          <thead>
+          <tr>
+            <th>Tipo de certificado</th>
+            <th>Fecha de emisión</th>
+            <th>Vencimiento</th>
+            <th>Presentado</th>
+            <th class="text-end">Acciones</th>
+          </tr>
+          </thead>
+          <tbody>
+          <tr th:each="certificado : ${certificados}">
+            <td th:text="${certificado.tipoCertificado != null ? certificado.tipoCertificado.nombre : 'Sin tipo'}"></td>
+            <td th:text="${certificado.fechaEmision != null ? #temporals.format(certificado.fechaEmision, 'dd/MM/yyyy') : '—'}"></td>
+            <td>
+              <span class="badge rounded-pill"
+                    th:classappend="${certificado.requiereVencimiento ? 'text-bg-warning' : 'text-bg-secondary'}"
+                    th:text="${certificado.requiereVencimiento ? 'Requiere vencimiento' : 'Sin vencimiento'}"></span>
+            </td>
+            <td>
+              <span class="badge rounded-pill"
+                    th:classappend="${certificado.presentado ? 'text-bg-success' : 'text-bg-danger'}"
+                    th:text="${certificado.presentado ? 'Sí' : 'No'}"></span>
+            </td>
+            <td>
+              <div class="table-actions">
+                <a class="btn btn-sm btn-outline-primary" aria-label="Ver certificado"
+                   th:href="@{/certificados/{id}(id=${certificado.id})}">
+                  <i class="bi bi-eye"></i>Ver
+                </a>
+                <a class="btn btn-sm btn-outline-secondary" aria-label="Editar certificado"
+                   th:href="@{/certificados/{id}/editar(id=${certificado.id})}">
+                  <i class="bi bi-pencil"></i>Editar
+                </a>
+              </div>
+            </td>
+          </tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="empty-state" th:if="${certificados.isEmpty()}">
+        <i class="bi bi-file-earmark-medical"></i>
+        <p class="empty-title">Sin certificados asociados</p>
+        <p>Este docente aún no tiene certificados registrados.</p>
+        <a class="btn btn-primary mt-3" th:href="@{/certificados/nuevo/docente/{id}(id=${item.id})}">
+          <i class="bi bi-plus-lg me-1"></i>Agregar certificado
+        </a>
+      </div>
+    </div>
   </div>
-  <a class="btn btn-secondary mt-3" th:href="@{/docentes}">Volver</a>
-  <a class="btn btn-warning mt-3" th:href="@{/docentes/{id}/editar(id=${item.id})}">Editar docente</a>
+
+  <!-- ============ Designaciones registradas ============ -->
+  <div class="card" th:if="${!designacionesDocente.isEmpty()}">
+    <div class="card-header d-flex align-items-center gap-2">
+      <h3 class="card-title mb-0">Designaciones registradas</h3>
+      <span class="badge text-bg-secondary ms-auto" th:text="${#lists.size(designacionesDocente)}"></span>
+    </div>
+    <div class="card-body">
+      <div class="table-responsive">
+        <table class="table">
+          <thead>
+          <tr>
+            <th>Materia/Curso</th>
+            <th>Carácter</th>
+            <th>Inicio efectivo</th>
+            <th>Fecha fin definitiva</th>
+            <th>Estado</th>
+          </tr>
+          </thead>
+          <tbody>
+          <tr th:each="designacion : ${designacionesDocente}">
+            <td th:text="${materiasDesignaciones[designacion.id] != null ? materiasDesignaciones[designacion.id] : '—'}"></td>
+            <td th:text="${designacion.caracterDesignacion != null ? designacion.caracterDesignacion : '—'}"></td>
+            <td th:text="${designacion.fechaInicioEfectiva != null ? #temporals.format(designacion.fechaInicioEfectiva, 'dd/MM/yyyy') : '—'}"></td>
+            <td th:text="${designacion.fechaFinDefinitiva != null ? #temporals.format(designacion.fechaFinDefinitiva, 'dd/MM/yyyy') : ''}"></td>
+            <td>
+              <span class="badge rounded-pill"
+                    th:classappend="${designacion.estadoDesignacion == T(com.elvarest.cliente.dto.enums.EstadoDesignacion).ACTIVO ? 'text-bg-success' : (designacion.estadoDesignacion == T(com.elvarest.cliente.dto.enums.EstadoDesignacion).PENDIENTE ? 'text-bg-warning' : 'text-bg-secondary')}"
+                    th:text="${designacion.estadoDesignacion != null ? designacion.estadoDesignacion : '—'}"></span>
+            </td>
+          </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ Historial de concursos ============ -->
+  <div class="card">
+    <div class="card-header d-flex align-items-center gap-2">
+      <h3 class="card-title mb-0">Historial en concursos</h3>
+      <span class="text-secondary small ms-auto">Tomas de horas registradas</span>
+    </div>
+    <div class="card-body">
+      <div class="list-toolbar" th:if="${!historialPostulaciones.isEmpty()}">
+        <div class="toolbar-filters" role="group" aria-label="Filtrar por estado del concurso">
+          <button type="button" class="btn btn-sm btn-outline-primary active"
+                  data-filter-btn data-filter-group="historial" data-filter-target="#historialConcursos" data-filter-value="">
+            Todos
+          </button>
+          <button type="button" class="btn btn-sm btn-outline-primary"
+                  data-filter-btn data-filter-group="historial" data-filter-target="#historialConcursos" data-filter-value="PUBLICADO">
+            Publicados
+          </button>
+          <button type="button" class="btn btn-sm btn-outline-primary"
+                  data-filter-btn data-filter-group="historial" data-filter-target="#historialConcursos" data-filter-value="EN_PROCESO">
+            En proceso
+          </button>
+          <button type="button" class="btn btn-sm btn-outline-primary"
+                  data-filter-btn data-filter-group="historial" data-filter-target="#historialConcursos" data-filter-value="FINALIZADO">
+            Finalizados
+          </button>
+        </div>
+      </div>
+      <ul class="mini-list" id="historialConcursos" th:if="${!historialPostulaciones.isEmpty()}">
+        <li class="mini-item mini-blue" data-filter-item th:each="postulacion : ${historialPostulaciones}"
+            th:attr="data-filter-tags=${postulacion.concurso?.estadoConcurso?.name()}">
+          <span class="mini-item-icon"><i class="bi bi-trophy"></i></span>
+          <div class="mini-item-body">
+            <a class="mini-item-title" th:if="${postulacion.concurso != null}"
+               th:href="@{/concursos/{id}(id=${postulacion.concurso.id})}"
+               th:text="${postulacion.concurso.descripcion}"></a>
+            <span class="mini-item-title" th:if="${postulacion.concurso == null}">Concurso sin datos</span>
+            <div class="mini-item-meta">
+              <span th:if="${postulacion.fechaEmision != null}">
+                <i class="bi bi-calendar3 me-1"></i>
+                <time th:text="${#temporals.format(postulacion.fechaEmision, 'dd/MM/yyyy')}"></time>
+              </span>
+              <span th:text="${horasHistorial[postulacion.id] != null ? horasHistorial[postulacion.id] + ' h' : 'Sin horas registradas'}"></span>
+              <span class="status-badge" th:if="${estadosHistorial[postulacion.id] != null}"
+                    th:classappend="${estadosHistorial[postulacion.id].badgeClass}"
+                    th:text="${estadosHistorial[postulacion.id].etiqueta}"></span>
+            </div>
+          </div>
+          <a class="btn btn-sm btn-outline-primary align-self-center" th:if="${postulacion.concurso != null}"
+             th:href="@{/concursos/{id}(id=${postulacion.concurso.id})}">Ver concurso</a>
+        </li>
+      </ul>
+      <div class="empty-state d-none" data-filter-empty="historialConcursos" th:if="${!historialPostulaciones.isEmpty()}">
+        <i class="bi bi-funnel"></i>
+        <p class="empty-title">Sin resultados para el filtro</p>
+        <p>Ninguna participación coincide con el estado del concurso seleccionado.</p>
+      </div>
+      <div class="empty-state" th:if="${historialPostulaciones.isEmpty()}">
+        <i class="bi bi-clock-history"></i>
+        <p class="empty-title">Sin historial de concursos</p>
+        <p>Este docente todavía no participó de la toma de horas de ningún concurso.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ Acciones ============ -->
+  <div class="list-toolbar">
+    <div class="toolbar-filters">
+      <a class="btn btn-outline-secondary" th:href="@{/docentes}">
+        <i class="bi bi-arrow-left me-1"></i>Volver al listado
+      </a>
+    </div>
+  </div>
+
 </section>
 </html>

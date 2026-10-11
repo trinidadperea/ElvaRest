@@ -12,8 +12,6 @@ import lombok.NoArgsConstructor;
 @Entity
 public class Docente extends Persona {
 
-    private double puntaje;
-
     @Column(nullable = false)
     private boolean activo;
 

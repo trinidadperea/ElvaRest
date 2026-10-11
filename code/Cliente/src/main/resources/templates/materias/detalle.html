@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{base :: layout('Detalle de la materia', ~{::#encabezado}, ~{::#contenido}, '')}">
+<section id="encabezado">
+  <h3 data-subtitle="Materia registrada en la institución">
+    <span th:text="${item.nombre != null and !item.nombre.isBlank() ? item.nombre : 'Materia sin nombre'}"></span></h3>
+</section>
+<section id="contenido">
+
+
+  <!-- ============ Datos de la materia ============ -->
+  <div class="card">
+    <div class="card-header d-flex align-items-center gap-2">
+      <h3 class="card-title mb-0">Datos de la materia</h3>
+    </div>
+    <div class="card-body">
+      <div class="detail-grid">
+        <div class="detail-item">
+          <dt>Nombre</dt>
+          <dd th:text="${item.nombre != null and !item.nombre.isBlank() ? item.nombre : '—'}"></dd>
+        </div>
+        <div class="detail-item">
+          <dt>Área</dt>
+          <dd th:text="${item.area != null and !item.area.isBlank() ? item.area : '—'}"></dd>
+        </div>
+        <div class="detail-item">
+          <dt>Curso</dt>
+          <dd>
+            <a th:if="${item.curso != null}" class="text-decoration-none"
+               th:href="@{/academica/{id}(id=${item.curso.id})}"
+               th:text="${item.curso.anio + '° Año'}"></a>
+            <span th:if="${item.curso == null}">—</span>
+          </dd>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ Acciones ============ -->
+  <div class="list-toolbar">
+    <div class="toolbar-filters">
+      <a class="btn btn-outline-secondary" th:href="@{/materias/list}">
+        <i class="bi bi-arrow-left me-1"></i>Volver al listado
+      </a>
+    </div>
+    <div class="d-flex flex-wrap gap-2">
+      <a class="btn btn-outline-danger" th:href="@{/materias/baja/{id}(id=${item.id})}"
+         th:attr="data-confirm=${'¿Dar de baja la materia ' + item.nombre + '?'}">
+        <i class="bi bi-trash me-1"></i>Eliminar
+      </a>
+      <a class="btn btn-primary" th:href="@{/materias/{id}/editar(id=${item.id})}">
+        <i class="bi bi-pencil me-1"></i>Editar materia
+      </a>
+    </div>
+  </div>
+
+</section>
+</html>

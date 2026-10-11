@@ -1,2 +1,66 @@
-<!doctype html><html lang="es" xmlns:th="http://www.thymeleaf.org" th:replace="~{base :: layout('Detalle del usuario', ~{::#encabezado}, ~{::#contenido})}">
-<section id="encabezado"><h3>Detalle del usuario</h3></section><section id="contenido"><dl><dt>Nombre</dt><dd th:text="${item.apellido + ', ' + item.nombre}"></dd><dt>Usuario</dt><dd th:text="${item.nombreUsuario}"></dd><dt>Correo</dt><dd th:text="${item.correoElectronico}"></dd><dt>Rol</dt><dd th:text="${item.rol}"></dd></dl><a class="btn btn-secondary" th:href="@{/usuarios}">Volver</a><a class="btn btn-warning" th:href="@{/usuarios/{id}/editar(id=${item.id})}">Editar</a></section></html>
+<!doctype html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{base :: layout('Detalle del usuario', ~{::#encabezado}, ~{::#contenido}, '')}">
+<section id="encabezado">
+  <h3 th:attr="data-subtitle=${item.rol?.name() == 'ADMIN' ? 'Administrador del sistema' : 'Usuario del sistema'}">
+    <span th:text="${item.apellido + ', ' + item.nombre}"></span></h3>
+</section>
+<section id="contenido">
+
+
+  <div class="card">
+    <div class="card-header d-flex align-items-center gap-2">
+      <h3 class="card-title mb-0">Datos de la cuenta</h3>
+      <span class="badge rounded-pill ms-auto"
+            th:classappend="${item.rol == T(com.elvarest.cliente.dto.enums.Rol).ADMIN ? 'text-bg-primary' : 'text-bg-secondary'}"
+            th:text="${item.rol == T(com.elvarest.cliente.dto.enums.Rol).ADMIN ? 'Administrador' : 'Usuario'}"></span>
+    </div>
+    <div class="card-body">
+      <div class="detail-grid">
+        <div class="detail-item">
+          <dt>Nombre de usuario</dt>
+          <dd th:text="${item.nombreUsuario != null and !item.nombreUsuario.isBlank() ? item.nombreUsuario : '—'}"></dd>
+        </div>
+        <div class="detail-item">
+          <dt>Correo electrónico</dt>
+          <dd th:text="${item.correoElectronico != null and !item.correoElectronico.isBlank() ? item.correoElectronico : '—'}"></dd>
+        </div>
+        <div class="detail-item">
+          <dt>Teléfono</dt>
+          <dd th:text="${item.telefono != null and !item.telefono.isBlank() ? item.telefono : '—'}"></dd>
+        </div>
+        <div class="detail-item">
+          <dt>Documento</dt>
+          <dd th:text="${item.numeroDocumento != null and !item.numeroDocumento.isBlank() ? item.numeroDocumento : '—'}"></dd>
+        </div>
+        <div class="detail-item">
+          <dt>Fecha de nacimiento</dt>
+          <dd th:text="${item.fechaNacimiento != null ? #temporals.format(item.fechaNacimiento, 'dd/MM/yyyy') : '—'}"></dd>
+        </div>
+        <div class="detail-item">
+          <dt>Rol</dt>
+          <dd th:text="${item.rol != null ? item.rol : '—'}"></dd>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="list-toolbar">
+    <div class="toolbar-filters">
+      <a class="btn btn-outline-secondary" th:href="@{/usuarios/list}">
+        <i class="bi bi-arrow-left me-1"></i>Volver al listado
+      </a>
+    </div>
+    <div class="d-flex flex-wrap gap-2">
+      <a class="btn btn-outline-danger" th:href="@{/usuarios/baja/{id}(id=${item.id})}"
+         th:attr="data-confirm='¿Dar de baja al usuario ' + ${item.apellido + ', ' + item.nombre} + '?'">
+        <i class="bi bi-trash me-1"></i>Eliminar
+      </a>
+      <a class="btn btn-primary" th:href="@{/usuarios/{id}/editar(id=${item.id})}">
+        <i class="bi bi-pencil me-1"></i>Editar usuario
+      </a>
+    </div>
+  </div>
+
+</section>
+</html>

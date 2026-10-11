@@ -15,7 +15,8 @@
 
         <li class="nav-header">INSTITUCIÓN</li>
         <li class="nav-item">
-          <a th:href="@{/}" class="nav-link">
+          <a th:href="@{/}" class="nav-link"
+             th:classappend="${currentPath == '/' ? 'active' : ''}">
             <i class="nav-icon bi bi-speedometer"></i>
             <p>Dashboard</p>
           </a>
@@ -23,42 +24,66 @@
 
         <li class="nav-header">GESTIÓN ACADÉMICA</li>
         <li class="nav-item">
-          <a th:href="@{/alertas}" class="nav-link">
-            <i class="nav-icon bi bi-exclamation-triangle"></i>
-            <p>Alertas</p>
-          </a>
-        </li>
-
-        <li class="nav-item">
-          <a th:href="@{/concursos}" class="nav-link">
-            <i class="nav-icon bi bi-people"></i>
-            <p>Concursos</p>
-          </a>
-        </li>
-
-        <li class="nav-item">
-          <a th:href="@{/cargos}" class="nav-link">
-            <i class="nav-icon bi bi-briefcase"></i>
-            <p>Cargos</p>
-          </a>
-        </li>
-
-        <li class="nav-item">
-          <a th:href="@{/docentes}" class="nav-link">
+          <a th:href="@{/docentes}" class="nav-link"
+             th:classappend="${#strings.startsWith(currentPath, '/docentes') ? 'active' : ''}">
             <i class="nav-icon bi bi-person-badge"></i>
             <p>Docentes</p>
           </a>
         </li>
 
         <li class="nav-item">
-          <a th:href="@{/reportes}" class="nav-link">
+          <a th:href="@{/cargos}" class="nav-link"
+             th:classappend="${#strings.startsWith(currentPath, '/cargos') or #strings.startsWith(currentPath, '/designaciones') ? 'active' : ''}">
+            <i class="nav-icon bi bi-briefcase"></i>
+            <p>Cargos</p>
+          </a>
+        </li>
+
+        <li class="nav-item">
+          <a th:href="@{/concursos}" class="nav-link"
+             th:classappend="${#strings.startsWith(currentPath, '/concursos') ? 'active' : ''}">
+            <i class="nav-icon bi bi-trophy"></i>
+            <p>Concursos</p>
+          </a>
+        </li>
+
+        <li class="nav-item">
+          <a th:href="@{/alertas}" class="nav-link"
+             th:classappend="${#strings.startsWith(currentPath, '/alertas') ? 'active' : ''}">
+            <i class="nav-icon bi bi-exclamation-triangle"></i>
+            <p>Alertas</p>
+          </a>
+        </li>
+
+        <li class="nav-item">
+          <a th:href="@{/reportes}" class="nav-link"
+             th:classappend="${#strings.startsWith(currentPath, '/reportes') ? 'active' : ''}">
             <i class="nav-icon bi bi-bar-chart"></i>
             <p>Reportes</p>
           </a>
         </li>
 
+        <li class="nav-header">MATERIA/CURSO</li>
         <li class="nav-item">
-          <a th:href="@{/usuarios}" class="nav-link">
+          <a th:href="@{/materias}" class="nav-link"
+             th:classappend="${#strings.startsWith(currentPath, '/materias') ? 'active' : ''}">
+            <i class="nav-icon bi bi-book"></i>
+            <p>Materias</p>
+          </a>
+        </li>
+
+        <li class="nav-item">
+          <a th:href="@{/academica}" class="nav-link"
+             th:classappend="${#strings.startsWith(currentPath, '/academica') ? 'active' : ''}">
+            <i class="nav-icon bi bi-mortarboard"></i>
+            <p>Cursos</p>
+          </a>
+        </li>
+
+        <li class="nav-header">SISTEMA</li>
+        <li class="nav-item">
+          <a th:href="@{/usuarios}" class="nav-link"
+             th:classappend="${#strings.startsWith(currentPath, '/usuarios') ? 'active' : ''}">
             <i class="nav-icon bi bi-person-gear"></i>
             <p>Usuarios</p>
           </a>

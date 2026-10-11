@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{base :: layout('Nuevo concurso (rellamado)', ~{::#encabezado}, ~{::#contenido}, '')}">
+<section id="encabezado">
+  <h3 data-subtitle="Hereda el cargo original y toma las horas remanentes como horas totales">Abrir nuevo concurso asociado (rellamado)</h3>
+</section>
+<section id="contenido">
+  <div class="card">
+    <div class="card-body">
+      <div class="detail-grid">
+        <div class="detail-item">
+          <dt>Concurso origen</dt>
+          <dd th:text="${concurso.descripcion}"></dd>
+        </div>
+        <div class="detail-item">
+          <dt>Cargo</dt>
+          <dd th:text="${concurso.cargo != null ? concurso.cargo.descripcion : 'Sin cargo asociado'}"></dd>
+        </div>
+        <div class="detail-item">
+          <dt>Designación</dt>
+          <dd th:text="${concurso.caracterDesignacion != null ? concurso.caracterDesignacion : 'Sin definir'}"></dd>
+        </div>
+        <div class="detail-item">
+          <dt>Horas remanentes</dt>
+          <dd th:text="${horasRemanentes} + ' h'"></dd>
+        </div>
+      </div>
+      <p class="text-secondary small mt-3 mb-0">
+        Al confirmar, el concurso original quedará <strong>cerrado definitivamente</strong> y el nuevo concurso
+        nacerá en estado <strong>abierto</strong> con las horas remanentes como totales.
+      </p>
+    </div>
+  </div>
+
+  <form method="post" th:action="@{/concursos/{id}/rellamado(id=${concurso.id})}" th:object="${item}" data-loading>
+    <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
+    <div class="mb-3">
+      <label for="descripcion">Descripción del nuevo concurso</label>
+      <input id="descripcion" class="form-control" th:field="*{descripcion}" required maxlength="150">
+    </div>
+    <div class="mb-3">
+      <label for="fechaConcurso">Fecha y hora del concurso</label>
+      <input id="fechaConcurso" class="form-control" type="datetime-local" th:field="*{fechaConcurso}" required>
+    </div>
+    <div class="mb-3">
+      <label for="horasTotales">Horas totales heredadas</label>
+      <input id="horasTotales" class="form-control" type="number" th:field="*{horasTotales}" readonly>
+      <div class="form-text">Se toman automáticamente las horas remanentes del concurso origen.</div>
+    </div>
+    <div class="d-flex flex-wrap gap-2 mt-3">
+      <a class="btn btn-secondary" th:href="@{/concursos/{id}(id=${concurso.id})}">Cancelar</a>
+      <button class="btn btn-primary"><i class="bi bi-arrow-repeat me-1"></i>Cerrar original y abrir rellamado</button>
+    </div>
+  </form>
+</section>
+</html>

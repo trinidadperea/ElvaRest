@@ -1,593 +1,302 @@
 <!doctype html>
-<html lang="es" xmlns:th="http://www.thymeleaf.org" th:replace="~{base :: layout('Reportes', ~{::#encabezado}, ~{::#contenido})}">
+<html lang="es" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{base :: layout('Reportes', ~{::#encabezado}, ~{::#contenido}, ~{::#scripts})}">
 <section id="encabezado">
-
-<div class="row">
-
-
-    <div class="col-sm-6">
-
-
-        <h3 class="mb-0">
-
-
-            <i class="bi bi-bar-chart-line me-2"></i>
-
-
-            Reportes
-
-
-
-        </h3>
-
-
-    </div>
-
-
-
-
-
-    <div class="col-sm-6">
-
-
-        <ol class="breadcrumb float-sm-end">
-
-
-            <li class="breadcrumb-item">
-
-                <a th:href="@{/}">
-                    Inicio
-                </a>
-
-            </li>
-
-
-
-
-            <li class="breadcrumb-item active">
-
-                Reportes
-
-            </li>
-
-
-
-
-        </ol>
-
-
-    </div>
-
-
-</div>
-
-
+  <h3 data-subtitle="Suplentes vigentes, historial de designaciones y avance de los concursos">Módulo de reportes</h3>
 </section>
-
-
-
-
-
-
-
-
 
 <section id="contenido">
 
+  <!-- ============ Barra de acciones ============ -->
+  <div class="list-toolbar">
+    <div class="toolbar-filters">
+      <span class="text-secondary small">
+        <i class="bi bi-info-circle me-1"></i>
+        Los reportes se generan con los datos registrados en el sistema. Cada sección puede exportarse a CSV o imprimirse completa.
+      </span>
+    </div>
+    <button type="button" class="btn btn-outline-secondary" data-print>
+      <i class="bi bi-printer me-1"></i>Imprimir reporte
+    </button>
+  </div>
 
-
-
-
-
-
-
-
-<!-- Indicadores -->
-
-<div class="row">
-
-
-
-
-
-    <div class="col-lg-3 col-6">
-
-
-        <div class="small-box bg-primary">
-
-
-            <div class="inner">
-
-
-                <h3>
-                    120
-                </h3>
-
-
-                <p>
-                    Docentes
-                </p>
-
-
-            </div>
-
-
-            <div class="icon">
-
-
-                <i class="bi bi-person-badge"></i>
-
-
-            </div>
-
-
+  <!-- ============ Métricas ============ -->
+  <div class="row g-3 mb-1">
+    <div class="col-xl-3 col-md-6">
+      <a th:href="@{/docentes}" class="d-block text-decoration-none h-100">
+        <div class="stat-card stat-blue">
+          <div class="stat-card-icon"><i class="bi bi-person-badge"></i></div>
+          <div>
+            <div class="stat-card-value" th:text="${cantidadDocentes}">0</div>
+            <div class="stat-card-label">Docentes activos</div>
+          </div>
         </div>
-
-
+      </a>
     </div>
-
-
-
-
-
-
-
-
-
-    <div class="col-lg-3 col-6">
-
-
-        <div class="small-box bg-success">
-
-
-            <div class="inner">
-
-
-                <h3>
-                    350
-                </h3>
-
-
-                <p>
-                    Usuarios
-                </p>
-
-
-            </div>
-
-
-            <div class="icon">
-
-
-                <i class="bi bi-people"></i>
-
-
-            </div>
-
-
+    <div class="col-xl-3 col-md-6">
+      <a th:href="@{/designaciones}" class="d-block text-decoration-none h-100">
+        <div class="stat-card stat-teal">
+          <div class="stat-card-icon"><i class="bi bi-clipboard-check"></i></div>
+          <div>
+            <div class="stat-card-value" th:text="${cantidadDesignacionesActivas}">0</div>
+            <div class="stat-card-label">Designaciones activas</div>
+          </div>
         </div>
-
-
+      </a>
     </div>
-
-
-
-
-
-
-
-
-
-    <div class="col-lg-3 col-6">
-
-
-        <div class="small-box bg-warning">
-
-
-            <div class="inner">
-
-
-                <h3>
-                    18
-                </h3>
-
-
-                <p>
-                    Licencias
-                </p>
-
-
-            </div>
-
-
-            <div class="icon">
-
-
-                <i class="bi bi-calendar-x"></i>
-
-
-            </div>
-
-
+    <div class="col-xl-3 col-md-6">
+      <a href="#seccionSuplentes" class="d-block text-decoration-none h-100">
+        <div class="stat-card stat-violet">
+          <div class="stat-card-icon"><i class="bi bi-person-lines-fill"></i></div>
+          <div>
+            <div class="stat-card-value" th:text="${cantidadSuplentes}">0</div>
+            <div class="stat-card-label">Suplentes vigentes</div>
+          </div>
         </div>
-
-
+      </a>
     </div>
-
-
-
-
-
-
-
-
-
-    <div class="col-lg-3 col-6">
-
-
-        <div class="small-box bg-danger">
-
-
-            <div class="inner">
-
-
-                <h3>
-                    7
-                </h3>
-
-
-                <p>
-                    Alertas
-                </p>
-
-
-            </div>
-
-
-            <div class="icon">
-
-
-                <i class="bi bi-bell"></i>
-
-
-            </div>
-
-
+    <div class="col-xl-3 col-md-6">
+      <a th:href="@{/concursos}" class="d-block text-decoration-none h-100">
+        <div class="stat-card stat-amber">
+          <div class="stat-card-icon"><i class="bi bi-trophy"></i></div>
+          <div>
+            <div class="stat-card-value" th:text="${cantidadConcursosAbiertos}">0</div>
+            <div class="stat-card-label">Concursos abiertos</div>
+          </div>
         </div>
-
-
+      </a>
     </div>
+  </div>
 
-
-
-
-
-</div>
-
-
-
-
-
-
-
-
-
-<!-- Gráfico -->
-
-<div class="card">
-
-
-
-
-
-    <div class="card-header">
-
-
-        <h5 class="mb-0">
-
-
-            <i class="bi bi-graph-up me-2"></i>
-
-
-            Estadísticas generales
-
-
-
-        </h5>
-
-
-
+  <!-- ============ Suplentes vigentes ============ -->
+  <div class="card" id="seccionSuplentes" style="scroll-margin-top: 80px;">
+    <div class="card-header d-flex flex-wrap align-items-center gap-2">
+      <h3 class="card-title mb-0">Suplentes vigentes</h3>
+      <span class="badge text-bg-secondary" th:text="${#lists.size(suplentesVigentes)} + ' registro(s)'"></span>
+      <button type="button" class="btn btn-sm btn-outline-secondary ms-auto"
+              th:if="${!suplentesVigentes.isEmpty()}"
+              data-export-csv="#tablaSuplentes" data-export-name="suplentes-vigentes">
+        <i class="bi bi-download me-1"></i>CSV
+      </button>
     </div>
+    <div class="card-body">
+      <div class="table-responsive" th:if="${!suplentesVigentes.isEmpty()}">
+        <table class="table" id="tablaSuplentes">
+          <thead>
+          <tr>
+            <th>Docente</th>
+            <th>Cargo</th>
+            <th>Materia</th>
+            <th>Carácter</th>
+            <th>Inicio efectiva</th>
+            <th>Fin definitiva</th>
+            <th>Estado</th>
+          </tr>
+          </thead>
+          <tbody>
+          <tr th:each="item : ${suplentesVigentes}">
+            <td>
+              <a class="fw-semibold text-decoration-none"
+                 th:href="@{/docentes/{id}(id=${item.designacion.docente.id})}"
+                 th:text="${item.designacion.docente.apellido + ', ' + item.designacion.docente.nombre}"></a>
+            </td>
+            <td th:text="${item.cargo != null ? item.cargo.descripcion : 'Sin cargo'}"></td>
+            <td th:text="${item.cargo != null and item.cargo.materia != null ? item.cargo.materia.nombre : '—'}"></td>
+            <td>
+              <span class="badge text-bg-secondary"
+                    th:text="${#strings.capitalize(#strings.toLowerCase(#strings.replace(item.designacion.caracterDesignacion.toString(), '_', ' ')))}"></span>
+            </td>
+            <td th:text="${item.designacion.fechaInicioEfectiva != null ? #temporals.format(item.designacion.fechaInicioEfectiva, 'dd/MM/yyyy') : '—'}"></td>
+            <td th:text="${item.designacion.fechaFinDefinitiva != null ? #temporals.format(item.designacion.fechaFinDefinitiva, 'dd/MM/yyyy') : '—'}"></td>
+            <td><span class="badge text-bg-success">Activo</span></td>
+          </tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="empty-state" th:if="${suplentesVigentes.isEmpty()}">
+        <i class="bi bi-person-x"></i>
+        <p class="empty-title">No hay suplentes vigentes</p>
+        <p>Las designaciones activas con carácter de suplencia aparecerán en esta sección.</p>
+      </div>
+    </div>
+  </div>
 
+  <!-- ============ Historial de designaciones ============ -->
+  <div class="card">
+    <div class="card-header d-flex flex-wrap align-items-center gap-2">
+      <h3 class="card-title mb-0">Historial de designaciones</h3>
+      <span class="badge text-bg-secondary" th:text="${#lists.size(historialDesignaciones)} + ' registro(s)'"></span>
+      <button type="button" class="btn btn-sm btn-outline-secondary ms-auto"
+              th:if="${!historialDesignaciones.isEmpty()}"
+              data-export-csv="#tablaHistorial" data-export-name="historial-designaciones">
+        <i class="bi bi-download me-1"></i>CSV
+      </button>
+    </div>
+    <div class="card-body">
+      <div class="table-responsive" th:if="${!historialDesignaciones.isEmpty()}">
+        <table class="table" id="tablaHistorial">
+          <thead>
+          <tr>
+            <th>Docente</th>
+            <th>Cargo</th>
+            <th>Carácter</th>
+            <th>Inicio efectiva</th>
+            <th>Fin definitiva</th>
+            <th>Estado</th>
+          </tr>
+          </thead>
+          <tbody>
+          <tr th:each="item : ${historialDesignaciones}">
+            <td>
+              <a class="fw-semibold text-decoration-none"
+                 th:href="@{/docentes/{id}(id=${item.designacion.docente.id})}"
+                 th:text="${item.designacion.docente.apellido + ', ' + item.designacion.docente.nombre}"></a>
+            </td>
+            <td th:text="${item.cargo != null ? item.cargo.descripcion : 'Sin cargo'}"></td>
+            <td>
+              <span class="badge"
+                    th:classappend="${item.designacion.caracterDesignacion == T(com.elvarest.cliente.dto.enums.CaracterDesignacion).EFECTIVO ? ' text-bg-primary' : ' text-bg-secondary'}"
+                    th:text="${item.designacion.caracterDesignacion != null ? #strings.capitalize(#strings.toLowerCase(#strings.replace(item.designacion.caracterDesignacion.toString(), '_', ' '))) : '—'}"></span>
+            </td>
+            <td th:text="${item.designacion.fechaInicioEfectiva != null ? #temporals.format(item.designacion.fechaInicioEfectiva, 'dd/MM/yyyy') : '—'}"></td>
+            <td th:text="${item.designacion.fechaFinDefinitiva != null ? #temporals.format(item.designacion.fechaFinDefinitiva, 'dd/MM/yyyy') : '—'}"></td>
+            <td>
+              <span class="badge text-bg-success"
+                    th:if="${item.designacion.estadoDesignacion == T(com.elvarest.cliente.dto.enums.EstadoDesignacion).ACTIVO}">Activo</span>
+              <span class="badge text-bg-warning"
+                    th:if="${item.designacion.estadoDesignacion == T(com.elvarest.cliente.dto.enums.EstadoDesignacion).PENDIENTE}">Pendiente</span>
+              <span class="badge text-bg-secondary"
+                    th:if="${item.designacion.estadoDesignacion == T(com.elvarest.cliente.dto.enums.EstadoDesignacion).FINALIZADO}">Finalizado</span>
+              <span class="badge text-bg-secondary" th:if="${item.designacion.estadoDesignacion == null}">—</span>
+            </td>
+          </tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="empty-state" th:if="${historialDesignaciones.isEmpty()}">
+        <i class="bi bi-clock-history"></i>
+        <p class="empty-title">Sin designaciones registradas</p>
+        <p>Las designaciones que se registren quedarán disponibles en este historial.</p>
+      </div>
+    </div>
+  </div>
 
-
-
-
-
-
+  <!-- ============ Concursos ============ -->
+  <div class="card mb-0">
+    <div class="card-header d-flex flex-wrap align-items-center gap-2">
+      <h3 class="card-title mb-0">Concursos</h3>
+      <span class="badge text-bg-secondary" th:text="${#lists.size(concursosReporte)} + ' registro(s)'"></span>
+      <button type="button" class="btn btn-sm btn-outline-secondary ms-auto"
+              th:if="${!concursosReporte.isEmpty()}"
+              data-export-csv="#tablaConcursos" data-export-name="concursos">
+        <i class="bi bi-download me-1"></i>CSV
+      </button>
+    </div>
     <div class="card-body">
 
-
-
-
-
-        <canvas id="reportesChart" height="100"></canvas>
-
-
-
-
-
-
-    </div>
-
-
-
-
-
-
-
-</div>
-
-
-
-
-
-
-
-
-
-<!-- Reportes disponibles -->
-
-<div class="card mt-4">
-
-
-
-
-
-    <div class="card-header">
-
-
-        <h5 class="mb-0">
-
-
-            <i class="bi bi-file-earmark-bar-graph me-2"></i>
-
-
-            Reportes disponibles
-
-
-
-        </h5>
-
-
-
-    </div>
-
-
-
-
-
-
-
-    <div class="card-body">
-
-
-
-
-
-        <div class="row">
-
-
-
-
-
-            <div class="col-md-6">
-
-
-
-                <div class="form-check mb-3">
-
-
-                    <input 
-                        class="form-check-input"
-                        type="radio"
-                        name="reporte"
-                    >
-
-
-                    <label class="form-check-label">
-
-
-                        Docentes
-
-
-                    </label>
-
-
-                </div>
-
-
-
-
-
-
-
-                <div class="form-check mb-3">
-
-
-                    <input 
-                        class="form-check-input"
-                        type="radio"
-                        name="reporte"
-                    >
-
-
-                    <label class="form-check-label">
-
-
-                        Licencias
-
-
-                    </label>
-
-
-                </div>
-
-
-
-            </div>
-
-
-
-
-
-
-
-
-
-            <div class="col-md-6">
-
-
-
-                <div class="form-check mb-3">
-
-
-                    <input 
-                        class="form-check-input"
-                        type="radio"
-                        name="reporte"
-                    >
-
-
-                    <label class="form-check-label">
-
-
-                        Usuarios
-
-
-                    </label>
-
-
-                </div>
-
-
-
-
-
-
-
-                <div class="form-check mb-3">
-
-
-                    <input 
-                        class="form-check-input"
-                        type="radio"
-                        name="reporte"
-                    >
-
-
-                    <label class="form-check-label">
-
-
-                        Académica
-
-
-                    </label>
-
-
-                </div>
-
-
-
-            </div>
-
-
-
-
-
+      <div th:if="${!chartLabels.isEmpty()}" class="mb-4">
+        <div class="d-flex align-items-center gap-2 mb-2">
+          <i class="bi bi-bar-chart text-secondary"></i>
+          <span class="text-secondary fw-semibold" style="font-size: .82rem;">Horas cubiertas vs. disponibles por concurso abierto</span>
         </div>
-
-
-
-
-
-
-
-
-
-        <hr>
-
-
-
-
-
-
-
-        <div class="d-flex gap-2">
-
-
-
-
-
-            <button class="btn btn-danger">
-
-
-                <i class="bi bi-file-earmark-pdf"></i>
-
-
-                Exportar PDF
-
-
-
-            </button>
-
-
-
-
-
-
-
-            <button class="btn btn-success">
-
-
-                <i class="bi bi-file-earmark-excel"></i>
-
-
-                Exportar Excel
-
-
-
-            </button>
-
-
-
-
-
-
+        <div class="chart-container chart-fixed chart-wide">
+          <canvas id="reporteHorasChart"></canvas>
         </div>
+      </div>
 
-
-
-
-
-
+      <div class="table-responsive" th:if="${!concursosReporte.isEmpty()}">
+        <table class="table" id="tablaConcursos">
+          <thead>
+          <tr>
+            <th>Concurso</th>
+            <th>Cargo</th>
+            <th>Fecha</th>
+            <th>Estado</th>
+            <th>Horas</th>
+            <th>Postulantes</th>
+          </tr>
+          </thead>
+          <tbody>
+          <tr th:each="reporte : ${concursosReporte}"
+              th:with="disponibles=${reporte.horasDisponibles == null ? 0 : reporte.horasDisponibles},
+                       cubiertas=${reporte.horasTotales != null ? reporte.horasTotales - (reporte.horasDisponibles == null ? 0 : reporte.horasDisponibles) : 0}">
+            <td>
+              <a class="fw-semibold text-decoration-none"
+                 th:href="@{/concursos/{id}(id=${reporte.concurso.id})}"
+                 th:text="${reporte.concurso.descripcion != null and !reporte.concurso.descripcion.isBlank() ? reporte.concurso.descripcion : 'Concurso sin descripción'}"></a>
+              <span class="badge text-bg-info ms-1" th:if="${reporte.rellamado}">Rellamado</span>
+            </td>
+            <td th:text="${reporte.concurso.cargo != null ? reporte.concurso.cargo.descripcion : 'Sin cargo'}"></td>
+            <td th:text="${reporte.concurso.fechaConcurso != null ? #temporals.format(reporte.concurso.fechaConcurso, 'dd/MM/yyyy HH:mm') : (reporte.concurso.fechaCierre != null ? #temporals.format(reporte.concurso.fechaCierre, 'dd/MM/yyyy') : (reporte.concurso.fechaApertura != null ? #temporals.format(reporte.concurso.fechaApertura, 'dd/MM/yyyy') : '—'))}"></td>
+            <td>
+              <span class="badge text-bg-success" th:if="${!reporte.cerrado}">Abierto</span>
+              <span class="badge text-bg-secondary" th:if="${reporte.cerrado}">Cerrado</span>
+              <span class="badge text-bg-warning" th:if="${!reporte.cerrado and reporte.listoParaCierre}">Listo para cerrar</span>
+            </td>
+            <td style="min-width: 150px;">
+              <div th:if="${reporte.horasTotales != null}">
+                <span class="small" th:text="${cubiertas} + ' / ' + ${reporte.horasTotales} + ' h cubiertas'"></span>
+                <div class="hours-progress mt-1">
+                  <div class="progress-bar"
+                       th:classappend="${disponibles <= 0 ? 'bg-full' : ''}"
+                       th:style="'width:' + ${reporte.horasTotales > 0 ? (100 * cubiertas / reporte.horasTotales) : 0} + '%'"></div>
+                </div>
+                <span class="text-secondary" style="font-size: .76rem;" th:text="${disponibles} + ' h disponibles'"></span>
+              </div>
+              <span class="text-secondary small" th:if="${reporte.horasTotales == null}">Sin horas configuradas</span>
+            </td>
+            <td th:text="${reporte.postulantesVigentes}"></td>
+          </tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="empty-state" th:if="${concursosReporte.isEmpty()}">
+        <i class="bi bi-trophy"></i>
+        <p class="empty-title">No hay concursos registrados</p>
+        <p>Cree un concurso para comenzar a registrar la toma de horas de los docentes.</p>
+        <a class="btn btn-primary mt-3" th:href="@{/concursos/nuevo}">
+          <i class="bi bi-plus-lg me-1"></i>Crear concurso
+        </a>
+      </div>
     </div>
+  </div>
 
+</section>
 
-
-
-
-
-
-</div>
-
-
-
-
-
-
-
-
-
+<section id="scripts" th:if="${!chartLabels.isEmpty()}">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+  <script th:inline="javascript">
+    (function () {
+      var canvas = document.getElementById('reporteHorasChart');
+      if (!canvas || typeof Chart === 'undefined') { return; }
+      var labels = /*[[${chartLabels}]]*/ [];
+      var cubiertas = /*[[${chartCubiertas}]]*/ [];
+      var disponibles = /*[[${chartDisponibles}]]*/ [];
+      new Chart(canvas, {
+        type: 'bar',
+        data: {
+          labels: labels,
+          datasets: [
+            { label: 'Horas cubiertas', data: cubiertas, backgroundColor: '#059669', borderRadius: 6, maxBarThickness: 34 },
+            { label: 'Horas disponibles', data: disponibles, backgroundColor: '#f59e0b', borderRadius: 6, maxBarThickness: 34 }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          scales: {
+            x: { grid: { display: false }, ticks: { font: { size: 11 } } },
+            y: { beginAtZero: true, ticks: { precision: 0, font: { size: 11 } }, grid: { color: 'rgba(15, 23, 42, .07)' } }
+          },
+          plugins: {
+            legend: {
+              position: 'bottom',
+              labels: { boxWidth: 10, boxHeight: 10, usePointStyle: true, padding: 14, font: { size: 11 } }
+            }
+          }
+        }
+      });
+    })();
+  </script>
 </section>
 </html>

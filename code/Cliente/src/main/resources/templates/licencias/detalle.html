@@ -1,2 +1,61 @@
-<!doctype html><html lang="es" xmlns:th="http://www.thymeleaf.org" th:replace="~{base :: layout('Detalle de licencia', ~{::#encabezado}, ~{::#contenido})}">
-<section id="encabezado"><h3>Detalle de licencia</h3></section><section id="contenido"><dl><dt>Tipo</dt><dd th:text="${item.tipo}"></dd><dt>Inicio</dt><dd th:text="${item.fechaInicio}"></dd><dt>Fin</dt><dd th:text="${item.fechaFin}"></dd><dt>Renovable</dt><dd th:text="${item.renovable}"></dd></dl><a class="btn btn-secondary" th:href="@{/licencias}">Volver</a><a class="btn btn-warning" th:href="@{/licencias/{id}/editar(id=${item.id})}">Editar</a></section></html>
+<!doctype html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{base :: layout('Detalle de licencia', ~{::#encabezado}, ~{::#contenido}, '')}">
+<section id="encabezado">
+  <h3 th:attr="data-subtitle=${item.fechaInicio != null ? 'Desde el ' + #temporals.format(item.fechaInicio, 'dd/MM/yyyy') : 'Sin fecha de inicio registrada'}">
+    <span th:text="${item.tipo != null and !item.tipo.isBlank() ? item.tipo : 'Licencia sin tipo'}"></span></h3>
+</section>
+<section id="contenido">
+
+
+  <div class="card">
+    <div class="card-header d-flex align-items-center gap-2">
+      <h3 class="card-title mb-0">Datos de la licencia</h3>
+      <span class="badge rounded-pill ms-auto text-bg-secondary"
+            th:if="${item.fechaInicio == null and item.fechaFin == null}">Sin fechas</span>
+      <span class="badge rounded-pill ms-auto text-bg-warning"
+            th:if="${item.fechaFin != null and item.fechaFin.isBefore(#temporals.createToday())}">Vencida</span>
+      <span class="badge rounded-pill ms-auto text-bg-success"
+            th:if="${item.fechaInicio != null and (item.fechaFin == null or !item.fechaFin.isBefore(#temporals.createToday()))}">Vigente</span>
+    </div>
+    <div class="card-body">
+      <div class="detail-grid">
+        <div class="detail-item">
+          <dt>Tipo</dt>
+          <dd th:text="${item.tipo != null and !item.tipo.isBlank() ? item.tipo : '—'}"></dd>
+        </div>
+        <div class="detail-item">
+          <dt>Fecha de inicio</dt>
+          <dd th:text="${item.fechaInicio != null ? #temporals.format(item.fechaInicio, 'dd/MM/yyyy') : '—'}"></dd>
+        </div>
+        <div class="detail-item">
+          <dt>Fecha de fin</dt>
+          <dd th:text="${item.fechaFin != null ? #temporals.format(item.fechaFin, 'dd/MM/yyyy') : '—'}"></dd>
+        </div>
+        <div class="detail-item">
+          <dt>Renovable</dt>
+          <dd th:text="${item.renovable ? 'Sí' : 'No'}"></dd>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="list-toolbar">
+    <div class="toolbar-filters">
+      <a class="btn btn-outline-secondary" th:href="@{/licencias/list}">
+        <i class="bi bi-arrow-left me-1"></i>Volver al listado
+      </a>
+    </div>
+    <div class="d-flex flex-wrap gap-2">
+      <a class="btn btn-outline-danger" th:href="@{/licencias/baja/{id}(id=${item.id})}"
+         th:attr="data-confirm='¿Dar de baja la licencia ' + ${item.tipo != null ? item.tipo : ''} + '?'">
+        <i class="bi bi-trash me-1"></i>Eliminar
+      </a>
+      <a class="btn btn-primary" th:href="@{/licencias/{id}/editar(id=${item.id})}">
+        <i class="bi bi-pencil me-1"></i>Editar licencia
+      </a>
+    </div>
+  </div>
+
+</section>
+</html>

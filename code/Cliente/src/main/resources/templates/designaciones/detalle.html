@@ -1,2 +1,89 @@
-<!doctype html><html lang="es" xmlns:th="http://www.thymeleaf.org" th:replace="~{base :: layout('Detalle de designacion', ~{::#encabezado}, ~{::#contenido})}">
-<section id="encabezado"><h3>Detalle de designación</h3></section><section id="contenido"><dl><dt>Origen de vacancia</dt><dd th:text="${item.origenVacancia}"></dd><dt>Fecha de inicio</dt><dd th:text="${item.fechaInicioEfectiva}"></dd><dt>Fecha de fin estimada</dt><dd th:text="${item.fechaFinEstimada}"></dd><dt>Carácter</dt><dd th:text="${item.caracterDesignacion}"></dd><dt>Estado</dt><dd><span class="badge rounded-pill text-bg-success" th:text="${item.estadoDesignacion}"></span></dd></dl><div class="d-flex gap-2 mt-3"><a class="btn btn-secondary" th:href="@{/cargos}"><i class="bi bi-arrow-left me-2"></i>Volver</a><a class="btn btn-primary" th:href="@{/designaciones/{id}/editar(id=${item.id})}"><i class="bi bi-pencil me-2"></i>Editar</a></div></section></html>
+<!doctype html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{base :: layout('Detalle de designación', ~{::#encabezado}, ~{::#contenido}, '')}">
+<section id="encabezado">
+  <h3 th:attr="data-subtitle=${item.docente != null ? 'Docente: ' + item.docente.apellido + ', ' + item.docente.nombre : 'Sin docente asignado'}">
+    Detalle de designación</h3>
+</section>
+<section id="contenido">
+
+
+  <div class="card">
+    <div class="card-header d-flex align-items-center gap-2">
+      <h3 class="card-title mb-0">Datos de la designación</h3>
+      <span class="badge rounded-pill ms-auto"
+            th:classappend="${item.estadoDesignacion == T(com.elvarest.cliente.dto.enums.EstadoDesignacion).ACTIVO ? 'text-bg-success' : (item.estadoDesignacion == T(com.elvarest.cliente.dto.enums.EstadoDesignacion).PENDIENTE ? 'text-bg-warning' : 'text-bg-secondary')}"
+            th:text="${item.estadoDesignacion != null ? item.estadoDesignacion : '—'}"></span>
+    </div>
+    <div class="card-body">
+      <div class="detail-grid">
+        <div class="detail-item">
+          <dt>Docente</dt>
+          <dd>
+            <a th:if="${item.docente != null}" class="text-decoration-none"
+               th:href="@{/docentes/{id}(id=${item.docente.id})}"
+               th:text="${item.docente.apellido + ', ' + item.docente.nombre}"></a>
+            <span th:if="${item.docente == null}">Sin docente asignado</span>
+          </dd>
+        </div>
+        <div class="detail-item">
+          <dt>Carácter</dt>
+          <dd th:text="${item.caracterDesignacion != null ? item.caracterDesignacion : '—'}"></dd>
+        </div>
+        <div class="detail-item">
+          <dt>Origen de vacancia</dt>
+          <dd th:text="${item.origenVacancia != null and !item.origenVacancia.isBlank() ? item.origenVacancia : '—'}"></dd>
+        </div>
+        <div class="detail-item">
+          <dt>Fecha de inicio</dt>
+          <dd th:text="${item.fechaInicioEfectiva != null ? #temporals.format(item.fechaInicioEfectiva, 'dd/MM/yyyy') : '—'}"></dd>
+        </div>
+        <div class="detail-item">
+          <dt>Fecha de fin definitiva</dt>
+          <dd th:text="${item.fechaFinDefinitiva != null ? #temporals.format(item.fechaFinDefinitiva, 'dd/MM/yyyy') : '—'}"></dd>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card" th:if="${item.alertas != null and !item.alertas.isEmpty()}">
+    <div class="card-header d-flex align-items-center gap-2">
+      <h3 class="card-title mb-0">Alertas asociadas</h3>
+      <span class="badge text-bg-secondary ms-auto" th:text="${#lists.size(item.alertas)}"></span>
+    </div>
+    <div class="card-body">
+      <ul class="mini-list">
+        <li class="mini-item" th:each="alerta : ${item.alertas}"
+            th:classappend="${alerta.prioridad == T(com.elvarest.cliente.dto.enums.PrioridadAlerta).ALTA ? ' mini-red' : ' mini-blue'}">
+          <span class="mini-item-icon"><i class="bi bi-bell"></i></span>
+          <div class="mini-item-body">
+            <a class="mini-item-title" th:href="@{/alertas/{id}(id=${alerta.id})}"
+               th:text="${#strings.abbreviate(alerta.mensaje, 80)}"></a>
+            <div class="mini-item-meta">
+              <span class="badge rounded-pill"
+                    th:classappend="${alerta.leida ? ' badge-alert-read' : ' badge-alert-unread'}"
+                    th:text="${alerta.leida ? 'Leída' : 'Pendiente de lectura'}"></span>
+            </div>
+          </div>
+        </li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="d-flex flex-wrap gap-2 mt-3">
+    <!-- Al ingresar desde "Cargo → Ver" queda solo el botón Volver, que regresa al cargo de origen -->
+    <a th:if="${cargoOrigenId != null}" class="btn btn-outline-secondary"
+       th:href="@{/cargos/{id}(id=${cargoOrigenId})}">
+      <i class="bi bi-arrow-left me-1"></i>Volver al cargo
+    </a>
+    <a th:unless="${cargoOrigenId != null}" class="btn btn-outline-secondary"
+       th:href="@{/designaciones}">
+      <i class="bi bi-arrow-left me-1"></i>Volver al listado
+    </a>
+    <a th:if="${cargoOrigenId == null}" class="btn btn-primary" th:href="@{/designaciones/{id}/editar(id=${item.id})}">
+      <i class="bi bi-pencil me-1"></i>Editar designación
+    </a>
+  </div>
+
+</section>
+</html>

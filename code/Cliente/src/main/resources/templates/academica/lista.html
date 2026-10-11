@@ -1,9 +1,71 @@
 <!doctype html>
-<html lang="es" xmlns:th="http://www.thymeleaf.org" th:replace="~{base :: layout('Academica', ~{::#encabezado}, ~{::#contenido})}">
-<section id="encabezado"><h3>Academica</h3></section>
-<section id="contenido"><a class="btn btn-primary mb-3" th:href="@{/academica/nuevo}">Nuevo curso</a>
-  <table class="table"><thead><tr><th>Anio</th><th>Seccion</th><th>Acciones</th></tr></thead>
-  <tbody><tr th:each="item : ${items}"><td th:text="${item.anio}"></td><td th:text="${item.seccion}"></td>
-    <td><a class="btn btn-sm btn-info" th:href="@{/academica/{id}(id=${item.id})}">Ver</a> <a class="btn btn-sm btn-warning" th:href="@{/academica/{id}/editar(id=${item.id})}">Editar</a> <a class="btn btn-sm btn-danger" th:href="@{/academica/baja/{id}(id=${item.id})}">Eliminar</a></td>
-  </tr></tbody></table>
-</section></html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{base :: layout('Académica', ~{::#encabezado}, ~{::#contenido}, '')}">
+<section id="encabezado">
+  <h3 data-subtitle="Cursos registrados en la institución">Académica</h3>
+</section>
+<section id="contenido">
+
+
+  <div class="list-toolbar">
+    <div class="toolbar-search">
+      <input class="form-control" type="search" data-filter-input="#tablaCursos"
+             placeholder="Buscar por año…" aria-label="Buscar cursos">
+    </div>
+    <div class="toolbar-filters">
+      <a class="btn btn-primary" th:href="@{/academica/nuevo}">
+        <i class="bi bi-plus-lg me-1"></i>Nuevo curso
+      </a>
+    </div>
+  </div>
+
+  <div class="table-responsive" th:if="${!items.isEmpty()}">
+    <table class="table" id="tablaCursos">
+      <thead>
+      <tr>
+        <th>Curso</th>
+        <th class="text-end">Acciones</th>
+      </tr>
+      </thead>
+      <tbody>
+      <tr th:each="item : ${items}">
+        <td>
+          <a class="fw-semibold text-decoration-none" th:href="@{/academica/{id}(id=${item.id})}"
+             th:text="${item.anio} + '° Año'"></a>
+        </td>
+        <td>
+          <div class="table-actions">
+            <a class="btn btn-sm btn-outline-primary" th:href="@{/academica/{id}(id=${item.id})}">
+              <i class="bi bi-eye"></i>Ver
+            </a>
+            <a class="btn btn-sm btn-outline-secondary" th:href="@{/academica/{id}/editar(id=${item.id})}">
+              <i class="bi bi-pencil"></i>Editar
+            </a>
+            <a class="btn btn-sm btn-outline-danger" th:href="@{/academica/baja/{id}(id=${item.id})}"
+               th:attr="data-confirm=${'¿Dar de baja el curso ' + item.anio + '° Año?'}">
+              <i class="bi bi-trash"></i>Eliminar
+            </a>
+          </div>
+        </td>
+      </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="empty-state" th:if="${items.isEmpty()}">
+    <i class="bi bi-mortarboard"></i>
+    <p class="empty-title">Sin cursos registrados</p>
+    <p>Registre los cursos de la institución para asociarlos a las materias y cargos.</p>
+    <a class="btn btn-primary mt-3" th:href="@{/academica/nuevo}">
+      <i class="bi bi-plus-lg me-1"></i>Nuevo curso
+    </a>
+  </div>
+
+  <div class="empty-state d-none" data-filter-empty="tablaCursos" th:if="${!items.isEmpty()}">
+    <i class="bi bi-search"></i>
+    <p class="empty-title">Sin resultados</p>
+    <p>Ningún curso coincide con la búsqueda ingresada.</p>
+  </div>
+
+</section>
+</html>

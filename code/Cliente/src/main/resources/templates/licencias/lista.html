@@ -1,9 +1,89 @@
 <!doctype html>
-<html lang="es" xmlns:th="http://www.thymeleaf.org" th:replace="~{base :: layout('Licencias', ~{::#encabezado}, ~{::#contenido})}">
-<section id="encabezado"><h3>Licencias</h3></section>
-<section id="contenido"><a class="btn btn-primary mb-3" th:href="@{/licencias/nuevo}">Nueva licencia</a>
-  <table class="table"><thead><tr><th>Tipo</th><th>Desde</th><th>Hasta</th><th>Renovable</th><th>Acciones</th></tr></thead>
-  <tbody><tr th:each="item : ${items}"><td th:text="${item.tipo}"></td><td th:text="${item.fechaInicio}"></td><td th:text="${item.fechaFin}"></td><td th:text="${item.renovable ? 'Si' : 'No'}"></td>
-    <td><a class="btn btn-sm btn-info" th:href="@{/licencias/{id}(id=${item.id})}">Ver</a> <a class="btn btn-sm btn-warning" th:href="@{/licencias/{id}/editar(id=${item.id})}">Editar</a> <a class="btn btn-sm btn-danger" th:href="@{/licencias/baja/{id}(id=${item.id})}">Eliminar</a></td>
-  </tr></tbody></table>
-</section></html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{base :: layout('Licencias', ~{::#encabezado}, ~{::#contenido}, '')}">
+<section id="encabezado">
+  <h3 data-subtitle="Licencias registradas en el sistema">Licencias</h3>
+</section>
+<section id="contenido">
+
+
+  <div class="list-toolbar">
+    <div class="toolbar-search">
+      <input class="form-control" type="search" data-filter-input="#tablaLicencias"
+             placeholder="Buscar por tipo o fecha…" aria-label="Buscar licencias">
+    </div>
+    <div class="toolbar-filters">
+      <a class="btn btn-primary" th:href="@{/licencias/nuevo}">
+        <i class="bi bi-plus-lg me-1"></i>Nueva licencia
+      </a>
+    </div>
+  </div>
+
+  <div class="table-responsive" th:if="${!items.isEmpty()}">
+    <table class="table" id="tablaLicencias">
+      <thead>
+      <tr>
+        <th>Tipo</th>
+        <th>Inicio</th>
+        <th>Fin</th>
+        <th>Estado</th>
+        <th>Renovable</th>
+        <th class="text-end">Acciones</th>
+      </tr>
+      </thead>
+      <tbody>
+      <tr th:each="item : ${items}">
+        <td>
+          <a class="fw-semibold text-decoration-none" th:href="@{/licencias/{id}(id=${item.id})}"
+             th:text="${item.tipo != null and !item.tipo.isBlank() ? item.tipo : 'Sin tipo'}"></a>
+        </td>
+        <td th:text="${item.fechaInicio != null ? #temporals.format(item.fechaInicio, 'dd/MM/yyyy') : '—'}"></td>
+        <td th:text="${item.fechaFin != null ? #temporals.format(item.fechaFin, 'dd/MM/yyyy') : '—'}"></td>
+        <td>
+          <span class="badge rounded-pill text-bg-secondary"
+                th:if="${item.fechaInicio == null and item.fechaFin == null}">Sin fechas</span>
+          <span class="badge rounded-pill text-bg-warning"
+                th:if="${item.fechaFin != null and item.fechaFin.isBefore(#temporals.createToday())}">Vencida</span>
+          <span class="badge rounded-pill text-bg-success"
+                th:if="${item.fechaInicio != null and (item.fechaFin == null or !item.fechaFin.isBefore(#temporals.createToday()))}">Vigente</span>
+        </td>
+        <td>
+          <span class="badge rounded-pill text-bg-success" th:if="${item.renovable}">Sí</span>
+          <span class="badge rounded-pill text-bg-secondary" th:if="${!item.renovable}">No</span>
+        </td>
+        <td>
+          <div class="table-actions">
+            <a class="btn btn-sm btn-outline-primary" th:href="@{/licencias/{id}(id=${item.id})}">
+              <i class="bi bi-eye"></i>Ver
+            </a>
+            <a class="btn btn-sm btn-outline-secondary" th:href="@{/licencias/{id}/editar(id=${item.id})}">
+              <i class="bi bi-pencil"></i>Editar
+            </a>
+            <a class="btn btn-sm btn-outline-danger" th:href="@{/licencias/baja/{id}(id=${item.id})}"
+               th:attr="data-confirm='¿Dar de baja la licencia ' + ${item.tipo != null ? item.tipo : ''} + '?'">
+              <i class="bi bi-trash"></i>Eliminar
+            </a>
+          </div>
+        </td>
+      </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="empty-state" th:if="${items.isEmpty()}">
+    <i class="bi bi-calendar-x"></i>
+    <p class="empty-title">Sin licencias registradas</p>
+    <p>Registre una licencia para llevar el control de ausencias del personal.</p>
+    <a class="btn btn-primary mt-3" th:href="@{/licencias/nuevo}">
+      <i class="bi bi-plus-lg me-1"></i>Nueva licencia
+    </a>
+  </div>
+
+  <div class="empty-state d-none" data-filter-empty="tablaLicencias" th:if="${!items.isEmpty()}">
+    <i class="bi bi-search"></i>
+    <p class="empty-title">Sin resultados</p>
+    <p>Ninguna licencia coincide con la búsqueda ingresada.</p>
+  </div>
+
+</section>
+</html>

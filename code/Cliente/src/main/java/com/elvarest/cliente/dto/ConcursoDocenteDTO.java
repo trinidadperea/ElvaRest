@@ -1,8 +1,6 @@
 package com.elvarest.cliente.dto;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
+import com.elvarest.cliente.dto.enums.EstadoPostulacion;
 import lombok.Getter;
 import lombok.Setter;
 import org.springframework.format.annotation.DateTimeFormat;
@@ -17,4 +15,12 @@ public class ConcursoDocenteDTO extends BaseDTO{
     private ConcursoDTO concurso;
     private DocenteDTO docente;
     private boolean ganador;
+
+    // --- Campos del flujo de toma de horas (persistidos en el Servidor) ---
+    private Integer horasElegidas;
+    private EstadoPostulacion estadoPostulacion;
+    private Boolean certificadosRecibidos;
+    private Boolean requiereVencimientoCertificados;
+    private Integer mesesVigencia;
+    private String observacion;
 }

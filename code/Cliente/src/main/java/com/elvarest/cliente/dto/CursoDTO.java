@@ -8,5 +8,4 @@ import lombok.Setter;
 public class CursoDTO extends BaseDTO {
 
     private int anio;
-    private String seccion;
 }

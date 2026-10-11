@@ -8,7 +8,6 @@ import lombok.Setter;
 @Getter
 @Setter
 public class DocenteDTO extends PersonaDTO {
-    private double puntaje;
     private boolean activo;
     private boolean interno;
     private String area;

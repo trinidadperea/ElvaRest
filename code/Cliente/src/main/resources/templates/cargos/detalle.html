@@ -1,0 +1,117 @@
+<!doctype html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{base :: layout('Detalle del cargo', ~{::#encabezado}, ~{::#contenido}, '')}">
+<section id="encabezado">
+  <h3 th:attr="data-subtitle=${item.materia != null ? 'Materia: ' + item.materia.nombre : 'Sin materia asignada'}">
+    <span th:text="${item.descripcion}"></span></h3>
+</section>
+<section id="contenido">
+
+
+  <!-- ============ Datos del cargo ============ -->
+  <div class="card">
+    <div class="card-header d-flex align-items-center gap-2">
+      <h3 class="card-title mb-0">Datos del cargo</h3>
+      <span class="badge rounded-pill ms-auto"
+            th:classappend="${vacante ? 'text-bg-warning' : 'text-bg-success'}"
+            th:text="${vacante ? 'Vacante' : 'Ocupado'}"></span>
+    </div>
+    <div class="card-body">
+      <div class="detail-grid">
+        <div class="detail-item">
+          <dt>Carga horaria</dt>
+          <dd th:text="${item.cargaHoraria} + ' h'"></dd>
+        </div>
+        <div class="detail-item">
+          <dt>Materia</dt>
+          <dd th:text="${item.materia != null ? item.materia.nombre : 'Sin materia asignada'}"></dd>
+        </div>
+        <div class="detail-item">
+          <dt>Curso</dt>
+          <dd th:text="${item.materia != null and item.materia.curso != null ? item.materia.curso.anio + '° Año' : '—'}"></dd>
+        </div>
+        <div class="detail-item">
+          <dt>Designaciones activas</dt>
+          <dd th:text="${designacionesActivas}"></dd>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ Designaciones ============ -->
+  <div class="card">
+    <div class="card-header d-flex align-items-center gap-2">
+      <h3 class="card-title mb-0">Designaciones del cargo</h3>
+    </div>
+    <div class="card-body">
+      <div class="table-responsive" th:if="${!designaciones.isEmpty()}">
+        <table class="table">
+          <thead>
+          <tr>
+            <th>Docente</th>
+            <th>Designación</th>
+            <th>Carga horaria</th>
+            <th>Fecha inicio</th>
+            <th>Fecha fin</th>
+            <th>Estado</th>
+            <th class="text-end">Acciones</th>
+          </tr>
+          </thead>
+          <tbody>
+          <tr th:each="designacion : ${designaciones}">
+            <td>
+              <span class="fw-semibold"
+                    th:text="${designacion.docente != null ? designacion.docente.apellido + ', ' + designacion.docente.nombre : 'Sin docente asignado'}"></span>
+            </td>
+            <td>
+              <span class="badge rounded-pill text-bg-secondary"
+                    th:text="${designacion.caracterDesignacion != null ? designacion.caracterDesignacion : '—'}"></span>
+            </td>
+            <td th:text="${horasDesignacion[designacion.id] != null ? horasDesignacion[designacion.id] + ' h' : item.cargaHoraria + ' h'}"></td>
+            <td th:text="${designacion.fechaInicioEfectiva != null ? #temporals.format(designacion.fechaInicioEfectiva, 'dd/MM/yyyy') : '—'}"></td>
+            <td th:text="${designacion.fechaFinDefinitiva != null ? #temporals.format(designacion.fechaFinDefinitiva, 'dd/MM/yyyy') : ''}"></td>
+            <td>
+              <span class="badge rounded-pill"
+                    th:classappend="${designacion.estadoDesignacion == T(com.elvarest.cliente.dto.enums.EstadoDesignacion).ACTIVO ? 'text-bg-success' : (designacion.estadoDesignacion == T(com.elvarest.cliente.dto.enums.EstadoDesignacion).PENDIENTE ? 'text-bg-warning' : 'text-bg-secondary')}"
+                    th:text="${designacion.estadoDesignacion != null ? designacion.estadoDesignacion : '—'}"></span>
+            </td>
+            <td>
+              <div class="table-actions">
+                <a class="btn btn-sm btn-outline-primary"
+                   th:href="@{/designaciones/{id}(id=${designacion.id}, cargoId=${item.id})}">
+                  <i class="bi bi-eye"></i>Ver
+                </a>
+                <a class="btn btn-sm btn-outline-secondary"
+                   th:href="@{/designaciones/{id}/editar(id=${designacion.id}, cargoId=${item.id})}">
+                  <i class="bi bi-pencil"></i>Editar
+                </a>
+              </div>
+            </td>
+          </tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="empty-state" th:if="${designaciones.isEmpty()}">
+        <i class="bi bi-clipboard-x"></i>
+        <p class="empty-title">Sin designaciones registradas</p>
+        <p>Este cargo no tiene designaciones. Registrar una toma de horas en un concurso o cree una designación manualmente.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ Acciones ============ -->
+  <div class="list-toolbar">
+    <div class="toolbar-filters">
+      <a class="btn btn-outline-secondary" th:href="@{/cargos}">
+        <i class="bi bi-arrow-left me-1"></i>Volver al listado
+      </a>
+    </div>
+    <div class="d-flex flex-wrap gap-2">
+      <a class="btn btn-outline-primary" th:href="@{/concursos/nuevo-desde-cargo/{id}(id=${item.id})}">
+        <i class="bi bi-trophy me-1"></i>Abrir concurso para este cargo
+      </a>
+    </div>
+  </div>
+
+</section>
+</html>
