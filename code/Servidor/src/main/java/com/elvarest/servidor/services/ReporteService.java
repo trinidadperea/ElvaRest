@@ -40,9 +40,9 @@ public class ReporteService extends BaseService<Reporte, Long> {
                 .orElseThrow(() ->
                         new RuntimeException("Concurso no encontrado"));
 
-        List<ConcursoDocente> ordenMerito =
+        /*List<ConcursoDocente> ordenMerito =
                 concursoDocenteRepository
-                        .findByConcursoIdOrderByDocentePuntajeDesc(concursoId);
+                        .findByConcursoIdOrderByDocentePuntajeDesc(concursoId);*/
 
         try {
             ByteArrayOutputStream outputStream =
@@ -56,7 +56,7 @@ public class ReporteService extends BaseService<Reporte, Long> {
 
             agregarTitulo(documento);
             agregarDatosConcurso(documento, concurso);
-            agregarOrdenMerito(documento, ordenMerito);
+            //agregarOrdenMerito(documento, ordenMerito);
             agregarFechaGeneracion(documento);
 
             documento.close();
@@ -139,7 +139,7 @@ public class ReporteService extends BaseService<Reporte, Long> {
         documento.add(new Paragraph(" "));
     }
 
-    private void agregarOrdenMerito(
+    /*private void agregarOrdenMerito(
             Document documento,
             List<ConcursoDocente> ordenMerito)
             throws DocumentException {
@@ -215,7 +215,7 @@ public class ReporteService extends BaseService<Reporte, Long> {
         }
 
         documento.add(tabla);
-    }
+    }*/
 
     private void agregarCeldaEncabezado(
             PdfPTable tabla,

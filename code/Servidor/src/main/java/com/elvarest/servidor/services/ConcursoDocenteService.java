@@ -21,7 +21,7 @@ public class ConcursoDocenteService
 
     public List<ConcursoDocente> obtenerOrdenMerito(Long concursoId) {
         return concursoDocenteRepository
-                .findByConcursoIdOrderByDocentePuntajeDesc(concursoId);
+                .findByConcursoIdOrderByIdAsc(concursoId);
     }
 
     public boolean docenteYaPostulado(

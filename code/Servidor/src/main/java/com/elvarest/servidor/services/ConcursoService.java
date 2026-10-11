@@ -116,7 +116,7 @@ public class ConcursoService extends BaseService<Concurso, Long> {
 
         List<ConcursoDocente> ordenMerito =
                 concursoDocenteRepository
-                        .findByConcursoIdOrderByDocentePuntajeDesc(concursoId);
+                        .findByConcursoIdOrderByIdAsc(concursoId);
 
         if (ordenMerito.isEmpty()) {
             return null;
@@ -131,7 +131,7 @@ public class ConcursoService extends BaseService<Concurso, Long> {
 
         List<ConcursoDocente> ordenMerito =
                 concursoDocenteRepository
-                        .findByConcursoIdOrderByDocentePuntajeDesc(concursoId);
+                        .findByConcursoIdOrderByIdAsc(concursoId);
 
         for (int i = 0; i < ordenMerito.size(); i++) {
 

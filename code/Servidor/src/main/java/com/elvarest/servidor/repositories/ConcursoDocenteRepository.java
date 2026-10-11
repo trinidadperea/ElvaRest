@@ -7,7 +7,7 @@ import java.util.List;
 public interface ConcursoDocenteRepository
         extends BaseRepository<ConcursoDocente, Long> {
 
-    List<ConcursoDocente> findByConcursoIdOrderByDocentePuntajeDesc(
+    List<ConcursoDocente> findByConcursoIdOrderByIdAsc(
             Long concursoId
     );
 
