@@ -80,9 +80,9 @@ public class DocenteService extends BaseService<Docente, Long> {
 
     @Override
     protected void validar(Docente entidad) throws ErrorServiceException {
-        if (entidad.getPuntaje() < 0) {
+        /*if (entidad.getPuntaje() < 0) {
             throw new ErrorServiceException("El puntaje no puede ser negativo");
-        }
+        }*/
         if (entidad.getArea() == null || entidad.getArea().isBlank()) {
             throw new ErrorServiceException("El área es obligatoria");
         }
