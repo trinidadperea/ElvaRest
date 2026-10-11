@@ -34,6 +34,10 @@
           <dt>Fecha de emisión</dt>
           <dd th:text="${item.fechaEmision != null ? #temporals.format(item.fechaEmision, 'dd/MM/yyyy') : '—'}"></dd>
         </div>
+        <div class="detail-item" th:if="${item.fechaVencimiento != null}">
+          <dt>Fecha de vencimiento</dt>
+          <dd th:text="${#temporals.format(item.fechaVencimiento, 'dd/MM/yyyy')}"></dd>
+        </div>
         <div class="detail-item">
           <dt>Requiere vencimiento</dt>
           <dd th:text="${item.requiereVencimiento ? 'Sí' : 'No'}"></dd>

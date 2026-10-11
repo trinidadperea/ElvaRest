@@ -14,6 +14,8 @@ import java.time.LocalDate;
 public class CertificadoDTO extends BaseDTO{
     @DateTimeFormat(pattern = "yyyy-MM-dd")
     private LocalDate fechaEmision;
+    @DateTimeFormat(pattern = "yyyy-MM-dd")
+    private LocalDate fechaVencimiento;
     private boolean requiereVencimiento;
     private boolean presentado;
     private DocenteDTO docente;

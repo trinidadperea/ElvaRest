@@ -39,6 +39,12 @@
       <div class="form-text">Indique si el certificado tiene fecha de vencimiento según su tipo.</div>
     </div>
     <div class="mb-3">
+      <label for="fechaVencimiento">Fecha de vencimiento</label>
+      <input class="form-control" id="fechaVencimiento" type="date" th:field="*{fechaVencimiento}"
+             th:required="${item.requiereVencimiento}">
+      <div class="form-text">Complete solo si el certificado requiere vencimiento.</div>
+    </div>
+    <div class="mb-3">
       <label class="form-check mb-0">
         <input class="form-check-input" type="checkbox" th:field="*{presentado}">
         Presentado
@@ -56,5 +62,21 @@
     </div>
   </form>
 
+  <script>
+    (function () {
+      var requiere = document.getElementById('requiereVencimiento');
+      var vencimiento = document.getElementById('fechaVencimiento');
+      if (!requiere || !vencimiento) { return; }
+
+      var sincronizar = function () {
+        vencimiento.required = requiere.checked;
+        if (!requiere.checked) {
+          vencimiento.value = '';
+        }
+      };
+      requiere.addEventListener('change', sincronizar);
+      sincronizar();
+    })();
+  </script>
 </section>
 </html>
