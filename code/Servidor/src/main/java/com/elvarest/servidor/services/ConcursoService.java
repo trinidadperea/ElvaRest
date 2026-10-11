@@ -8,12 +8,16 @@ import com.elvarest.servidor.entities.enums.EstadoDesignacion;
 import com.elvarest.servidor.entities.enums.EstadoPostulacion;
 import com.elvarest.servidor.exceptions.ErrorServiceException;
 import com.elvarest.servidor.repositories.ConcursoDocenteRepository;
+import com.elvarest.servidor.entities.ConcursoDocente;
+import com.elvarest.servidor.entities.Docente;
 import com.elvarest.servidor.repositories.ConcursoRepository;
 import com.elvarest.servidor.repositories.DesignacionRepository;
 import org.springframework.stereotype.Service;
 
 import java.util.Objects;
 import java.util.Optional;
+
+import java.util.List;
 
 @Service
 public class ConcursoService extends BaseService<Concurso, Long> {
@@ -106,5 +110,46 @@ public class ConcursoService extends BaseService<Concurso, Long> {
         }
         String esperado = concurso.getDescripcion() != null ? "Concurso: " + concurso.getDescripcion() : null;
         return esperado != null && esperado.equals(designacion.getOrigenVacancia());
+    }
+
+    public Docente obtenerPrimero(Long concursoId) {
+
+        List<ConcursoDocente> ordenMerito =
+                concursoDocenteRepository
+                        .findByConcursoIdOrderByDocentePuntajeDesc(concursoId);
+
+        if (ordenMerito.isEmpty()) {
+            return null;
+        }
+
+        return ordenMerito.get(0).getDocente();
+    }
+
+    public Docente obtenerSiguienteEnOrden(
+            Long concursoId,
+            Long idDocenteActual) {
+
+        List<ConcursoDocente> ordenMerito =
+                concursoDocenteRepository
+                        .findByConcursoIdOrderByDocentePuntajeDesc(concursoId);
+
+        for (int i = 0; i < ordenMerito.size(); i++) {
+
+            Docente docenteActual =
+                    ordenMerito.get(i).getDocente();
+
+            if (docenteActual.getId().equals(idDocenteActual)) {
+
+                if (i + 1 < ordenMerito.size()) {
+                    return ordenMerito
+                            .get(i + 1)
+                            .getDocente();
+                }
+
+                return null;
+            }
+        }
+
+        return null;
     }
 }

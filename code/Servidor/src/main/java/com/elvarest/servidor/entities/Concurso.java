@@ -13,7 +13,7 @@ import java.time.LocalDate;
 @NoArgsConstructor
 @AllArgsConstructor
 @Entity
-public class Concurso extends BaseEntity<Long>{
+public class Concurso extends BaseEntity<Long> {
 
     @Column(nullable = false)
     private LocalDate fechaApertura;
@@ -49,4 +49,15 @@ public class Concurso extends BaseEntity<Long>{
 
     /** Horas remanentes transferidas a un rellamado: el concurso origen queda sin horas disponibles. */
     private Integer horasTransferidas;
+
+    //Esto deberia ir en service
+    public boolean estaVigente() {
+        LocalDate hoy = LocalDate.now();
+
+        return estadoConcurso == EstadoConcurso.EN_PROCESO
+                && !hoy.isBefore(fechaApertura)
+                && !hoy.isAfter(fechaCierre);
+    }
 }
+
+
