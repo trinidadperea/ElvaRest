@@ -19,6 +19,8 @@ public class Certificado extends BaseEntity<Long> {
     @Column(nullable = false)
     private boolean requiereVencimiento;
 
+    private LocalDate fechaVencimiento;
+
     private boolean presentado;
 
     @ManyToOne
@@ -28,4 +30,11 @@ public class Certificado extends BaseEntity<Long> {
     @ManyToOne
     @JoinColumn(name = "tipo_certificado_id")
     private TipoCertificado tipoCertificado;
+
+    public boolean esVigente() {
+        if (!requiereVencimiento) {
+            return true;
+        }
+        return fechaVencimiento != null && !fechaVencimiento.isBefore(LocalDate.now());
+    }
 }
