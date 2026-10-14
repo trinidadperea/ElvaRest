@@ -13,11 +13,19 @@ import com.elvarest.cliente.services.ConcursoService;
 import com.elvarest.cliente.services.DesignacionService;
 import com.elvarest.cliente.services.DocenteService;
 import com.elvarest.cliente.services.FlujoConcursoService;
+import com.elvarest.cliente.services.ReporteService;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.client.HttpClientErrorException;
 
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -42,16 +50,42 @@ public class ReporteController {
     private final ConcursoService concursoService;
     private final ConcursoDocenteService concursoDocenteService;
     private final FlujoConcursoService flujoService;
+    private final ReporteService reporteService;
 
     public ReporteController(DocenteService docenteService, CargoService cargoService,
                              DesignacionService designacionService, ConcursoService concursoService,
-                             ConcursoDocenteService concursoDocenteService, FlujoConcursoService flujoService) {
+                             ConcursoDocenteService concursoDocenteService, FlujoConcursoService flujoService,
+                             ReporteService reporteService) {
         this.docenteService = docenteService;
         this.cargoService = cargoService;
         this.designacionService = designacionService;
         this.concursoService = concursoService;
         this.concursoDocenteService = concursoDocenteService;
         this.flujoService = flujoService;
+        this.reporteService = reporteService;
+    }
+
+    /** PDF de un concurso generado por el Servidor; se abre en una pestaña nueva del navegador. */
+    @GetMapping("/concurso/{concursoId}/pdf")
+    public ResponseEntity<byte[]> pdfConcurso(@PathVariable Long concursoId) {
+        try {
+            byte[] pdf = reporteService.pdfConcurso(concursoId);
+            return ResponseEntity.ok()
+                    .header(HttpHeaders.CONTENT_DISPOSITION,
+                            "inline; filename=reporte-concurso-" + concursoId + ".pdf")
+                    .contentType(MediaType.APPLICATION_PDF)
+                    .body(pdf);
+        } catch (HttpClientErrorException.NotFound e) {
+            return mensajeError(HttpStatus.NOT_FOUND, "El concurso solicitado no existe o fue eliminado.");
+        } catch (Exception e) {
+            return mensajeError(HttpStatus.BAD_GATEWAY, "No se pudo generar el reporte del concurso. Intente nuevamente.");
+        }
+    }
+
+    private ResponseEntity<byte[]> mensajeError(HttpStatus estado, String mensaje) {
+        return ResponseEntity.status(estado)
+                .contentType(new MediaType(MediaType.TEXT_PLAIN, StandardCharsets.UTF_8))
+                .body(mensaje.getBytes(StandardCharsets.UTF_8));
     }
 
     @GetMapping

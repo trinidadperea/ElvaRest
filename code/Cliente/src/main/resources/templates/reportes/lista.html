@@ -214,6 +214,7 @@
             <th>Estado</th>
             <th>Horas</th>
             <th>Postulantes</th>
+            <th class="d-print-none" data-export-skip></th>
           </tr>
           </thead>
           <tbody>
@@ -246,6 +247,12 @@
               <span class="text-secondary small" th:if="${reporte.horasTotales == null}">Sin horas configuradas</span>
             </td>
             <td th:text="${reporte.postulantesVigentes}"></td>
+            <td class="text-end d-print-none" data-export-skip>
+              <a class="btn btn-sm btn-outline-secondary" target="_blank" rel="noopener"
+                 th:href="@{/reportes/concurso/{id}/pdf(id=${reporte.concurso.id})}" title="Descargar reporte PDF">
+                <i class="bi bi-file-earmark-pdf me-1"></i>PDF
+              </a>
+            </td>
           </tr>
           </tbody>
         </table>
