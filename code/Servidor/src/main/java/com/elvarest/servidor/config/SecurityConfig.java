@@ -28,7 +28,10 @@ public class SecurityConfig {
                                 "/materias/**",
                                 "/tipos-certificado/**",
                                 "/reportes/**",
-                                "/usuarios/**"
+                                "/usuarios/**",
+                                // Sin esto, cualquier excepción previa al controller (p. ej. JSON inválido)
+                                // se redirige a /error y la seguridad la convierte en un 403 vacío.
+                                "/error"
                         ).permitAll()
                         .anyRequest().authenticated()
                 )
