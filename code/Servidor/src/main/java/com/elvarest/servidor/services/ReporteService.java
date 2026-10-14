@@ -22,7 +22,6 @@ import java.io.ByteArrayOutputStream;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
-import java.util.Objects;
 
 @Service
 public class ReporteService extends BaseService<Reporte, Long> {
@@ -128,9 +127,10 @@ public class ReporteService extends BaseService<Reporte, Long> {
                                      List<ConcursoDocente> postulaciones) throws DocumentException {
         agregarSubtitulo(documento, "RESUMEN DE HORAS");
 
-        Integer totales = horasTotales(concurso);
-        int asignadas = horasAsignadas(postulaciones);
+        Integer totales = ReglasConcurso.horasTotales(concurso);
+        int asignadas = ReglasConcurso.horasAsignadas(postulaciones);
         int transferidas = concurso.getHorasTransferidas() != null ? concurso.getHorasTransferidas() : 0;
+        Integer disponibles = ReglasConcurso.horasDisponibles(concurso, postulaciones);
 
         PdfPTable tabla = new PdfPTable(4);
         tabla.setWidthPercentage(100);
@@ -142,8 +142,7 @@ public class ReporteService extends BaseService<Reporte, Long> {
         agregarCelda(tabla, totales == null ? "-" : String.valueOf(totales));
         agregarCelda(tabla, String.valueOf(asignadas));
         agregarCelda(tabla, String.valueOf(transferidas));
-        agregarCelda(tabla, totales == null ? "-"
-                : String.valueOf(Math.max(0, totales - asignadas - transferidas)));
+        agregarCelda(tabla, disponibles == null ? "-" : String.valueOf(disponibles));
 
         documento.add(tabla);
     }
@@ -172,14 +171,14 @@ public class ReporteService extends BaseService<Reporte, Long> {
         int numero = 1;
         for (ConcursoDocente postulacion : postulaciones) {
             Docente docente = postulacion.getDocente();
-            EstadoPostulacion estado = estadoEfectivo(postulacion);
+            EstadoPostulacion estado = ReglasConcurso.estadoEfectivo(postulacion);
 
             agregarCelda(tabla, String.valueOf(numero++));
             agregarCelda(tabla, docente == null ? "-" : docente.getApellido() + ", " + docente.getNombre());
             agregarCelda(tabla, docente == null ? "-" : docente.getNumeroDocumento());
             agregarCelda(tabla, postulacion.getHorasElegidas() == null ? "-"
                     : String.valueOf(postulacion.getHorasElegidas()));
-            agregarCelda(tabla, etiqueta(estado));
+            agregarCelda(tabla, ReglasConcurso.etiqueta(estado));
             agregarCelda(tabla, estado == EstadoPostulacion.DESIGNACION_DEFINITIVA ? "Sí" : "No");
             agregarCelda(tabla, postulacion.getObservacion());
         }
@@ -193,48 +192,6 @@ public class ReporteService extends BaseService<Reporte, Long> {
         fecha.setSpacingBefore(20);
         fecha.setAlignment(Element.ALIGN_RIGHT);
         documento.add(fecha);
-    }
-
-    // --- Reglas de horas y estado (mismo criterio que FlujoConcursoService del Cliente) ---
-
-    /** Estado persistido; los registros históricos sin estado se derivan del ganador (§9). */
-    private EstadoPostulacion estadoEfectivo(ConcursoDocente postulacion) {
-        if (postulacion.getEstadoPostulacion() != null) {
-            return postulacion.getEstadoPostulacion();
-        }
-        return postulacion.isGanador()
-                ? EstadoPostulacion.DESIGNACION_DEFINITIVA
-                : EstadoPostulacion.PENDIENTE_CERTIFICADOS;
-    }
-
-    /** Horas totales persistidas o, como respaldo, la carga horaria del cargo. */
-    private Integer horasTotales(Concurso concurso) {
-        if (concurso.getHorasTotales() != null) {
-            return concurso.getHorasTotales();
-        }
-        if (concurso.getCargo() != null && concurso.getCargo().getCargaHoraria() > 0) {
-            return concurso.getCargo().getCargaHoraria();
-        }
-        return null;
-    }
-
-    /** Suma de horas de las postulaciones vigentes (excluye canceladas y sin horas). */
-    private int horasAsignadas(List<ConcursoDocente> postulaciones) {
-        return postulaciones.stream()
-                .filter(postulacion -> estadoEfectivo(postulacion) != EstadoPostulacion.CANCELADO_INEFECTIVO)
-                .map(ConcursoDocente::getHorasElegidas)
-                .filter(Objects::nonNull)
-                .mapToInt(Integer::intValue)
-                .sum();
-    }
-
-    private String etiqueta(EstadoPostulacion estado) {
-        return switch (estado) {
-            case PENDIENTE_CERTIFICADOS -> "Pendiente de certificados";
-            case DESIGNADO_PENDIENTE_POSESION -> "Pendiente de posesión";
-            case DESIGNACION_DEFINITIVA -> "Designación definitiva";
-            case CANCELADO_INEFECTIVO -> "Cancelado / inefectivo";
-        };
     }
 
     // --- Utilidades de formato ---

@@ -1,7 +1,7 @@
 # Informe de Reglas de Negocio — ElvaRest
 
 **Alcance**: Concursos, Cargos, Designaciones, Docentes y flujo completo de cobertura de cargos
-**Fuentes**: código vigente verificado (`ConcursoController`, `FlujoConcursoService`, `DesignacionController`, `CargoController`, `DocenteController` del Cliente; entidades/enums del Servidor; validación de bajas: `preDelete` + `validarEliminacion` del Servidor) + registro de decisiones tomadas durante el desarrollo.
+**Fuentes**: código vigente verificado (`ConcursoController`, `FlujoConcursoService`, `DesignacionController`, `CargoController`, `DocenteController` del Cliente; entidades/enums del Servidor; validación de bajas: `preDelete` + `validarEliminacion` del Servidor; validación de postulaciones y designaciones: `ConcursoDocenteService` y `DesignacionService` del Servidor) + registro de decisiones tomadas durante el desarrollo.
 
 ---
 
@@ -48,9 +48,11 @@
 - Horas: **mínimo 1** y **máximo las horas disponibles** del concurso.
 - Al registrar: `ganador=false`, fecha de emisión = hoy, estado inicial `PENDIENTE_CERTIFICADOS`.
 - **Doble barrera**: la exclusión se aplica tanto en el selector (GET) como en la validación del POST.
+- **Validación en el Servidor**: todas las reglas de esta sección se validan también en `ConcursoDocenteService`, así que una petición directa a `POST /concursos-docentes` las respeta. El Servidor fija además los valores iniciales (`ganador=false`, fecha de emisión = hoy, estado `PENDIENTE_CERTIFICADOS`), sin importar lo que se envíe.
 
 **3.3 Modificación de horas**
 - Solo con el concurso abierto; solo para postulaciones **pendientes** (certificados o posesión); horas ≥ 1 y ≤ máximo disponible.
+- **Ciclo de estados validado en el Servidor** (`PUT /concursos-docentes/{id}`): solo se permiten las transiciones `PENDIENTE_CERTIFICADOS` → `DESIGNADO_PENDIENTE_POSESION` | `CANCELADO_INEFECTIVO` y `DESIGNADO_PENDIENTE_POSESION` → `DESIGNACION_DEFINITIVA` | `CANCELADO_INEFECTIVO`, siempre con el concurso abierto; `DESIGNACION_DEFINITIVA` y `CANCELADO_INEFECTIVO` son finales. Tampoco se puede cambiar el concurso ni el docente de una postulación. Los registros históricos sin estado (§9) no se validan, para que el flujo legacy de ganador siga funcionando.
 
 **3.4 Validación de certificados** (concurso abierto, postulación `PENDIENTE_CERTIFICADOS`)
 - Decisión obligatoria: Aprobar o Rechazar.
@@ -61,7 +63,7 @@
 - Fechas de inicio efectiva y fin definitiva obligatorias (defaults: hoy y +1 año).
 - El **concurso debe tener carácter definido** (si no, error pidiendo completarlo).
 - La designación **hereda el carácter del concurso** y el **origen de la vacancia** capturado en él (los concursos anteriores al campo usan el respaldo `"Concurso: <descripción>"`); estado = **ACTIVO**; la fecha de fin cargada en el formulario se persiste directamente como `fechaFinDefinitiva`; guarda además el **vínculo directo** con el concurso (`concursoId`).
-- **Validación de vigencia**: se rechaza si el cargo ya tiene una designación ACTIVA/PENDIENTE del mismo docente ("El docente ya posee una designación vigente para este cargo.").
+- **Validación de vigencia**: se rechaza si el cargo ya tiene una designación ACTIVA/PENDIENTE del mismo docente ("El docente ya posee una designación vigente para este cargo."). Se valida también en el Servidor (ver §4).
 - La designación se crea y se agrega al cargo; la postulación queda `ganador=true` → `DESIGNACION_DEFINITIVA`.
 
 **3.6 Declarar inefectivo** (solo `DESIGNADO_PENDIENTE_POSESION`)
@@ -78,7 +80,7 @@
 
 **3.9 Flujos legacy** (se mantienen para enlaces existentes)
 - **Ganador**: solo en concurso FINALIZADO; marca una postulación como ganadora.
-- **Agregar cargo**: solo FINALIZADO y con ganador elegido; crea la designación con fechas de inicio y fin definitiva y carácter **manuales** (select propio) y estado inicial PENDIENTE; hereda el origen de la vacancia del concurso y su vínculo directo (`concursoId`). *No aplica la validación de designación vigente.*
+- **Agregar cargo**: solo FINALIZADO y con ganador elegido; crea la designación con fechas de inicio y fin definitiva y carácter **manuales** (select propio) y estado inicial PENDIENTE; hereda el origen de la vacancia del concurso y su vínculo directo (`concursoId`). Aplica la validación de designación vigente del Servidor (§4).
 
 **3.10 Cálculo de horas** (reglas de `FlujoConcursoService`)
 - Totales: DTO persistido → carga horaria del cargo (respaldo).
@@ -89,7 +91,7 @@
 ## 4. Reglas de Designaciones
 
 - **Múltiples designaciones históricas permitidas** para el mismo docente y cargo (no es duplicado).
-- **Única prohibición**: dos designaciones **vigentes simultáneas** (ACTIVO/PENDIENTE) para el mismo docente y cargo. Se valida por **lógica de negocio**, nunca con UNIQUE(docente_id, cargo_id) (bloquearía las históricas).
+- **Única prohibición**: dos designaciones **vigentes simultáneas** (ACTIVO/PENDIENTE) para el mismo docente y cargo. Se valida por **lógica de negocio**, nunca con UNIQUE(docente_id, cargo_id) (bloquearía las históricas). El Servidor (`DesignacionService`) la valida en el alta de **toda designación creada desde un concurso** (toma de posesión y agregar cargo legacy), resolviendo el cargo por el `concursoId`; las altas manuales no tienen cargo vinculado y no se validan.
 - **La vigencia se determina por estado, NO por fechas** (decisión explícita). `fechaFinDefinitiva` no define vigencia.
 - Al modificar una designación (formulario manual) se **conservan sus alertas y licencias** asociadas.
 - **Navegación con contexto**: editada desde Cargo → Ver, tanto **Cancelar** como el **guardado exitoso** vuelven al detalle de ese cargo (mecanismo `cargoId`); desde otros accesos, el comportamiento es el original (lista general).
@@ -141,7 +143,7 @@ La baja lógica de **Concursos, Docentes, Cargos, Cursos y Materias** se valida 
 
 ## 9. Limitaciones / deuda conocida (reglas al momento actual)
 
-- `agregarCargo` (legacy) **no aplica** la validación de designación vigente ni la herencia de carácter (tiene su propio select).
+- `agregarCargo` (legacy) **no aplica** la herencia de carácter (tiene su propio select). La validación de designación vigente sí se aplica desde el Servidor.
 - Designaciones **históricas** sin horas de concurso resueltas muestran el fallback (carga del cargo).
 - La exclusión de rellamado es **fail-open** si no logra resolver el origen.
 - Los registros antiguos **sin estado de postulación** derivan su estado del ganador (`ganador ? DESIGNACION_DEFINITIVA : PENDIENTE_CERTIFICADOS`) y en las validaciones de eliminación se tratan de forma conservadora (bloquean la baja).
