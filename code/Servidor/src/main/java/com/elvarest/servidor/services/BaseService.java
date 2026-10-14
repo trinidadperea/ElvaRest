@@ -47,7 +47,7 @@ public abstract class BaseService<T extends BaseEntity<ID>, ID> {
             });
 
         }catch(Exception e) {
-            throw new ErrorServiceException("Error de Sistemas");
+            throw new ErrorServiceException(e.getMessage());
         }
     }
 
