@@ -3,7 +3,7 @@
  * - Confirmación de acciones destructivas ([data-confirm] en enlaces, formularios y botones).
  * - Filtro en vivo de tablas y listas ([data-filter-input="#idTabla"]).
  * - Filtro por botones ([data-filter-btn] con data-filter-target y data-filter-value).
- * - Exportación CSV de tablas ([data-export-csv="#idTabla"]).
+ * - Exportación CSV de tablas ([data-export-csv="#idTabla"]; las celdas con [data-export-skip] se omiten).
  * - Impresión de la página ([data-print]).
  * - Cierre automático de mensajes flash y estado de carga en formularios.
  */
@@ -186,6 +186,9 @@
       }
       const cells = [];
       row.querySelectorAll('th, td').forEach(function (cell) {
+        if (cell.hasAttribute('data-export-skip')) {
+          return;
+        }
         let text = cell.innerText.replace(/\s+/g, ' ').trim();
         text = text.replace(/"/g, '""');
         cells.push('"' + text + '"');
