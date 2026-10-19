@@ -6,13 +6,16 @@
 </section>
 
 <section id="contenido">
-
   <!-- ============ Métricas principales ============ -->
-  <div class="row g-3 mb-1">
-    <div class="col-xl-3 col-md-6">
-      <a th:href="@{/docentes}" class="d-block text-decoration-none h-100">
-        <div class="stat-card stat-blue">
-          <div class="stat-card-icon"><i class="bi bi-person-badge"></i></div>
+  <div class="row g-3 mb-3">
+
+    <!-- Docentes activos -->
+    <div class="col-6">
+      <a th:href="@{/docentes}" class="text-decoration-none">
+        <div class="stat-card stat-blue w-100 h-100">
+          <div class="stat-card-icon">
+            <i class="bi bi-person-badge"></i>
+          </div>
           <div>
             <div class="stat-card-value" th:text="${cantidadDocentes}">0</div>
             <div class="stat-card-label">Docentes activos</div>
@@ -20,47 +23,63 @@
         </div>
       </a>
     </div>
-    <div class="col-xl-3 col-md-6">
-      <a th:href="@{/cargos}" class="d-block text-decoration-none h-100">
-        <div class="stat-card stat-amber">
-          <div class="stat-card-icon"><i class="bi bi-briefcase"></i></div>
+
+    <!-- Cargos vacantes -->
+    <div class="col-6">
+      <a th:href="@{/cargos}" class="text-decoration-none">
+        <div class="stat-card stat-amber w-100 h-100">
+          <div class="stat-card-icon">
+            <i class="bi bi-briefcase"></i>
+          </div>
           <div>
             <div class="stat-card-value" th:text="${cargosVacantes}">0</div>
             <div class="stat-card-label">Cargos vacantes</div>
-            <div class="text-secondary" style="font-size: .78rem;" th:text="'de ' + ${cantidadCargos} + ' en total'"></div>
+            <div class="text-secondary small"
+                 th:text="'de ' + ${cantidadCargos} + ' en total'"></div>
           </div>
         </div>
       </a>
     </div>
-    <div class="col-xl-3 col-md-6">
-      <a th:href="@{/alertas}" class="d-block text-decoration-none h-100">
-        <div class="stat-card stat-red">
-          <div class="stat-card-icon"><i class="bi bi-bell"></i></div>
+
+    <!-- Alertas sin leer -->
+    <div class="col-6">
+      <a th:href="@{/alertas}" class="text-decoration-none">
+        <div class="stat-card stat-red w-100 h-100">
+          <div class="stat-card-icon">
+            <i class="bi bi-bell"></i>
+          </div>
           <div>
             <div class="stat-card-value" th:text="${alertasSinLeer}">0</div>
             <div class="stat-card-label">Alertas sin leer</div>
-            <div class="text-secondary" style="font-size: .78rem;" th:text="'de ' + ${cantidadAlertas} + ' registradas'"></div>
+            <div class="text-secondary small"
+                 th:text="'de ' + ${cantidadAlertas} + ' registradas'"></div>
           </div>
         </div>
       </a>
     </div>
-    <div class="col-xl-3 col-md-6">
-      <a th:href="@{/concursos}" class="d-block text-decoration-none h-100">
-        <div class="stat-card stat-teal">
-          <div class="stat-card-icon"><i class="bi bi-trophy"></i></div>
+
+    <!-- Concursos abiertos -->
+    <div class="col-6">
+      <a th:href="@{/concursos}" class="text-decoration-none">
+        <div class="stat-card stat-teal w-100 h-100">
+          <div class="stat-card-icon">
+            <i class="bi bi-trophy"></i>
+          </div>
           <div>
             <div class="stat-card-value" th:text="${concursosAbiertos}">0</div>
             <div class="stat-card-label">Concursos abiertos</div>
-            <div class="text-secondary" style="font-size: .78rem;" th:text="'de ' + ${cantidadConcursos} + ' en total'"></div>
+            <div class="text-secondary small"
+                 th:text="'de ' + ${cantidadConcursos} + ' en total'"></div>
           </div>
         </div>
       </a>
     </div>
+
   </div>
 
   <!-- ============ Concursos en curso + Alertas / Accesos rápidos ============ -->
   <div class="row g-3">
-    <div class="col-xl-8">
+    <div class="col-12">
       <div class="card h-100">
         <div class="card-header d-flex align-items-center gap-2">
           <h3 class="card-title mb-0">Concursos en curso</h3>
@@ -139,7 +158,7 @@
       </div>
     </div>
 
-    <div class="col-xl-4">
+    <div class="col-12">
       <div class="card">
         <div class="card-header d-flex align-items-center gap-2">
           <h3 class="card-title mb-0">Alertas sin leer</h3>
@@ -171,7 +190,7 @@
         </div>
       </div>
 
-      <div class="card mb-0">
+      <div class="card mb-3">
         <div class="card-header">
           <h3 class="card-title">Accesos rápidos</h3>
         </div>
@@ -201,103 +220,118 @@
     </div>
   </div>
 
-  <!-- ============ Gráfico de postulaciones + Próximos cierres ============ -->
-  <div class="row g-3">
-    <div class="col-lg-5">
-      <div class="card h-100">
-        <div class="card-header">
-          <h3 class="card-title">Postulaciones por estado</h3>
-        </div>
-        <div class="card-body">
-          <div th:if="${totalPostulaciones > 0}">
-            <div class="chart-container chart-fixed">
-              <canvas id="chartEstados" aria-label="Postulaciones por estado" role="img"></canvas>
-            </div>
-            <p class="text-center text-secondary small mt-2 mb-0"
-               th:text="${totalPostulaciones} + ' postulación(es) registrada(s) en concursos activos'"></p>
-          </div>
-          <div class="empty-state" th:if="${totalPostulaciones == 0}">
-            <i class="bi bi-pie-chart"></i>
-            <p class="empty-title">Sin postulaciones todavía</p>
-            <p>El gráfico se completará a medida que los docentes tomen horas en los concursos.</p>
-          </div>
-        </div>
-      </div>
-    </div>
 
-    <div class="col-lg-7">
+    <!-- <div class="col-lg-7">
       <div class="card h-100">
+        <div class="card-header"> -->
+
+  <!-- ============ Próximos cierres ============ -->
+  <div class="row g-3 mb-3">
+    <div class="col-12">
+      <div class="card h-100">
+
         <div class="card-header">
-          <h3 class="card-title">Próximos cierres</h3>
+          <h3 class="card-title mb-0">Próximos cierres</h3>
         </div>
+
         <div class="card-body">
+
           <ul class="mini-list" th:if="${!proximosCierres.isEmpty()}">
             <li class="mini-item mini-amber" th:each="resumen : ${proximosCierres}">
-              <span class="mini-item-icon"><i class="bi bi-calendar-event"></i></span>
+
+              <span class="mini-item-icon">
+                <i class="bi bi-calendar-event"></i>
+              </span>
+
               <div class="mini-item-body">
-                <a class="mini-item-title" th:href="@{/concursos/{id}(id=${resumen.concurso.id})}"
+                <a class="mini-item-title"
+                   th:href="@{/concursos/{id}(id=${resumen.concurso.id})}"
                    th:text="${resumen.concurso.descripcion}"></a>
+
                 <div class="mini-item-meta">
                   <span>
                     <i class="bi bi-calendar3 me-1"></i>
                     <time th:text="${#temporals.format(resumen.concurso.fechaCierre, 'dd/MM/yyyy')}"></time>
                   </span>
+
                   <span th:if="${resumen.horasDisponibles != null and resumen.horasDisponibles > 0}"
                         th:text="${resumen.horasDisponibles} + ' h aún libres'"></span>
-                  <span class="badge text-bg-info" th:if="${resumen.rellamado}">Rellamado</span>
+
+                  <span class="badge text-bg-info" th:if="${resumen.rellamado}">
+                    Rellamado
+                  </span>
                 </div>
               </div>
+
               <a class="btn btn-sm btn-outline-primary align-self-center"
-                 th:href="@{/concursos/{id}(id=${resumen.concurso.id})}">Gestionar</a>
+                 th:href="@{/concursos/{id}(id=${resumen.concurso.id})}">
+                Gestionar
+              </a>
+
             </li>
           </ul>
+
           <div class="empty-state" th:if="${proximosCierres.isEmpty()}">
             <i class="bi bi-calendar-check"></i>
             <p class="empty-title">Sin cierres programados</p>
             <p>Ninguno de los concursos abiertos tiene fecha de cierre definida.</p>
           </div>
+
         </div>
       </div>
     </div>
   </div>
 
   <!-- ============ Pendientes de atención + Actividad reciente ============ -->
+  <!-- ============ Pendientes de atención + Actividad reciente ============ -->
   <div class="row g-3">
-    <div class="col-lg-6">
+
+    <!-- Pendientes de atención -->
+    <div class="col-12">
       <div class="card h-100 mb-0">
         <div class="card-header d-flex align-items-center gap-2">
           <h3 class="card-title mb-0">Pendientes de atención</h3>
-          <span class="badge text-bg-secondary ms-auto" th:if="${!pendientesAtencion.isEmpty()}"
+          <span class="badge text-bg-secondary ms-auto"
+                th:if="${!pendientesAtencion.isEmpty()}"
                 th:text="${#lists.size(pendientesAtencion)}"></span>
         </div>
+
         <div class="card-body">
           <ul class="mini-list" th:if="${!pendientesAtencion.isEmpty()}">
             <li class="mini-item" th:each="pendiente : ${pendientesAtencion}"
                 th:classappend="${pendiente.estado == T(com.elvarest.cliente.dto.enums.EstadoPostulacion).PENDIENTE_CERTIFICADOS ? ' mini-amber' : ' mini-violet'}">
-              <span class="mini-item-icon">
-                <i th:class="${pendiente.estado == T(com.elvarest.cliente.dto.enums.EstadoPostulacion).PENDIENTE_CERTIFICADOS ? 'bi bi-file-earmark-medical' : 'bi bi-person-badge'}"></i>
-              </span>
+
+            <span class="mini-item-icon">
+              <i th:class="${pendiente.estado == T(com.elvarest.cliente.dto.enums.EstadoPostulacion).PENDIENTE_CERTIFICADOS ? 'bi bi-file-earmark-medical' : 'bi bi-person-badge'}"></i>
+            </span>
+
               <div class="mini-item-body">
-                <span class="mini-item-title"
-                      th:text="${pendiente.postulacion.docente != null ? pendiente.postulacion.docente.apellido + ', ' + pendiente.postulacion.docente.nombre : 'Docente sin datos'}"></span>
+              <span class="mini-item-title"
+                    th:text="${pendiente.postulacion.docente != null ? pendiente.postulacion.docente.apellido + ', ' + pendiente.postulacion.docente.nombre : 'Docente sin datos'}"></span>
+
                 <div class="mini-item-meta">
                   <span th:text="${pendiente.concurso.descripcion}"></span>
-                  <span class="status-badge" th:classappend="${pendiente.estado.badgeClass}"
+                  <span class="status-badge"
+                        th:classappend="${pendiente.estado.badgeClass}"
                         th:text="${pendiente.estado.etiqueta}"></span>
                 </div>
               </div>
+
               <a class="btn btn-sm btn-primary align-self-center"
                  th:if="${pendiente.estado == T(com.elvarest.cliente.dto.enums.EstadoPostulacion).PENDIENTE_CERTIFICADOS}"
                  th:href="@{/concursos/{cid}/postulaciones/{pid}/certificados(cid=${pendiente.concurso.id}, pid=${pendiente.postulacion.id})}">
                 <i class="bi bi-patch-check me-1"></i>Validar
               </a>
+
               <a class="btn btn-sm btn-success align-self-center"
                  th:if="${pendiente.estado == T(com.elvarest.cliente.dto.enums.EstadoPostulacion).DESIGNADO_PENDIENTE_POSESION}"
                  th:href="@{/concursos/{cid}/postulaciones/{pid}/posesion(cid=${pendiente.concurso.id}, pid=${pendiente.postulacion.id})}">
                 <i class="bi bi-person-check me-1"></i>Confirmar
               </a>
+
             </li>
           </ul>
+
           <div class="empty-state" th:if="${pendientesAtencion.isEmpty()}">
             <i class="bi bi-check2-all"></i>
             <p class="empty-title">Sin pendientes de atención</p>
@@ -307,32 +341,44 @@
       </div>
     </div>
 
-    <div class="col-lg-6">
+    <!-- Actividad reciente -->
+    <div class="col-12">
       <div class="card h-100 mb-0">
         <div class="card-header d-flex align-items-center gap-2">
           <h3 class="card-title mb-0">Actividad reciente</h3>
           <span class="text-secondary small ms-auto">Últimas tomas de horas</span>
         </div>
+
         <div class="card-body">
           <ul class="mini-list" th:if="${!actividadReciente.isEmpty()}">
             <li class="mini-item mini-blue" th:each="postulacion : ${actividadReciente}">
-              <span class="mini-item-icon"><i class="bi bi-hourglass-split"></i></span>
+
+            <span class="mini-item-icon">
+              <i class="bi bi-hourglass-split"></i>
+            </span>
+
               <div class="mini-item-body">
-                <span class="mini-item-title"
-                      th:text="${postulacion.docente != null ? postulacion.docente.apellido + ', ' + postulacion.docente.nombre : 'Docente sin datos'}"></span>
+              <span class="mini-item-title"
+                    th:text="${postulacion.docente != null ? postulacion.docente.apellido + ', ' + postulacion.docente.nombre : 'Docente sin datos'}"></span>
+
                 <div class="mini-item-meta">
                   <span th:text="${postulacion.concurso != null ? postulacion.concurso.descripcion : 'Concurso sin datos'}"></span>
+
                   <span th:if="${postulacion.fechaEmision != null}">
-                    <i class="bi bi-calendar3 me-1"></i>
-                    <time th:text="${#temporals.format(postulacion.fechaEmision, 'dd/MM/yyyy')}"></time>
-                  </span>
-                  <span class="status-badge" th:if="${estadosRecientes[postulacion.id] != null}"
+                  <i class="bi bi-calendar3 me-1"></i>
+                  <time th:text="${#temporals.format(postulacion.fechaEmision, 'dd/MM/yyyy')}"></time>
+                </span>
+
+                  <span class="status-badge"
+                        th:if="${estadosRecientes[postulacion.id] != null}"
                         th:classappend="${estadosRecientes[postulacion.id].badgeClass}"
                         th:text="${estadosRecientes[postulacion.id].etiqueta}"></span>
                 </div>
               </div>
+
             </li>
           </ul>
+
           <div class="empty-state" th:if="${actividadReciente.isEmpty()}">
             <i class="bi bi-clock-history"></i>
             <p class="empty-title">Sin actividad reciente</p>
@@ -341,6 +387,7 @@
         </div>
       </div>
     </div>
+
   </div>
 
 </section>

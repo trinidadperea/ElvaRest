@@ -194,15 +194,7 @@
     </div>
     <div class="card-body">
 
-      <div th:if="${!chartLabels.isEmpty()}" class="mb-4">
-        <div class="d-flex align-items-center gap-2 mb-2">
-          <i class="bi bi-bar-chart text-secondary"></i>
-          <span class="text-secondary fw-semibold" style="font-size: .82rem;">Horas cubiertas vs. disponibles por concurso abierto</span>
-        </div>
-        <div class="chart-container chart-fixed chart-wide">
-          <canvas id="reporteHorasChart"></canvas>
-        </div>
-      </div>
+
 
       <div class="table-responsive" th:if="${!concursosReporte.isEmpty()}">
         <table class="table" id="tablaConcursos">
