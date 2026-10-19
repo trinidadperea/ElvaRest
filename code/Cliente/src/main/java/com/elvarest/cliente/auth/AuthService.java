@@ -7,6 +7,7 @@ import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
+import org.springframework.beans.factory.annotation.Value;
 
 import java.util.HashMap;
 import java.util.List;
@@ -17,6 +18,12 @@ public class AuthService {
 
     private final RestTemplate restTemplate = new RestTemplate();
     private String token; // JWT almacenado tras el login
+
+    @Value("${api.user}")
+    private String apiUser;
+
+    @Value("${api.password}")
+    private String apiPassword;
 
     // --- CLASES INTERNAS PARA MAPEAR LAS RESPUESTAS JSON ---
 
@@ -113,9 +120,7 @@ public class AuthService {
     public HttpHeaders authHeaders() {
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
-        if (token != null && !token.isEmpty()) {
-            headers.setBearerAuth(token);
-        }
+        headers.setBasicAuth(apiUser, apiPassword);
         return headers;
     }
 }
