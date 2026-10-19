@@ -8,6 +8,8 @@ import jakarta.persistence.Enumerated;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 
 @Data
 @NoArgsConstructor
@@ -17,7 +19,8 @@ public class Usuario extends Persona{
 
     @Column(nullable = false, unique = true)
     private String nombreUsuario;
-
+    //json solo permite escribir la contraseña, no leerla
+    @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
     @Column(nullable = false)
     private String contraseña;
 
