@@ -19,7 +19,7 @@ public class SecurityConfig {
                 .csrf(csrf -> csrf.disable())
                 .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
-                        // PROPUESTA: ajustar según tu respuesta a la pregunta 1
+                        // esto debemos ajustarlo segun endpoints y roles - SOLO PRUEABABAA-
                         .requestMatchers("/usuarios/**").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.GET, "/**").hasAnyRole("ADMIN", "USER")
                         .anyRequest().hasRole("ADMIN")
