@@ -1,0 +1,74 @@
+package com.elvarest.servidor.services;
+
+import com.elvarest.servidor.entities.Concurso;
+import com.elvarest.servidor.entities.ConcursoDocente;
+import com.elvarest.servidor.entities.enums.EstadoPostulacion;
+
+import java.util.List;
+import java.util.Objects;
+
+/**
+ * Reglas de estado y horas del flujo de concursos (§2 y §3.10 de las reglas de negocio).
+ * Mismo criterio que FlujoConcursoService del Cliente.
+ */
+public final class ReglasConcurso {
+
+    private ReglasConcurso() {
+    }
+
+    /** Estado persistido; los registros históricos sin estado se derivan del ganador (§9). */
+    public static EstadoPostulacion estadoEfectivo(ConcursoDocente postulacion) {
+        if (postulacion.getEstadoPostulacion() != null) {
+            return postulacion.getEstadoPostulacion();
+        }
+        return postulacion.isGanador()
+                ? EstadoPostulacion.DESIGNACION_DEFINITIVA
+                : EstadoPostulacion.PENDIENTE_CERTIFICADOS;
+    }
+
+    public static boolean esCancelada(ConcursoDocente postulacion) {
+        return estadoEfectivo(postulacion) == EstadoPostulacion.CANCELADO_INEFECTIVO;
+    }
+
+    /** Horas totales persistidas o, como respaldo, la carga horaria del cargo; null si no hay ninguna. */
+    public static Integer horasTotales(Concurso concurso) {
+        if (concurso.getHorasTotales() != null) {
+            return concurso.getHorasTotales();
+        }
+        if (concurso.getCargo() != null && concurso.getCargo().getCargaHoraria() > 0) {
+            return concurso.getCargo().getCargaHoraria();
+        }
+        return null;
+    }
+
+    /** Suma de horas de las postulaciones vigentes (excluye eliminadas, canceladas y sin horas). */
+    public static int horasAsignadas(List<ConcursoDocente> postulaciones) {
+        return postulaciones.stream()
+                .filter(postulacion -> !Boolean.TRUE.equals(postulacion.getEliminado()))
+                .filter(postulacion -> !esCancelada(postulacion))
+                .map(ConcursoDocente::getHorasElegidas)
+                .filter(Objects::nonNull)
+                .mapToInt(Integer::intValue)
+                .sum();
+    }
+
+    /** Horas disponibles: total − asignadas − transferidas, nunca menor a 0; null si el concurso no tiene horas. */
+    public static Integer horasDisponibles(Concurso concurso, List<ConcursoDocente> postulaciones) {
+        Integer total = horasTotales(concurso);
+        if (total == null) {
+            return null;
+        }
+        int transferidas = concurso.getHorasTransferidas() != null ? concurso.getHorasTransferidas() : 0;
+        return Math.max(0, total - horasAsignadas(postulaciones) - transferidas);
+    }
+
+    /** Texto para mostrar al usuario (mismas etiquetas que el Cliente). */
+    public static String etiqueta(EstadoPostulacion estado) {
+        return switch (estado) {
+            case PENDIENTE_CERTIFICADOS -> "Pendiente de certificados";
+            case DESIGNADO_PENDIENTE_POSESION -> "Pendiente de posesión";
+            case DESIGNACION_DEFINITIVA -> "Designación definitiva";
+            case CANCELADO_INEFECTIVO -> "Cancelado / inefectivo";
+        };
+    }
+}

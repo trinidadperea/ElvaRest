@@ -38,16 +38,17 @@ public abstract class BaseService<T extends BaseEntity<ID>, ID> {
     public Optional<T> modificar(ID id, T entidadNueva)throws ErrorServiceException {
         try {
 
+            // El id se asigna antes de validar para que las subclases puedan comparar con el registro guardado.
+            entidadNueva.setId(id);
             validar(entidadNueva);
             preModificacion(entidadNueva);
             return repository.findById(id).map(entidad -> {
-                entidadNueva.setId(id);
                 T actualizado = repository.save(entidadNueva);
                 return actualizado;
             });
 
         }catch(Exception e) {
-            throw new ErrorServiceException("Error de Sistemas");
+            throw new ErrorServiceException(e.getMessage());
         }
     }
 

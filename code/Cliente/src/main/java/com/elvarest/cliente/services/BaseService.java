@@ -57,18 +57,26 @@ public abstract class BaseService<T, ID> {
 
     public T alta(T dto) {
         HttpEntity<T> entity = new HttpEntity<>(dto, authService.authHeaders());
-        ResponseEntity<T> response = restTemplate.exchange(
-                apiUrl,
-                HttpMethod.POST,
-                entity,
-                dtoClass
-        );
-        return response.getBody();
+        try {
+            ResponseEntity<T> response = restTemplate.exchange(
+                    apiUrl,
+                    HttpMethod.POST,
+                    entity,
+                    dtoClass
+            );
+            return response.getBody();
+        } catch (HttpClientErrorException e) {
+            throw errorDelServidor(e);
+        }
     }
 
     public void modificar(ID id, T dto) {
         HttpEntity<T> entity = new HttpEntity<>(dto, authService.authHeaders());
-        restTemplate.exchange(apiUrl + "/" + id, HttpMethod.PUT, entity, Void.class);
+        try {
+            restTemplate.exchange(apiUrl + "/" + id, HttpMethod.PUT, entity, Void.class);
+        } catch (HttpClientErrorException e) {
+            throw errorDelServidor(e);
+        }
     }
 
     public void bajaLogica(ID id) {
@@ -76,14 +84,20 @@ public abstract class BaseService<T, ID> {
         try {
             restTemplate.exchange(apiUrl + "/" + id, HttpMethod.DELETE, entity, Void.class);
         } catch (HttpClientErrorException e) {
-            // El servidor rechaza la baja por reglas de negocio: se propaga su mensaje
-            // para que el controlador lo muestre al usuario en lugar de un error genérico.
-            String mensaje = mensajeDeError(new String(e.getResponseBodyAsByteArray(), StandardCharsets.UTF_8));
-            if (mensaje != null && !mensaje.isBlank()) {
-                throw new ErrorServiceException(mensaje);
-            }
-            throw e;
+            throw errorDelServidor(e);
         }
+    }
+
+    /**
+     * El servidor rechaza la operación (reglas de negocio, validaciones o errores de base de datos):
+     * se propaga su mensaje para que el controlador lo muestre al usuario en lugar de un error genérico.
+     */
+    private RuntimeException errorDelServidor(HttpClientErrorException e) {
+        String mensaje = mensajeDeError(new String(e.getResponseBodyAsByteArray(), StandardCharsets.UTF_8));
+        if (mensaje != null && !mensaje.isBlank()) {
+            return new ErrorServiceException(mensaje);
+        }
+        return e;
     }
 
     /**
