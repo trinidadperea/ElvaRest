@@ -6,9 +6,9 @@ import lombok.Getter;
 import lombok.Setter;
 
 @Getter
-@Setter
-public class TipoCertificadoDTO extends BaseDTO{
+public class TipoCertificadoDTO extends BaseDTO {
     private String codigo;
     private String nombre;
-    private int mesesVigencia;
+    private boolean obligatorio;
+    private boolean permiteProvisorio;
 }
