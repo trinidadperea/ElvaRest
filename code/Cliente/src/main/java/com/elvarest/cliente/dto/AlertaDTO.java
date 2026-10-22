@@ -19,4 +19,6 @@ public class AlertaDTO extends BaseDTO{
     private LocalDate fechaEmision;
     private boolean leida;
     private PrioridadAlerta prioridad;
+    /** Certificado que originó la alerta (nulo en las alertas manuales). Llega sin la postulación. */
+    private CertificadoDTO certificado;
 }

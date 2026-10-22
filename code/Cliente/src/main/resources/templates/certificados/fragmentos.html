@@ -1,0 +1,126 @@
+<!doctype html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<body>
+
+<!--
+  Formulario de carga / renovación de un certificado para una postulación.
+  Requiere en el modelo: item (CertificadoDTO con tipoCertificado no nulo) y tiposCertificado.
+  origen: "concurso" (vuelve al paso 2) o "docente" (vuelve al detalle del docente).
+-->
+<form th:fragment="carga(postulacionId, origen)" method="post" data-loading data-cert-form
+      th:action="@{/certificados/postulacion/{id}(id=${postulacionId})}">
+    <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
+    <input type="hidden" name="origen" th:value="${origen}">
+
+    <div class="mb-3">
+        <label th:for="${'tipo-' + postulacionId}">Tipo de certificado</label>
+        <select class="form-select" th:id="${'tipo-' + postulacionId}" name="tipoCertificado.id" required data-cert-tipo>
+            <option value="">Seleccione un tipo</option>
+            <option th:each="tipo : ${tiposCertificado}" th:value="${tipo.id}"
+                    th:selected="${item.tipoCertificado != null and item.tipoCertificado.id == tipo.id}"
+                    th:attr="data-permite-provisorio=${tipo.permiteProvisorio}"
+                    th:text="${tipo.nombre + (tipo.obligatorio ? ' (obligatorio)' : '')}"></option>
+        </select>
+    </div>
+
+    <div class="mb-3 d-none" data-cert-caracter>
+        <label>¿El certificado es definitivo o provisorio?</label>
+        <div class="form-check">
+            <input class="form-check-input" type="radio" name="caracter" value="DEFINITIVO"
+                   th:id="${'definitivo-' + postulacionId}" th:checked="${item.caracter?.name() == 'DEFINITIVO'}">
+            <label class="form-check-label" th:for="${'definitivo-' + postulacionId}">Definitivo (no vence)</label>
+        </div>
+        <div class="form-check">
+            <input class="form-check-input" type="radio" name="caracter" value="PROVISORIO"
+                   th:id="${'provisorio-' + postulacionId}" th:checked="${item.caracter?.name() == 'PROVISORIO'}">
+            <label class="form-check-label" th:for="${'provisorio-' + postulacionId}">Provisorio (con fecha de vencimiento)</label>
+        </div>
+    </div>
+
+    <div class="mb-3 d-none" data-cert-vencimiento>
+        <label th:for="${'vencimiento-' + postulacionId}">Fecha de vencimiento</label>
+        <input class="form-control" type="date" th:id="${'vencimiento-' + postulacionId}" name="fechaVencimiento"
+               th:value="${item.fechaVencimiento != null ? #temporals.format(item.fechaVencimiento, 'yyyy-MM-dd') : ''}"
+               th:min="${#temporals.format(#temporals.createToday().plusDays(1), 'yyyy-MM-dd')}">
+        <div class="form-text">Debe ser posterior a hoy. El sistema avisará faltando 7 días (prioridad media) y 3 días (prioridad alta).</div>
+    </div>
+
+    <button type="submit" class="btn btn-primary">
+        <i class="bi bi-file-earmark-plus me-1"></i>Guardar certificado
+    </button>
+
+    <script>
+        (function (form) {
+            var tipo = form.querySelector('[data-cert-tipo]');
+            var bloqueCaracter = form.querySelector('[data-cert-caracter]');
+            var bloqueVencimiento = form.querySelector('[data-cert-vencimiento]');
+            var radios = bloqueCaracter.querySelectorAll('input[type=radio]');
+            var vencimiento = bloqueVencimiento.querySelector('input[type=date]');
+
+            var sincronizar = function () {
+                var opcion = tipo.options[tipo.selectedIndex];
+                var permite = opcion && opcion.getAttribute('data-permite-provisorio') === 'true';
+                bloqueCaracter.classList.toggle('d-none', !permite);
+                radios.forEach(function (radio) {
+                    radio.required = permite;
+                    if (!permite) { radio.checked = false; }
+                });
+                var provisorio = permite && form.querySelector('input[value=PROVISORIO]').checked;
+                bloqueVencimiento.classList.toggle('d-none', !provisorio);
+                vencimiento.required = provisorio;
+                if (!provisorio) { vencimiento.value = ''; }
+            };
+            tipo.addEventListener('change', sincronizar);
+            radios.forEach(function (radio) { radio.addEventListener('change', sincronizar); });
+            sincronizar();
+        })(document.currentScript.closest('form'));
+    </script>
+</form>
+
+<!-- Tabla de certificados (actuales e historial). -->
+<div th:fragment="tabla(certificados)" class="table-responsive">
+    <table class="table">
+        <thead>
+        <tr>
+            <th>Tipo</th>
+            <th>Carácter</th>
+            <th>Vencimiento</th>
+            <th>Cargado el</th>
+            <th>Estado</th>
+            <th class="text-end">Acciones</th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr th:each="certificado : ${certificados}" th:classappend="${!certificado.actual ? 'text-secondary' : ''}">
+            <td th:text="${certificado.tipoCertificado != null ? certificado.tipoCertificado.nombre : 'Sin tipo'}"></td>
+            <td>
+        <span class="badge rounded-pill" th:if="${certificado.caracter != null}"
+              th:classappend="${certificado.caracter.name() == 'PROVISORIO' ? 'text-bg-warning' : 'text-bg-success'}"
+              th:text="${certificado.caracter.etiqueta}"></span>
+            </td>
+            <td>
+                <span th:if="${certificado.fechaVencimiento == null}">—</span>
+                <span th:if="${certificado.fechaVencimiento != null}"
+                      th:text="${#temporals.format(certificado.fechaVencimiento, 'dd/MM/yyyy')}"></span>
+                <span class="badge rounded-pill text-bg-danger ms-1"
+                      th:if="${certificado.actual and certificado.fechaVencimiento != null and certificado.fechaVencimiento.isBefore(#temporals.createToday())}">Vencido</span>
+            </td>
+            <td th:text="${certificado.fechaCarga != null ? #temporals.format(certificado.fechaCarga, 'dd/MM/yyyy') : '—'}"></td>
+            <td>
+        <span class="badge rounded-pill" th:classappend="${certificado.actual ? 'text-bg-primary' : 'text-bg-secondary'}"
+              th:text="${certificado.actual ? 'Actual' : 'Reemplazado'}"></span>
+            </td>
+            <td>
+                <div class="table-actions">
+                    <a class="btn btn-sm btn-outline-primary" th:href="@{/certificados/{id}(id=${certificado.id})}">
+                        <i class="bi bi-eye"></i>Ver
+                    </a>
+                </div>
+            </td>
+        </tr>
+        </tbody>
+    </table>
+</div>
+
+</body>
+</html>

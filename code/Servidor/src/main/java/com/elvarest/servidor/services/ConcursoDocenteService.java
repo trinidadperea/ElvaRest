@@ -5,13 +5,16 @@ import com.elvarest.servidor.entities.Concurso;
 import com.elvarest.servidor.entities.ConcursoDocente;
 import com.elvarest.servidor.entities.Designacion;
 import com.elvarest.servidor.entities.Docente;
+import com.elvarest.servidor.entities.TipoCertificado;
 import com.elvarest.servidor.entities.enums.EstadoConcurso;
 import com.elvarest.servidor.entities.enums.EstadoDesignacion;
 import com.elvarest.servidor.entities.enums.EstadoPostulacion;
 import com.elvarest.servidor.exceptions.ErrorServiceException;
+import com.elvarest.servidor.repositories.CertificadoRepository;
 import com.elvarest.servidor.repositories.ConcursoDocenteRepository;
 import com.elvarest.servidor.repositories.ConcursoRepository;
 import com.elvarest.servidor.repositories.DocenteRepository;
+import com.elvarest.servidor.repositories.TipoCertificadoRepository;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
@@ -20,6 +23,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * Postulaciones (toma de horas). Las reglas de §3.2 a §3.6 se validan también acá, para que
@@ -41,16 +45,22 @@ public class ConcursoDocenteService
     private final ConcursoDocenteRepository concursoDocenteRepository;
     private final ConcursoRepository concursoRepository;
     private final DocenteRepository docenteRepository;
+    private final CertificadoRepository certificadoRepository;
+    private final TipoCertificadoRepository tipoCertificadoRepository;
 
     public ConcursoDocenteService(
             ConcursoDocenteRepository concursoDocenteRepository,
             ConcursoRepository concursoRepository,
-            DocenteRepository docenteRepository) {
+            DocenteRepository docenteRepository,
+            CertificadoRepository certificadoRepository,
+            TipoCertificadoRepository tipoCertificadoRepository) {
 
         super(concursoDocenteRepository);
         this.concursoDocenteRepository = concursoDocenteRepository;
         this.concursoRepository = concursoRepository;
         this.docenteRepository = docenteRepository;
+        this.certificadoRepository = certificadoRepository;
+        this.tipoCertificadoRepository = tipoCertificadoRepository;
     }
 
     public List<ConcursoDocente> obtenerOrdenMerito(Long concursoId) {
@@ -149,6 +159,11 @@ public class ConcursoDocenteService
                 throw new ErrorServiceException("No se puede pasar una postulación de «" + ReglasConcurso.etiqueta(estadoActual)
                         + "» a «" + ReglasConcurso.etiqueta(nueva.getEstadoPostulacion()) + "».");
             }
+            // al aprobar el paso 2 deben estar cargados los certificados obligatorios
+            if (estadoActual == EstadoPostulacion.PENDIENTE_CERTIFICADOS
+                    && nueva.getEstadoPostulacion() == EstadoPostulacion.DESIGNADO_PENDIENTE_POSESION) {
+                validarCertificadosObligatorios(actual);
+            }
         }
 
         if (!Objects.equals(nueva.getHorasElegidas(), actual.getHorasElegidas())) {
@@ -176,6 +191,23 @@ public class ConcursoDocenteService
                 throw new ErrorServiceException("El máximo permitido es " + maximo
                         + " h (horas actuales del docente + horas disponibles del concurso).");
             }
+        }
+    }
+
+    /** Paso 2: para aprobar, la postulación debe tener cargado un certificado actual de cada tipo obligatorio */
+    private void validarCertificadosObligatorios(ConcursoDocente postulacion) throws ErrorServiceException {
+        Set<Long> cargados = certificadoRepository
+                .findByConcursoDocenteIdAndActualTrueAndEliminadoFalse(postulacion.getId()).stream()
+                .filter(certificado -> certificado.getTipoCertificado() != null)
+                .map(certificado -> certificado.getTipoCertificado().getId())
+                .collect(Collectors.toSet());
+        String faltantes = tipoCertificadoRepository.findAll().stream()
+                .filter(tipo -> !Boolean.TRUE.equals(tipo.getEliminado()) && tipo.isObligatorio())
+                .filter(tipo -> !cargados.contains(tipo.getId()))
+                .map(TipoCertificado::getNombre)
+                .collect(Collectors.joining(", "));
+        if (!faltantes.isEmpty()) {
+            throw new ErrorServiceException("No se puede aprobar: falta cargar el certificado obligatorio: " + faltantes + ".");
         }
     }
 
