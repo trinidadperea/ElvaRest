@@ -35,6 +35,10 @@
           <dd th:text="${item.origenVacancia != null and !item.origenVacancia.isBlank() ? item.origenVacancia : '—'}"></dd>
         </div>
         <div class="detail-item">
+          <dt>Profesor reemplazante</dt>
+          <dd th:text="${item.profesorReemplazante != null and !item.profesorReemplazante.isBlank() ? item.profesorReemplazante : '—'}"></dd>
+        </div>
+        <div class="detail-item">
           <dt>Fecha de inicio</dt>
           <dd th:text="${item.fechaInicioEfectiva != null ? #temporals.format(item.fechaInicioEfectiva, 'dd/MM/yyyy') : '—'}"></dd>
         </div>

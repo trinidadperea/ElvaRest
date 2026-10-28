@@ -108,6 +108,7 @@ public class ReporteService extends BaseService<Reporte, Long> {
 
         agregarFila(tabla, "Carácter de designación", texto(concurso.getCaracterDesignacion()));
         agregarFila(tabla, "Origen de la vacancia", concurso.getOrigenVacancia());
+        agregarFila(tabla, "Profesor reemplazante", concurso.getProfesorReemplazante());
         agregarFila(tabla, "Fecha de apertura", fecha(concurso.getFechaApertura()));
         // La fecha del concurso se persiste en fechaCierre (§2 de las reglas de negocio).
         agregarFila(tabla, "Fecha del concurso", fecha(concurso.getFechaCierre()));

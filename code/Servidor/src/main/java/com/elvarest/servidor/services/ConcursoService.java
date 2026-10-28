@@ -13,6 +13,7 @@ import com.elvarest.servidor.entities.Docente;
 import com.elvarest.servidor.repositories.ConcursoRepository;
 import com.elvarest.servidor.repositories.DesignacionRepository;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Objects;
 import java.util.Optional;
@@ -24,19 +25,94 @@ public class ConcursoService extends BaseService<Concurso, Long> {
 
     private final DesignacionRepository designacionRepository;
     private final ConcursoDocenteRepository concursoDocenteRepository;
+    private final AlertaService alertaService;
 
     public ConcursoService(ConcursoRepository repository,
                            DesignacionRepository designacionRepository,
-                           ConcursoDocenteRepository concursoDocenteRepository) {
+                           ConcursoDocenteRepository concursoDocenteRepository,
+                           AlertaService alertaService) {
         super(repository);
         this.designacionRepository = designacionRepository;
         this.concursoDocenteRepository = concursoDocenteRepository;
+        this.alertaService = alertaService;
     }
 
     @Override
     protected void validar(Concurso concurso) throws ErrorServiceException {
         if (concurso.getEstadoConcurso() == null) {
             throw new ErrorServiceException("Debe seleccionar un estado para el concurso.");
+        }
+    }
+
+    /**
+     * Regla: un cargo no puede tener dos concursos abiertos a la vez. "Abierto" se define por el
+     * estado (PUBLICADO o EN_PROCESO), no por las fechas. En el alta se controla siempre y en la
+     * modificación solo cuando cambia el cargo, para no bloquear la edición de registros
+     * históricos ni el cierre de un concurso que quedó duplicado con anterioridad.
+     */
+    @Override
+    protected void preAlta(Concurso concurso) throws ErrorServiceException {
+        if (concurso.getEstadoConcurso() != EstadoConcurso.FINALIZADO) {
+            validarCargoSinConcursoAbierto(cargoIdDe(concurso), null);
+        }
+    }
+
+    @Override
+    protected void preModificacion(Concurso concurso) throws ErrorServiceException {
+        Long cargoAnterior = concurso.getId() == null ? null
+                : repository.findById(concurso.getId())
+                        .filter(actual -> actual.getCargo() != null)
+                        .map(actual -> actual.getCargo().getId())
+                        .orElse(null);
+        Long cargoNuevo = cargoIdDe(concurso);
+        if (concurso.getEstadoConcurso() != EstadoConcurso.FINALIZADO
+                && cargoNuevo != null && !Objects.equals(cargoNuevo, cargoAnterior)) {
+            validarCargoSinConcursoAbierto(cargoNuevo, concurso.getId());
+        }
+    }
+
+    /**
+     * El cierre (manual o automático) y la corrección de datos se guardan con este método: después
+     * de persistir se reevalúan las alertas del concurso. Así el cierre marca leída la alerta en el
+     * acto y una edición de un concurso vencido la genera sin esperar al scheduler.
+     */
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public Optional<Concurso> modificar(Long id, Concurso entidad) throws ErrorServiceException {
+        Optional<Concurso> resultado = super.modificar(id, entidad);
+        resultado.ifPresent(alertaService::evaluarConcursoSinCerrar);
+        return resultado;
+    }
+
+    /**
+     * Al dar de baja el concurso, sus dos alertas (sigue en proceso y horas sin cubrir) ya no tienen
+     * causa y quedan leídas en el acto; la baja es lógica, así que la alerta se conserva como historial.
+     */
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public boolean bajaLogica(Long id) throws ErrorServiceException {
+        boolean dadoDeBaja = super.bajaLogica(id);
+        if (dadoDeBaja) {
+            repository.findById(id).ifPresent(alertaService::evaluarConcursoSinCerrar);
+        }
+        return dadoDeBaja;
+    }
+
+    private Long cargoIdDe(Concurso concurso) {
+        return concurso.getCargo() != null ? concurso.getCargo().getId() : null;
+    }
+
+    private void validarCargoSinConcursoAbierto(Long cargoId, Long concursoExcluido) throws ErrorServiceException {
+        if (cargoId == null) {
+            return;
+        }
+        boolean otroAbierto = repository.findAll().stream()
+                .filter(otro -> !Boolean.TRUE.equals(otro.getEliminado()))
+                .filter(otro -> !Objects.equals(otro.getId(), concursoExcluido))
+                .filter(otro -> otro.getEstadoConcurso() != EstadoConcurso.FINALIZADO)
+                .anyMatch(otro -> otro.getCargo() != null && Objects.equals(otro.getCargo().getId(), cargoId));
+        if (otroAbierto) {
+            throw new ErrorServiceException("El cargo ya tiene un concurso abierto: ciérrelo antes de abrir otro.");
         }
     }
 

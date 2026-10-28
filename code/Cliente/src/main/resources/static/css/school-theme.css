@@ -28,6 +28,12 @@ body { background: var(--school-page) !important; color: var(--school-ink); font
 .list-toolbar .toolbar-search { flex: 1 1 240px; max-width: 340px; }
 .list-toolbar .form-control, .list-toolbar .form-select { min-height: 40px; }
 
+/* Panel de filtros de listados: agrupa búsqueda, fechas, orden y estado. Cada
+   control lleva su etiqueta para que no se confundan entre sí. */
+.filter-panel .card-body { padding: 1rem 1.15rem; }
+.filter-label { display: block; margin-bottom: .3rem; color: var(--school-muted); font-size: .76rem; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; }
+.filter-divider { height: 1px; margin: .9rem 0; background: var(--school-border); }
+
 /* Acciones dentro de tablas */
 .table-actions { display: flex; flex-wrap: wrap; gap: .35rem; justify-content: flex-end; }
 
@@ -114,6 +120,22 @@ a.mini-item-title:hover { color: var(--school-blue); }
 .detail-item { padding: .8rem .95rem; border: 1px solid var(--school-border); border-radius: 11px; background: #fff; }
 .detail-item dt { color: var(--school-muted); font-size: .76rem; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; margin-bottom: .25rem; }
 .detail-item dd { margin: 0; color: var(--school-ink); font-weight: 650; font-size: .95rem; }
+
+/* Cabecera de la ficha de detalle (nombre + área): el aire lo aporta la
+   separación del área y el padding inferior, no el margen del h3. La clase
+   .detail-header se aplica solo en esta vista para no alterar las demás. */
+#encabezado.detail-header { padding-bottom: .5rem; }
+#encabezado.detail-header h3 { margin-bottom: 0; }
+#encabezado.detail-header h3[data-subtitle]::after { margin-top: .35rem; }
+
+/* Encabezados de sección internos de una ficha (p. ej. Docentes → Ver).
+   AdminLTE define .card-title en 1.1rem/400: mismo tamaño y menos peso que los
+   datos, así que la sección no se distinguía de su contenido. Se recupera la
+   jerarquía con el peso y el azul del sistema sin competir con el nombre del
+   docente (1.55rem/750). El float se anula porque AdminLTE lo usa para
+   .card-title. */
+.card-header .section-title { display: flex; align-items: center; gap: .6rem; float: none; margin: 0; color: var(--school-ink); font-size: 1.1rem; font-weight: 700; line-height: 1.25; letter-spacing: -.01em; }
+.card-header .section-title::before { content: ""; flex: 0 0 auto; width: 4px; height: 1.1em; border-radius: 999px; background: var(--school-blue); }
 
 /* Gráficos */
 .chart-container { position: relative; width: 100%; max-width: 420px; margin: 0 auto; }

@@ -76,6 +76,14 @@
                     <dt>Carácter previsto</dt>
                     <dd th:text="${item.caracterDesignacion != null ? item.caracterDesignacion : 'Sin definir'}"></dd>
                 </div>
+                <div class="detail-item">
+                    <dt>Origen de la vacancia</dt>
+                    <dd th:text="${item.origenVacancia != null and !item.origenVacancia.isBlank() ? item.origenVacancia : 'Sin definir'}"></dd>
+                </div>
+                <div class="detail-item">
+                    <dt>Profesor reemplazante</dt>
+                    <dd th:text="${item.profesorReemplazante != null and !item.profesorReemplazante.isBlank() ? item.profesorReemplazante : '—'}"></dd>
+                </div>
             </div>
         </div>
     </div>

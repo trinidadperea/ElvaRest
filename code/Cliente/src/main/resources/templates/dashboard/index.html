@@ -82,7 +82,7 @@
     <div class="col-12">
       <div class="card h-100">
         <div class="card-header d-flex align-items-center gap-2">
-          <h3 class="card-title mb-0">Concursos en curso</h3>
+          <h3 class="card-title section-title mb-0">Concursos en curso</h3>
           <a class="ms-auto small" th:href="@{/concursos}">Ver todos</a>
         </div>
         <div class="card-body">
@@ -161,7 +161,7 @@
     <div class="col-12">
       <div class="card">
         <div class="card-header d-flex align-items-center gap-2">
-          <h3 class="card-title mb-0">Alertas sin leer</h3>
+          <h3 class="card-title section-title mb-0">Alertas sin leer</h3>
           <a class="ms-auto small" th:href="@{/alertas}">Ver todas</a>
         </div>
         <div class="card-body">
@@ -192,7 +192,7 @@
 
       <div class="card mb-3">
         <div class="card-header">
-          <h3 class="card-title">Accesos rápidos</h3>
+          <h3 class="card-title section-title">Accesos rápidos</h3>
         </div>
         <div class="card-body">
           <div class="quick-actions">
@@ -231,7 +231,7 @@
       <div class="card h-100">
 
         <div class="card-header">
-          <h3 class="card-title mb-0">Próximos cierres</h3>
+          <h3 class="card-title section-title mb-0">Próximos cierres</h3>
         </div>
 
         <div class="card-body">
@@ -290,7 +290,7 @@
     <div class="col-12">
       <div class="card h-100 mb-0">
         <div class="card-header d-flex align-items-center gap-2">
-          <h3 class="card-title mb-0">Pendientes de atención</h3>
+          <h3 class="card-title section-title mb-0">Pendientes de atención</h3>
           <span class="badge text-bg-secondary ms-auto"
                 th:if="${!pendientesAtencion.isEmpty()}"
                 th:text="${#lists.size(pendientesAtencion)}"></span>
@@ -345,7 +345,7 @@
     <div class="col-12">
       <div class="card h-100 mb-0">
         <div class="card-header d-flex align-items-center gap-2">
-          <h3 class="card-title mb-0">Actividad reciente</h3>
+          <h3 class="card-title section-title mb-0">Actividad reciente</h3>
           <span class="text-secondary small ms-auto">Últimas tomas de horas</span>
         </div>
 

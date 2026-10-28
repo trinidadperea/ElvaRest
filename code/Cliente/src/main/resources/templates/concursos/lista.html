@@ -2,15 +2,65 @@
 <html lang="es" xmlns:th="http://www.thymeleaf.org"
       th:replace="~{base :: layout('Concursos', ~{::#encabezado}, ~{::#contenido}, '')}">
 <section id="encabezado">
-  <h3 data-subtitle="Toma de horas, certificados, toma de posesión y rellamados">Concursos</h3>
+  <div class="d-flex flex-wrap justify-content-between align-items-start gap-2">
+    <h3 data-subtitle="Toma de horas, certificados, toma de posesión y rellamados">Concursos</h3>
+    <a class="btn btn-primary" th:href="@{/concursos/nuevo}"><i class="bi bi-plus-lg me-1"></i>Nuevo concurso</a>
+  </div>
 </section>
 <section id="contenido">
-  <div class="list-toolbar">
-    <div class="toolbar-filters">
-      <input type="search" class="form-control toolbar-search" data-filter-input="#tablaConcursos"
-             placeholder="Buscar por cargo, designación o estado…" aria-label="Buscar concurso">
+  <!-- Filtros del listado: cada criterio tiene su etiqueta y el alta queda en la cabecera. -->
+  <div class="card filter-panel" data-filter-scope>
+    <div class="card-body">
+      <div class="row g-3 align-items-end" data-date-filter="#tablaConcursos">
+        <div class="col-12 col-lg-4">
+          <label class="filter-label" for="concursoBuscar">Buscar</label>
+          <div class="input-group">
+            <span class="input-group-text"><i class="bi bi-search"></i></span>
+            <input id="concursoBuscar" type="search" class="form-control" data-filter-input="#tablaConcursos"
+                   placeholder="Cargo, designación o estado…" aria-label="Buscar concurso">
+          </div>
+        </div>
+        <div class="col-6 col-lg-2">
+          <label class="filter-label" for="concursoFechaDesde">Fecha desde</label>
+          <input id="concursoFechaDesde" type="date" class="form-control" data-date-from
+                 aria-label="Fecha del concurso desde">
+        </div>
+        <div class="col-6 col-lg-2">
+          <label class="filter-label" for="concursoFechaHasta">Fecha hasta</label>
+          <input id="concursoFechaHasta" type="date" class="form-control" data-date-to
+                 aria-label="Fecha del concurso hasta">
+        </div>
+        <div class="col-6 col-lg-2">
+          <label class="filter-label" for="concursoOrden">Ordenar por</label>
+          <select id="concursoOrden" class="form-select" data-sort-target="#tablaConcursos"
+                  aria-label="Ordenar concursos">
+            <option value="recientes">Más recientes</option>
+            <option value="antiguos">Más antiguos</option>
+          </select>
+        </div>
+        <div class="col-6 col-lg-2">
+          <button type="button" class="btn btn-outline-secondary w-100" data-filter-reset="#tablaConcursos">
+            <i class="bi bi-x-circle me-1"></i>Limpiar filtros
+          </button>
+        </div>
+      </div>
+      <div class="filter-divider"></div>
+      <div class="d-flex flex-wrap align-items-center gap-2">
+        <span class="filter-label mb-0">Estado</span>
+        <button type="button" class="btn btn-sm btn-outline-primary active"
+                data-filter-btn data-filter-group="estadoConcurso" data-filter-target="#tablaConcursos"
+                data-filter-value="">Todos</button>
+        <button type="button" class="btn btn-sm btn-outline-primary"
+                data-filter-btn data-filter-group="estadoConcurso" data-filter-target="#tablaConcursos"
+                data-filter-value="PUBLICADO">Publicados</button>
+        <button type="button" class="btn btn-sm btn-outline-primary"
+                data-filter-btn data-filter-group="estadoConcurso" data-filter-target="#tablaConcursos"
+                data-filter-value="EN_PROCESO">En proceso</button>
+        <button type="button" class="btn btn-sm btn-outline-primary"
+                data-filter-btn data-filter-group="estadoConcurso" data-filter-target="#tablaConcursos"
+                data-filter-value="FINALIZADO">Finalizados</button>
+      </div>
     </div>
-    <a class="btn btn-primary" th:href="@{/concursos/nuevo}"><i class="bi bi-plus-lg me-1"></i>Nuevo concurso</a>
   </div>
 
   <div class="table-responsive">
@@ -27,7 +77,8 @@
       </tr>
       </thead>
       <tbody>
-      <tr th:each="item : ${items}" data-filter-item>
+      <tr th:each="item : ${items}" data-filter-item
+          th:attr="data-filter-date=${fechasConcursos[item.id]}, data-sort-date=${aperturasConcursos[item.id]}, data-sort-id=${item.id}, data-filter-tags=${item.estadoConcurso}">
         <td>
           <a class="fw-semibold text-decoration-none" th:href="@{/concursos/{id}(id=${item.id})}"
              th:text="${item.descripcion}"></a>
@@ -100,7 +151,7 @@
   <div class="empty-state d-none mt-3" data-filter-empty="tablaConcursos">
     <i class="bi bi-search"></i>
     <p class="empty-title">Sin resultados</p>
-    <p>No hay concursos que coincidan con la búsqueda.</p>
+    <p>No hay concursos que coincidan con los filtros aplicados.</p>
   </div>
 </section>
 </html>

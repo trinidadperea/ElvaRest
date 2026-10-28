@@ -3,9 +3,14 @@
  * - Confirmación de acciones destructivas ([data-confirm] en enlaces, formularios y botones).
  * - Filtro en vivo de tablas y listas ([data-filter-input="#idTabla"]).
  * - Filtro por botones ([data-filter-btn] con data-filter-target y data-filter-value).
+ * - Filtro por rango de fechas ([data-date-filter="#idTabla"] con [data-date-from]/[data-date-to])
+ *   y ordenamiento por fecha ([data-sort-target="#idTabla"]: recientes/antiguos).
+ * - Limpieza de los filtros de una tabla ([data-filter-reset="#idTabla"]).
  * - Exportación CSV de tablas ([data-export-csv="#idTabla"]; las celdas con [data-export-skip] se omiten).
  * - Impresión de la página ([data-print]).
  * - Cierre automático de mensajes flash y estado de carga en formularios.
+ * - Campos obligatorios condicionales
+ *   ([data-required-when="#selector" data-required-value="VALOR"]).
  */
 (function () {
   'use strict';
@@ -116,13 +121,27 @@
     return document.querySelector(targetSelector);
   }
 
-  function filterRows(target, term) {
-    const normalized = term.trim().toLowerCase();
+  // Estado de filtros por tabla: texto, rango de fechas y filtro por botones se
+  // combinan entre sí (antes cada criterio pisaba el resultado del anterior).
+  function filterState(target) {
+    if (!target.filterState) {
+      target.filterState = { term: '', from: '', to: '', tagAttr: 'data-filter-tags', tagValue: '' };
+    }
+    return target.filterState;
+  }
+
+  function applyFilters(target) {
+    const state = filterState(target);
     const rows = target.querySelectorAll('[data-filter-item], tbody tr');
     let visible = 0;
     rows.forEach(function (row) {
       const text = row.textContent.toLowerCase();
-      const match = normalized === '' || text.indexOf(normalized) !== -1;
+      const date = row.getAttribute('data-filter-date') || '';
+      const tags = (row.getAttribute(state.tagAttr) || '').toLowerCase();
+      const match = (state.term === '' || text.indexOf(state.term) !== -1)
+        && (state.from === '' || (date !== '' && date >= state.from))
+        && (state.to === '' || (date !== '' && date <= state.to))
+        && (state.tagValue === '' || tags.indexOf(state.tagValue) !== -1);
       row.classList.toggle('d-none', !match);
       if (match) {
         visible += 1;
@@ -132,6 +151,11 @@
     if (empty) {
       empty.classList.toggle('d-none', visible !== 0);
     }
+  }
+
+  function filterRows(target, term) {
+    filterState(target).term = term.trim().toLowerCase();
+    applyFilters(target);
   }
 
   document.querySelectorAll('[data-filter-input]').forEach(function (input) {
@@ -157,22 +181,90 @@
       if (!target) {
         return;
       }
-      const attr = button.dataset.filterAttr || 'data-filter-tags';
-      const value = button.dataset.filterValue || '';
-      let visible = 0;
-      target.querySelectorAll('[data-filter-item]').forEach(function (item) {
-        const tags = (item.getAttribute(attr) || '').toLowerCase();
-        const match = value === '' || tags.indexOf(value.toLowerCase()) !== -1;
-        item.classList.toggle('d-none', !match);
-        if (match) {
-          visible += 1;
-        }
-      });
-      const empty = document.querySelector('[data-filter-empty="' + target.id + '"]');
-      if (empty) {
-        empty.classList.toggle('d-none', visible !== 0);
+      const state = filterState(target);
+      state.tagAttr = button.dataset.filterAttr || 'data-filter-tags';
+      state.tagValue = (button.dataset.filterValue || '').toLowerCase();
+      applyFilters(target);
+    });
+  });
+
+  // Rango de fechas: [data-date-filter="#idTabla"] agrupa los dos campos.
+  document.querySelectorAll('[data-date-filter]').forEach(function (group) {
+    const target = filterTarget(group.dataset.dateFilter);
+    if (!target) {
+      return;
+    }
+    const from = group.querySelector('[data-date-from]');
+    const to = group.querySelector('[data-date-to]');
+    const sync = function () {
+      const state = filterState(target);
+      state.from = from ? from.value : '';
+      state.to = to ? to.value : '';
+      applyFilters(target);
+    };
+    [from, to].forEach(function (field) {
+      if (field) {
+        field.addEventListener('input', sync);
+        field.addEventListener('change', sync);
       }
     });
+  });
+
+  // Limpiar: restablece texto, fechas y filtro por botones de la tabla indicada.
+  document.querySelectorAll('[data-filter-reset]').forEach(function (button) {
+    button.addEventListener('click', function () {
+      const target = filterTarget(button.dataset.filterReset);
+      if (!target) {
+        return;
+      }
+      const scope = button.closest('[data-filter-scope]') || button.closest('.list-toolbar') || document;
+      scope.querySelectorAll('[data-filter-input], [data-date-from], [data-date-to]').forEach(function (field) {
+        field.value = '';
+      });
+      const state = filterState(target);
+      state.term = '';
+      state.from = '';
+      state.to = '';
+      state.tagValue = '';
+      document.querySelectorAll('[data-filter-btn]').forEach(function (other) {
+        if (other.dataset.filterTarget === button.dataset.filterReset) {
+          other.classList.toggle('active', (other.dataset.filterValue || '') === '');
+        }
+      });
+      applyFilters(target);
+    });
+  });
+
+  // Ordenamiento por fecha: [data-sort-target="#idTabla"] con recientes/antiguos.
+  document.querySelectorAll('[data-sort-target]').forEach(function (select) {
+    const target = filterTarget(select.dataset.sortTarget);
+    if (!target) {
+      return;
+    }
+    const sort = function () {
+      const rows = Array.prototype.slice.call(target.querySelectorAll('[data-filter-item]'));
+      if (rows.length === 0) {
+        return;
+      }
+      // Las filas se mueven dentro de su contenedor (tbody de la tabla, lista, etc.).
+      const body = rows[0].parentElement || target;
+      rows.sort(function (a, b) {
+        const dateA = a.getAttribute('data-sort-date') || '';
+        const dateB = b.getAttribute('data-sort-date') || '';
+        if (dateA !== dateB) {
+          return dateA < dateB ? -1 : 1;
+        }
+        return Number(a.getAttribute('data-sort-id') || 0) - Number(b.getAttribute('data-sort-id') || 0);
+      });
+      if (select.value !== 'antiguos') {
+        rows.reverse();
+      }
+      rows.forEach(function (row) {
+        body.appendChild(row);
+      });
+    };
+    select.addEventListener('change', sort);
+    sort();
   });
 
   // ------------------------------------------------------------------
@@ -250,5 +342,24 @@
         button.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>Procesando…';
       }
     });
+  });
+
+  // ------------------------------------------------------------------
+  // 7. Campos obligatorios condicionales (data-required-when)
+  // ------------------------------------------------------------------
+  // El campo con [data-required-when] pasa a ser obligatorio según el valor
+  // del control indicado. Sin data-required-value alcanza con que tenga un valor.
+  document.querySelectorAll('[data-required-when]').forEach(function (field) {
+    const source = document.querySelector(field.dataset.requiredWhen);
+    if (!source) {
+      return;
+    }
+    const expected = field.dataset.requiredValue;
+    const sync = function () {
+      field.required = expected === undefined ? source.value !== '' : source.value === expected;
+    };
+    source.addEventListener('change', sync);
+    source.addEventListener('input', sync);
+    sync();
   });
 })();

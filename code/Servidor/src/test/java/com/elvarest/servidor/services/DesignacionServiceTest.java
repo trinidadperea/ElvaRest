@@ -21,7 +21,10 @@ import java.util.Optional;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.lenient;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 /**
  * Regla §4: un docente no puede tener dos designaciones vigentes (ACTIVO o PENDIENTE) en el mismo cargo.
@@ -33,6 +36,8 @@ class DesignacionServiceTest {
     private DesignacionRepository designacionRepository;
     @Mock
     private ConcursoRepository concursoRepository;
+    @Mock
+    private AlertaService alertaService;
 
     private DesignacionService service;
     private Cargo cargo;
@@ -40,7 +45,7 @@ class DesignacionServiceTest {
 
     @BeforeEach
     void setUp() {
-        service = new DesignacionService(designacionRepository, concursoRepository);
+        service = new DesignacionService(designacionRepository, concursoRepository, alertaService);
 
         docente = new Docente();
         docente.setId(7L);
@@ -91,5 +96,17 @@ class DesignacionServiceTest {
     void altaManualSinConcursoNoSeValida() {
         cargo.setDesignaciones(List.of(designacion(EstadoDesignacion.ACTIVO, 1L)));
         assertDoesNotThrow(() -> service.alta(designacion(EstadoDesignacion.ACTIVO, null)));
+    }
+
+    @Test
+    void alEliminarLaDesignacionSeResuelveSuAlertaEnElActo() throws Exception {
+        Designacion guardada = designacion(EstadoDesignacion.ACTIVO, null);
+        guardada.setId(15L);
+        when(designacionRepository.findById(15L)).thenReturn(Optional.of(guardada));
+
+        assertTrue(service.bajaLogica(15L));
+
+        assertTrue(guardada.getEliminado(), "La baja es lógica: la designación se conserva.");
+        verify(alertaService).evaluarVencimientoDesignacion(guardada);
     }
 }

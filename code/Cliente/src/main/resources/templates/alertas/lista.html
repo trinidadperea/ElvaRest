@@ -33,13 +33,22 @@
                 Prioridad alta
             </button>
         </div>
-        <span class="text-secondary small" th:text="${#lists.size(items)} + ' alerta(s) en total'"></span>
+        <div class="d-flex flex-wrap align-items-center gap-2">
+            <label class="filter-label mb-0" for="alertaOrden">Ordenar por</label>
+            <select id="alertaOrden" class="form-select form-select-sm w-auto" data-sort-target="#listaAlertas"
+                    aria-label="Ordenar alertas">
+                <option value="recientes">Más recientes</option>
+                <option value="antiguos">Más antiguas</option>
+            </select>
+            <span class="text-secondary small" th:text="${#lists.size(items)} + ' alerta(s) en total'"></span>
+        </div>
     </div>
 
     <div class="alerts-list" id="listaAlertas">
         <article class="school-alert-card" data-filter-item
                  th:each="item : ${items}"
-                 th:attr="data-filter-tags=${(item.leida ? 'leida' : 'sin-leer') + ' ' + (item.prioridad?.name() == 'ALTA' ? 'alta' : 'media')}"
+                 th:attr="data-filter-tags=${(item.leida ? 'leida' : 'sin-leer') + ' ' + (item.prioridad?.name() == 'ALTA' ? 'alta' : 'media')}, data-sort-id=${item.id}"
+                 th:data-sort-date="${item.fechaEmision != null ? #temporals.format(item.fechaEmision, 'yyyy-MM-dd') : ''}"
                  th:classappend="${item.prioridad == T(com.elvarest.cliente.dto.enums.PrioridadAlerta).ALTA ? ' school-alert-high' : ' school-alert-medium'}">
             <div class="school-alert-icon" aria-hidden="true">
                 <i th:class="${item.prioridad == T(com.elvarest.cliente.dto.enums.PrioridadAlerta).ALTA ? 'bi bi-exclamation-triangle-fill' : 'bi bi-info-circle-fill'}"></i>
@@ -62,10 +71,6 @@
                 <div class="school-alert-actions">
                     <a class="btn btn-sm btn-outline-primary" th:href="@{/alertas/{id}(id=${item.id})}">
                         <i class="bi bi-eye me-1"></i>Ver aviso
-                    </a>
-                    <a class="btn btn-sm btn-outline-warning" th:if="${item.certificado != null}"
-                       th:href="@{/certificados/{id}(id=${item.certificado.id})}">
-                        <i class="bi bi-file-earmark-medical me-1"></i>Ver certificado
                     </a>
                     <a class="btn btn-sm btn-outline-secondary" th:href="@{/alertas/{id}/editar(id=${item.id})}">
                         <i class="bi bi-pencil me-1"></i>Editar

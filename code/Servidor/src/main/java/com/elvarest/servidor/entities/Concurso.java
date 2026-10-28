@@ -2,6 +2,7 @@ package com.elvarest.servidor.entities;
 
 import com.elvarest.servidor.entities.enums.CaracterDesignacion;
 import com.elvarest.servidor.entities.enums.EstadoConcurso;
+import com.elvarest.servidor.entities.enums.MotivoVacancia;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -37,6 +38,18 @@ public class Concurso extends BaseEntity<Long> {
 
     /** Origen o motivo de la vacancia que cubre el concurso; las designaciones creadas desde él lo heredan. */
     private String origenVacancia;
+
+    /**
+     * Motivo de la vacancia elegido de la lista. Se guarda como varchar para poder agregar
+     * motivos sin alterar un ENUM de la base; el texto final queda en {@link #origenVacancia}.
+     */
+    @Enumerated(EnumType.STRING)
+    @Column(columnDefinition = "varchar(30)")
+    private MotivoVacancia motivoVacancia;
+
+    /** Docente que se reemplaza; dato informativo, sin relación con la entidad Docente. */
+    @Column(length = 150)
+    private String profesorReemplazante;
 
     /** Indica si el concurso fue generado como rellamado de otro concurso. */
     private Boolean esRellamado;

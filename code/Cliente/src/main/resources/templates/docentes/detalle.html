@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="es" xmlns:th="http://www.thymeleaf.org"
       th:replace="~{base :: layout('Detalle del docente', ~{::#encabezado}, ~{::#contenido}, '')}">
-<section id="encabezado">
+<section id="encabezado" class="detail-header">
     <h3 th:attr="data-subtitle=${item.area != null and !item.area.isBlank() ? 'Área: ' + item.area : 'Sin área asignada'}">
         <span th:text="${item.apellido + ', ' + item.nombre}"></span></h3>
 </section>
@@ -11,7 +11,7 @@
     <!-- ============ Datos personales ============ -->
     <div class="card">
         <div class="card-header d-flex align-items-center gap-2">
-            <h3 class="card-title mb-0">Datos personales</h3>
+            <h3 class="card-title section-title mb-0">Datos personales</h3>
             <span class="badge rounded-pill text-bg-info" th:if="${item.interno}">Interno</span>
         </div>
         <div class="card-body">
@@ -42,7 +42,7 @@
 
     <!-- ============ Certificados (agrupados por concurso) ============ -->
     <div class="card">
-        <div class="card-header"><h3 class="card-title mb-0">Certificados por concurso</h3></div>
+        <div class="card-header"><h3 class="card-title section-title mb-0">Certificados por concurso</h3></div>
         <div class="card-body">
             <div class="mb-4" th:each="grupo : ${certificadosPorConcurso}" th:with="postulacion=${grupo.postulacion}">
                 <div class="d-flex flex-wrap align-items-center gap-2 mb-2">
@@ -57,12 +57,12 @@
                     </a>
                 </div>
                 <th:block th:if="${!grupo.actuales.isEmpty()}">
-                    <div th:replace="~{certificados/fragmentos :: tabla(${grupo.actuales})}"></div>
+                    <div th:replace="~{certificados/fragmentos :: tabla(${grupo.actuales}, false)}"></div>
                 </th:block>
                 <p class="text-secondary small mb-0" th:if="${grupo.actuales.isEmpty()}">Sin certificados cargados para este concurso.</p>
                 <details class="mt-2" th:if="${!grupo.historial.isEmpty()}">
                     <summary class="small" th:text="'Historial (' + ${#lists.size(grupo.historial)} + ' certificado(s) anterior(es))'"></summary>
-                    <div th:replace="~{certificados/fragmentos :: tabla(${grupo.historial})}"></div>
+                    <div th:replace="~{certificados/fragmentos :: tabla(${grupo.historial}, false)}"></div>
                 </details>
             </div>
             <div class="empty-state" th:if="${certificadosPorConcurso.isEmpty()}">
@@ -76,7 +76,7 @@
     <!-- ============ Designaciones registradas ============ -->
     <div class="card" th:if="${!designacionesDocente.isEmpty()}">
         <div class="card-header d-flex align-items-center gap-2">
-            <h3 class="card-title mb-0">Designaciones registradas</h3>
+            <h3 class="card-title section-title mb-0">Designaciones registradas</h3>
             <span class="badge text-bg-secondary ms-auto" th:text="${#lists.size(designacionesDocente)}"></span>
         </div>
         <div class="card-body">
@@ -85,6 +85,7 @@
                     <thead>
                     <tr>
                         <th>Materia/Curso</th>
+                        <th>Motivo y profesor reemplazado</th>
                         <th>Carácter</th>
                         <th>Inicio efectivo</th>
                         <th>Fecha fin definitiva</th>
@@ -94,6 +95,12 @@
                     <tbody>
                     <tr th:each="designacion : ${designacionesDocente}">
                         <td th:text="${materiasDesignaciones[designacion.id] != null ? materiasDesignaciones[designacion.id] : '—'}"></td>
+                        <td>
+                            <span th:text="${designacion.origenVacancia != null and !designacion.origenVacancia.isBlank() ? designacion.origenVacancia : '—'}"></span>
+                            <span class="d-block text-secondary small"
+                                  th:if="${designacion.profesorReemplazante != null and !designacion.profesorReemplazante.isBlank()}"
+                                  th:text="'Reemplaza a: ' + ${designacion.profesorReemplazante}"></span>
+                        </td>
                         <td th:text="${designacion.caracterDesignacion != null ? designacion.caracterDesignacion : '—'}"></td>
                         <td th:text="${designacion.fechaInicioEfectiva != null ? #temporals.format(designacion.fechaInicioEfectiva, 'dd/MM/yyyy') : '—'}"></td>
                         <td th:text="${designacion.fechaFinDefinitiva != null ? #temporals.format(designacion.fechaFinDefinitiva, 'dd/MM/yyyy') : ''}"></td>
@@ -112,7 +119,7 @@
     <!-- ============ Historial de concursos ============ -->
     <div class="card">
         <div class="card-header d-flex align-items-center gap-2">
-            <h3 class="card-title mb-0">Historial en concursos</h3>
+            <h3 class="card-title section-title mb-0">Historial en concursos</h3>
             <span class="text-secondary small ms-auto">Tomas de horas registradas</span>
         </div>
         <div class="card-body">

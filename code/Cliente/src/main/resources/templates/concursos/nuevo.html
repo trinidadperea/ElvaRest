@@ -32,13 +32,35 @@
                         th:text="${cargo.descripcion + ' (' + cargo.cargaHoraria + ' h)'}"></option>
             </select>
             <div class="form-text">Si no indica horas totales, se toma la carga horaria del cargo.</div>
+            <div class="form-text text-warning-emphasis" th:if="${!item.cargoFijado and #lists.isEmpty(cargos)}">
+                <i class="bi bi-info-circle me-1"></i>Todos los cargos tienen un concurso abierto: ciérrelo antes de abrir otro.
+            </div>
         </div>
 
         <div class="mb-3">
-            <label for="origenVacancia">Origen de la vacancia</label>
-            <input id="origenVacancia" class="form-control" th:field="*{origenVacancia}" required maxlength="150"
-                   placeholder="Ej.: Renuncia de ..., Jubilación de ..., Creación del cargo">
-            <div class="form-text">Motivo por el que el cargo quedó vacante; se copiará a las designaciones creadas desde este concurso.</div>
+            <label for="motivoVacancia">Motivo de la vacancia</label>
+            <select id="motivoVacancia" class="form-select" th:field="*{motivoVacancia}" required>
+                <option value="">Seleccione el motivo</option>
+                <option th:each="value : ${T(com.elvarest.cliente.dto.enums.MotivoVacancia).values()}"
+                        th:value="${value}" th:text="${value.etiqueta}"></option>
+            </select>
+        </div>
+
+        <div class="mb-3">
+            <label for="origenVacancia">Detalle del motivo</label>
+            <input id="origenVacancia" class="form-control" th:field="*{origenVacancia}" maxlength="150"
+                   placeholder="Ej.: Licencia por maternidad de la titular"
+                   data-required-when="#motivoVacancia" data-required-value="OTRO">
+            <div class="form-text">Opcional para los motivos de la lista y obligatorio si elige «Otro». Se muestra como
+                «Motivo – detalle» en las designaciones creadas desde este concurso.</div>
+        </div>
+
+        <div class="mb-3">
+            <label for="profesorReemplazante">Profesor reemplazante</label>
+            <input id="profesorReemplazante" class="form-control" th:field="*{profesorReemplazante}" maxlength="150"
+                   placeholder="Ej.: Gutiérrez, Ana">
+            <div class="form-text">Docente que se reemplaza. Es un dato informativo: no se asocia a un docente del sistema
+                ni genera designaciones.</div>
         </div>
 
         <div class="mb-3">

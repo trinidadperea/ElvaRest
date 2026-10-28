@@ -9,20 +9,20 @@
 <section id="contenido">
 
     <div class="card">
-        <div class="card-header"><h3 class="card-title mb-0">Certificados de este concurso</h3></div>
+        <div class="card-header"><h3 class="card-title section-title mb-0">Certificados de este concurso</h3></div>
         <div class="card-body">
             <th:block th:if="${!certificados.isEmpty()}">
-                <div th:replace="~{certificados/fragmentos :: tabla(${certificados})}"></div>
+                <div th:replace="~{certificados/fragmentos :: tabla(${certificados}, true)}"></div>
             </th:block>
             <p class="text-secondary mb-0" th:if="${certificados.isEmpty()}">Todavía no se cargó ningún certificado.</p>
         </div>
     </div>
 
     <div class="card">
-        <div class="card-header"><h3 class="card-title mb-0">Cargar / renovar certificado</h3></div>
+        <div class="card-header"><h3 class="card-title section-title mb-0">Cargar / renovar certificado</h3></div>
         <div class="card-body">
             <p class="text-secondary small">Si ya existe un certificado de ese tipo, el nuevo lo reemplaza y el anterior queda en el historial.</p>
-            <form th:replace="~{certificados/fragmentos :: carga(${postulacion.id}, 'docente')}"></form>
+            <form th:replace="~{certificados/fragmentos :: carga(${postulacion.id}, 'docente', ${tipoFijo}, ${certificadoOrigenId})}"></form>
         </div>
     </div>
 

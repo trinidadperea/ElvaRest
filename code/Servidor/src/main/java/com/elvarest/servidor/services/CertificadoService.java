@@ -19,7 +19,9 @@ import java.util.Objects;
  * - Se cargan siempre de cero en cada concurso (no se reutilizan los de otro concurso).
  * - Solo los tipos que lo permiten (apto psicofísico) pueden ser provisorios, con vencimiento posterior a hoy.
  * - No se editan: renovar = cargar uno nuevo; el anterior del mismo tipo queda en el historial (actual = false).
- * - Al cargar un provisorio se evalúa en el momento si corresponde alerta de vencimiento.
+ * - Al cargar un provisorio se evalúa en el momento si corresponde alerta de vencimiento; al renovar,
+ *   la alerta del certificado reemplazado se resuelve en el momento (no espera la depuración diaria).
+ * - Al darse de baja, su alerta de vencimiento se resuelve en el momento.
  */
 @Service
 public class CertificadoService extends BaseService<Certificado, Long> {
@@ -96,10 +98,23 @@ public class CertificadoService extends BaseService<Certificado, Long> {
                 .forEach(anterior -> {
                     anterior.setActual(false);
                     certificadoRepository.save(anterior);
+                    // La causa de su alerta desapareció: queda leída en el acto, no en la revisión diaria.
+                    alertaService.evaluarVencimiento(anterior);
                 });
 
         // Si al provisorio ya le quedan 7 días o menos, la alerta se genera en el momento.
         alertaService.evaluarVencimiento(guardado);
+    }
+
+    /** Al dar de baja el certificado, su alerta de vencimiento ya no tiene causa: queda leída en el acto. */
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public boolean bajaLogica(Long id) throws ErrorServiceException {
+        boolean dadoDeBaja = super.bajaLogica(id);
+        if (dadoDeBaja) {
+            repository.findById(id).ifPresent(alertaService::evaluarVencimiento);
+        }
+        return dadoDeBaja;
     }
 
     @Override

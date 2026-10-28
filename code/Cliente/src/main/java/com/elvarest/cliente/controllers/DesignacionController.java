@@ -1,6 +1,7 @@
 package com.elvarest.cliente.controllers;
 
 import com.elvarest.cliente.dto.DesignacionDTO;
+import com.elvarest.cliente.dto.enums.MotivoVacancia;
 import com.elvarest.cliente.exceptions.ErrorServiceException;
 import com.elvarest.cliente.services.DesignacionService;
 import com.elvarest.cliente.services.DocenteService;
@@ -38,6 +39,20 @@ public class DesignacionController extends BaseController<DesignacionDTO, Long> 
     protected void preModificacion() throws ErrorServiceException {
         model.addAttribute("docentes", docenteService.listarActivos());
         conservarCargoOrigen();
+        // El motivo se deduce del texto guardado en las designaciones anteriores al selector. En el
+        // formulario, origenVacancia se edita como detalle y se muestra sin el motivo para no
+        // recomponer "Renuncia – Renuncia" al guardar. En el detalle (isDisabled) se conserva el
+        // texto completo.
+        Object item = model.getAttribute("item");
+        if (item instanceof DesignacionDTO designacion) {
+            if (designacion.getMotivoVacancia() == null) {
+                designacion.setMotivoVacancia(MotivoVacancia.desdeTexto(designacion.getOrigenVacancia()));
+            }
+            if (Boolean.FALSE.equals(model.getAttribute("isDisabled"))) {
+                designacion.setOrigenVacancia(MotivoVacancia.detalleDesdeTexto(
+                        designacion.getMotivoVacancia(), designacion.getOrigenVacancia()));
+            }
+        }
     }
 
     /**
@@ -82,6 +97,22 @@ public class DesignacionController extends BaseController<DesignacionDTO, Long> 
                              RedirectAttributes attributes, Model model) {
         try {
             this.model = model;
+            // El formulario envía en origenVacancia el detalle libre del motivo elegido.
+            if (entidad.getOrigenVacancia() != null) {
+                String detalle = entidad.getOrigenVacancia().trim();
+                entidad.setOrigenVacancia(detalle.isEmpty() ? null : detalle);
+            }
+            if (entidad.getProfesorReemplazante() != null) {
+                String reemplazante = entidad.getProfesorReemplazante().trim();
+                entidad.setProfesorReemplazante(reemplazante.isEmpty() ? null : reemplazante);
+            }
+            if (entidad.getMotivoVacancia() == null) {
+                throw new ErrorServiceException("Seleccione el motivo de la vacancia.");
+            }
+            if (entidad.getMotivoVacancia() == MotivoVacancia.OTRO && entidad.getOrigenVacancia() == null) {
+                throw new ErrorServiceException("Escriba el motivo de la vacancia.");
+            }
+            entidad.setOrigenVacancia(MotivoVacancia.texto(entidad.getMotivoVacancia(), entidad.getOrigenVacancia()));
             if (entidad.getId() != null) {
                 DesignacionDTO original = service.obtener(entidad.getId());
                 if (original != null) {

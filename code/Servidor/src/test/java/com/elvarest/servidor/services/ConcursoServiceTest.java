@@ -45,13 +45,16 @@ class ConcursoServiceTest {
     private DesignacionRepository designacionRepository;
     @Mock
     private ConcursoDocenteRepository concursoDocenteRepository;
+    @Mock
+    private AlertaService alertaService;
 
     private ConcursoService service;
     private Concurso concurso;
 
     @BeforeEach
     void setUp() {
-        service = new ConcursoService(concursoRepository, designacionRepository, concursoDocenteRepository);
+        service = new ConcursoService(concursoRepository, designacionRepository, concursoDocenteRepository,
+                alertaService);
         concurso = new Concurso();
         concurso.setId(1L);
         concurso.setDescripcion("Matemática 2026");
