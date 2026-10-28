@@ -1,6 +1,6 @@
 <!doctype html>
 <html lang="es" xmlns:th="http://www.thymeleaf.org"
-      th:replace="~{base :: layout('Nuevo concurso', ~{::#encabezado}, ~{::#contenido}, '')}">
+      th:replace="~{base :: layout('Nuevo concurso', ~{::#encabezado}, ~{::#contenido}, ~{::#scripts})}">
 <section id="encabezado">
   <h3 data-subtitle="Defina el cargo vacante, la fecha del concurso y las horas a cubrir">Nuevo concurso</h3>
 </section>
@@ -19,7 +19,8 @@
       <label>Cargo vacante</label>
       <div class="form-control-plaintext fw-semibold"
            th:text="${item.cargo != null ? item.cargo.descripcion + (item.cargo.cargaHoraria > 0 ? ' (' + item.cargo.cargaHoraria + ' h)' : '') : '—'}"></div>
-      <input type="hidden" name="cargo.id" th:value="${item.cargo != null ? item.cargo.id : ''}">
+      <input type="hidden" id="cargoFijadoId" name="cargo.id" th:value="${item.cargo != null ? item.cargo.id : ''}"
+             th:attr="data-tipo=${item.cargo != null ? item.cargo.tipoCargo : ''},data-horas=${item.cargo != null ? item.cargo.cargaHoraria : ''}">
       <input type="hidden" th:field="*{cargoFijado}">
       <div class="form-text">El concurso se crea para este cargo; no puede cambiarse desde este formulario.</div>
     </div>
@@ -27,7 +28,7 @@
       <label for="cargoId">Cargo vacante</label>
       <select id="cargoId" class="form-select" name="cargo.id" required>
         <option value="">Seleccione un cargo</option>
-        <option th:each="cargo : ${cargos}" th:value="${cargo.id}"
+        <option th:each="cargo : ${cargos}" th:value="${cargo.id}" th:attr="data-tipo=${cargo.tipoCargo},data-horas=${cargo.cargaHoraria}"
                 th:selected="${item.cargo != null and item.cargo.id == cargo.id}"
                 th:text="${cargo.descripcion + ' (' + cargo.cargaHoraria + ' h)'}"></option>
       </select>
@@ -71,5 +72,34 @@
       <button class="btn btn-primary"><i class="bi bi-check-lg me-1"></i>Guardar concurso</button>
     </div>
   </form>
+</section>
+
+<section id="scripts">
+  <script>
+    // Cargo de preceptor: las horas totales se completan con la carga horaria del cargo (editables).
+    (function () {
+      var horas = document.getElementById('horasTotales');
+      var selector = document.getElementById('cargoId');
+      var cargo = selector ? null : document.getElementById('cargoFijadoId');
+      var autocompletadas = null;
+
+      function aplicar() {
+        var elegido = selector ? selector.options[selector.selectedIndex] : cargo;
+        var esPreceptor = elegido && elegido.getAttribute('data-tipo') === 'PRECEPTOR';
+        var tocadasAMano = horas.value && horas.value !== autocompletadas;
+        if (tocadasAMano) {
+          return;
+        }
+        // Solo se reemplaza un valor vacío o puesto por este script.
+        horas.value = esPreceptor ? elegido.getAttribute('data-horas') : '';
+        autocompletadas = horas.value;
+      }
+
+      if (selector) {
+        selector.addEventListener('change', aplicar);
+      }
+      aplicar();
+    })();
+  </script>
 </section>
 </html>

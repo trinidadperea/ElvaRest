@@ -9,6 +9,7 @@ import com.elvarest.cliente.dto.enums.CaracterDesignacion;
 import com.elvarest.cliente.dto.enums.EstadoConcurso;
 import com.elvarest.cliente.dto.enums.EstadoDesignacion;
 import com.elvarest.cliente.dto.enums.EstadoPostulacion;
+import com.elvarest.cliente.dto.enums.TipoCargo;
 import com.elvarest.cliente.services.CargoService;
 import com.elvarest.cliente.services.ConcursoDocenteService;
 import com.elvarest.cliente.services.ConcursoService;
@@ -189,6 +190,8 @@ public class ConcursoController extends BaseController<ConcursoDTO, Long> {
         model.addAttribute("horasDisponibles", horasDisponibles);
         model.addAttribute("porcentajeHoras", porcentaje);
         model.addAttribute("cerrado", cerrado);
+        model.addAttribute("esDePreceptor", esDePreceptor(concurso));
+        model.addAttribute("preceptorCubierto", preceptorCubierto(concurso, postulantes));
         model.addAttribute("listoParaCierre", listoParaCierre);
         model.addAttribute("esRellamado", flujoService.esRellamado(concurso));
         model.addAttribute("concursoOrigen", concursoOrigen);
@@ -389,6 +392,8 @@ public class ConcursoController extends BaseController<ConcursoDTO, Long> {
             model.addAttribute("item", postulacion);
             model.addAttribute("concurso", concurso);
             model.addAttribute("docentes", docentesDisponiblesParaPostular(concurso, postulantes));
+            model.addAttribute("esDePreceptor", esDePreceptor(concurso));
+            model.addAttribute("preceptorCubierto", preceptorCubierto(concurso, postulantes));
             model.addAttribute("horasTotales", horasTotalesDe(concurso));
             model.addAttribute("horasDisponibles", horasDisponiblesDe(concurso, postulantes));
             return "concursos/postular";
@@ -414,6 +419,15 @@ public class ConcursoController extends BaseController<ConcursoDTO, Long> {
             if (!docenteActivo) {
                 throw new IllegalArgumentException("Solo se pueden registrar docentes activos.");
             }
+            DocenteDTO docente = docenteService.obtener(docenteId);
+            boolean esDePreceptor = esDePreceptor(concurso);
+            boolean esPreceptor = docente.getTipo() == TipoCargo.PRECEPTOR;
+            if (esDePreceptor && !esPreceptor) {
+                throw new IllegalArgumentException("Este cargo es de preceptor: solo se pueden postular preceptores.");
+            }
+            if (!esDePreceptor && esPreceptor) {
+                throw new IllegalArgumentException("Este cargo es docente: no se pueden postular preceptores.");
+            }
             List<ConcursoDocenteDTO> postulantes = postulantesDelConcurso(concursoId);
             boolean yaPostulado = postulantes.stream()
                     .anyMatch(actual -> !estadoEfectivo(actual).isCancelado()
@@ -422,25 +436,34 @@ public class ConcursoController extends BaseController<ConcursoDTO, Long> {
             if (yaPostulado) {
                 throw new IllegalArgumentException("El docente ya tiene una toma de horas vigente en este concurso.");
             }
+            if (preceptorCubierto(concurso, postulantes)) {
+                throw new IllegalArgumentException("El concurso de preceptor admite una sola persona y ya tiene una postulación vigente.");
+            }
             boolean designacionEfectivaOrigen = docentesConDesignacionEfectivaDelOrigen(concurso).stream()
-                    .anyMatch(docente -> Objects.equals(docente.getId(), docenteId));
+                    .anyMatch(designado -> Objects.equals(designado.getId(), docenteId));
             if (designacionEfectivaOrigen) {
                 throw new IllegalArgumentException("El docente ya obtuvo una designación efectiva en el concurso origen para este mismo cargo, materia y curso: no puede volver a seleccionarse en el rellamado.");
             }
             boolean designacionActivaDelCargo = docentesConDesignacionActivaDelCargo(concurso).stream()
-                    .anyMatch(docente -> Objects.equals(docente.getId(), docenteId));
+                    .anyMatch(designado -> Objects.equals(designado.getId(), docenteId));
             if (designacionActivaDelCargo) {
                 throw new IllegalArgumentException("El docente tiene una designación efectiva vigente en este mismo cargo, materia y curso: no puede postularse a su propio reemplazo.");
+            }
+            Integer disponibles = horasDisponiblesDe(concurso, postulantes);
+            if (esDePreceptor) {
+                // El preceptor toma todas las horas disponibles del concurso.
+                if (disponibles == null || disponibles < 1) {
+                    throw new IllegalArgumentException("No quedan horas disponibles en el concurso.");
+                }
+                postulacion.setHorasElegidas(disponibles);
             }
             Integer horasElegidas = postulacion.getHorasElegidas();
             if (horasElegidas == null || horasElegidas < 1) {
                 throw new IllegalArgumentException("Indique la cantidad de horas tomadas (mínimo 1).");
             }
-            Integer disponibles = horasDisponiblesDe(concurso, postulantes);
             if (disponibles != null && horasElegidas > disponibles) {
                 throw new IllegalArgumentException("Solo hay " + disponibles + " horas disponibles en el concurso.");
             }
-            DocenteDTO docente = docenteService.obtener(docenteId);
             postulacion.setConcurso(concurso);
             postulacion.setDocente(docente);
             postulacion.setFechaEmision(LocalDate.now());
@@ -1003,6 +1026,9 @@ public class ConcursoController extends BaseController<ConcursoDTO, Long> {
         if (esCerrado(concurso)) {
             throw new IllegalArgumentException("El concurso está cerrado: no se pueden modificar horas.");
         }
+        if (esDePreceptor(concurso)) {
+            throw new IllegalArgumentException("En un concurso de preceptor no se modifican horas: el preceptor toma todas las horas del concurso.");
+        }
         EstadoPostulacion estado = estadoEfectivo(postulacion);
         if (estado == EstadoPostulacion.CANCELADO_INEFECTIVO || estado == EstadoPostulacion.DESIGNACION_DEFINITIVA) {
             throw new IllegalArgumentException("Solo se pueden modificar horas de postulaciones pendientes de certificados o de posesión.");
@@ -1080,6 +1106,17 @@ public class ConcursoController extends BaseController<ConcursoDTO, Long> {
         return flujoService.esListoParaCierre(concurso, postulaciones);
     }
 
+    /** Un cargo de preceptor admite una sola persona (preceptor) por concurso, que toma todas las horas. */
+    private boolean esDePreceptor(ConcursoDTO concurso) {
+        return concurso.getCargo() != null && concurso.getCargo().getTipoCargo() == TipoCargo.PRECEPTOR;
+    }
+
+    /** Concurso de preceptor que ya tiene una postulación vigente (las canceladas liberan el lugar). */
+    private boolean preceptorCubierto(ConcursoDTO concurso, List<ConcursoDocenteDTO> postulantes) {
+        return esDePreceptor(concurso) && postulantes.stream()
+                .anyMatch(postulacion -> !estadoEfectivo(postulacion).isCancelado());
+    }
+
     private List<DocenteDTO> docentesDisponibles(List<ConcursoDocenteDTO> postulantes) {
         List<Long> ocupados = postulantes.stream()
                 .filter(postulacion -> !estadoEfectivo(postulacion).isCancelado())
@@ -1098,7 +1135,13 @@ public class ConcursoController extends BaseController<ConcursoDTO, Long> {
      * rellamados también a quienes obtuvieron designación efectiva en el concurso origen.
      */
     private List<DocenteDTO> docentesDisponiblesParaPostular(ConcursoDTO concurso, List<ConcursoDocenteDTO> postulantes) {
-        List<DocenteDTO> disponibles = docentesDisponibles(postulantes);
+        if (preceptorCubierto(concurso, postulantes)) {
+            return List.of();
+        }
+        TipoCargo tipoCargo = esDePreceptor(concurso) ? TipoCargo.PRECEPTOR : TipoCargo.DOCENTE;
+        List<DocenteDTO> disponibles = docentesDisponibles(postulantes).stream()
+                .filter(docente -> (docente.getTipo() == null ? TipoCargo.DOCENTE : docente.getTipo()) == tipoCargo)
+                .toList();
         List<DocenteDTO> excluidosDocentes = new ArrayList<>(docentesConDesignacionActivaDelCargo(concurso));
         excluidosDocentes.addAll(docentesConDesignacionEfectivaDelOrigen(concurso));
         List<Long> excluidos = excluidosDocentes.stream()

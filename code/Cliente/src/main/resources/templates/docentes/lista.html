@@ -35,6 +35,7 @@
         <td>
           <a class="fw-semibold text-decoration-none" th:href="@{/docentes/{id}(id=${item.id})}"
              th:text="${item.apellido + ', ' + item.nombre}"></a>
+          <span class="badge rounded-pill text-bg-info ms-1" th:if="${item.tipo?.name() == 'PRECEPTOR'}">Preceptor</span>
           <span class="d-block text-secondary small" th:if="${item.interno}">Interno</span>
         </td>
         <td th:text="${item.numeroDocumento != null ? item.numeroDocumento : '—'}"></td>

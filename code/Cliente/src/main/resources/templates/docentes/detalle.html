@@ -33,6 +33,10 @@
           <dd th:text="${item.correoElectronico != null and !item.correoElectronico.isBlank() ? item.correoElectronico : '—'}"></dd>
         </div>
         <div class="detail-item">
+          <dt>Tipo</dt>
+          <dd th:text="${item.tipo?.name() == 'PRECEPTOR' ? 'Preceptor' : 'Docente'}"></dd>
+        </div>
+        <div class="detail-item">
           <dt>Área</dt>
           <dd th:text="${item.area != null and !item.area.isBlank() ? item.area : '—'}"></dd>
         </div>

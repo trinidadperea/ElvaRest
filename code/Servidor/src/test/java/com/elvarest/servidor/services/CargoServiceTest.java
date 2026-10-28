@@ -2,7 +2,9 @@ package com.elvarest.servidor.services;
 
 import com.elvarest.servidor.entities.Cargo;
 import com.elvarest.servidor.entities.Designacion;
+import com.elvarest.servidor.entities.Materia;
 import com.elvarest.servidor.entities.enums.EstadoDesignacion;
+import com.elvarest.servidor.entities.enums.TipoCargo;
 import com.elvarest.servidor.exceptions.ErrorServiceException;
 import com.elvarest.servidor.repositories.CargoRepository;
 import org.junit.jupiter.api.BeforeEach;
@@ -16,6 +18,8 @@ import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.when;
 
@@ -88,5 +92,29 @@ class CargoServiceTest {
         when(cargoRepository.findById(1L)).thenReturn(Optional.empty());
 
         assertDoesNotThrow(() -> service.validarEliminacion(1L));
+    }
+
+    @Test
+    void cargoDePreceptorSeGuardaSinMateria() {
+        cargo.setTipoCargo(TipoCargo.PRECEPTOR);
+        cargo.setCargaHoraria(30);
+        cargo.setMateria(new Materia());
+
+        service.preAlta(cargo);
+        assertNull(cargo.getMateria());
+        assertEquals(30, cargo.getCargaHoraria());
+
+        cargo.setMateria(new Materia());
+        service.preModificacion(cargo);
+        assertNull(cargo.getMateria());
+    }
+
+    @Test
+    void cargoDocenteConservaLaMateria() {
+        cargo.setMateria(new Materia());
+
+        service.preAlta(cargo);
+
+        assertNotNull(cargo.getMateria());
     }
 }

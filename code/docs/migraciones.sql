@@ -106,3 +106,25 @@ SET @sql = IF(
     'ALTER TABLE concurso ADD CONSTRAINT concurso_estado_concurso_valido CHECK (estado_concurso IN (''PUBLICADO'',''EN_PROCESO'',''FINALIZADO''))',
     'DO 0');
 PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
+
+
+-- ---------------------------------------------------------------------
+-- 7. cargo.tipo_cargo y docente.tipo: los cargos de preceptor solo
+--    admiten preceptores (§3.2). Hibernate crea las columnas al arrancar
+--    el Servidor; los registros previos quedan como DOCENTE. Correr este
+--    paso después de ese primer arranque (si la columna no existe, no
+--    hace nada).
+-- ---------------------------------------------------------------------
+SET @sql = IF(
+    (SELECT COUNT(*) FROM information_schema.COLUMNS
+     WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'cargo' AND COLUMN_NAME = 'tipo_cargo') = 1,
+    'UPDATE cargo SET tipo_cargo = ''DOCENTE'' WHERE tipo_cargo IS NULL OR tipo_cargo = ''''',
+    'DO 0');
+PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
+
+SET @sql = IF(
+    (SELECT COUNT(*) FROM information_schema.COLUMNS
+     WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'docente' AND COLUMN_NAME = 'tipo') = 1,
+    'UPDATE docente SET tipo = ''DOCENTE'' WHERE tipo IS NULL OR tipo = ''''',
+    'DO 0');
+PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;

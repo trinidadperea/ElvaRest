@@ -8,6 +8,7 @@ import com.elvarest.servidor.entities.Docente;
 import com.elvarest.servidor.entities.enums.EstadoConcurso;
 import com.elvarest.servidor.entities.enums.EstadoDesignacion;
 import com.elvarest.servidor.entities.enums.EstadoPostulacion;
+import com.elvarest.servidor.entities.enums.TipoCargo;
 import com.elvarest.servidor.exceptions.ErrorServiceException;
 import com.elvarest.servidor.repositories.ConcursoDocenteRepository;
 import com.elvarest.servidor.repositories.ConcursoRepository;
@@ -194,6 +195,77 @@ class ConcursoDocenteServiceTest {
 
         assertRechaza("Solo hay 2 horas disponibles en el concurso.", () -> service.alta(pedido(3)));
         assertDoesNotThrow(() -> service.alta(pedido(2)));
+    }
+
+    // ------------------------------------------------------------------
+    // Cargos de preceptor (§3.2)
+    // ------------------------------------------------------------------
+
+    private Docente preceptor(Long id) {
+        Docente nuevo = docente(id, true);
+        nuevo.setTipo(TipoCargo.PRECEPTOR);
+        lenient().when(docenteRepository.findById(id)).thenReturn(Optional.of(nuevo));
+        return nuevo;
+    }
+
+    private ConcursoDocente pedidoDe(Docente docenteDe, Integer horas) {
+        return postulacion(null, docenteDe, horas, null);
+    }
+
+    @Test
+    void preceptorEnCargoDocenteSeRechaza() {
+        assertRechaza("Este cargo es docente: no se pueden postular preceptores.",
+                () -> service.alta(pedidoDe(preceptor(8L), 4)));
+    }
+
+    @Test
+    void docenteEnCargoDePreceptorSeRechaza() {
+        cargo.setTipoCargo(TipoCargo.PRECEPTOR);
+        assertRechaza("Este cargo es de preceptor: solo se pueden postular preceptores.",
+                () -> service.alta(pedido(4)));
+    }
+
+    @Test
+    void preceptorTomaTodasLasHorasDisponibles() {
+        cargo.setTipoCargo(TipoCargo.PRECEPTOR);
+        concurso.setHorasTransferidas(2);
+        ConcursoDocente pedido = pedidoDe(preceptor(8L), 1);
+
+        assertDoesNotThrow(() -> service.alta(pedido));
+
+        assertEquals(8, pedido.getHorasElegidas());
+    }
+
+    @Test
+    void segundaPersonaEnConcursoDePreceptorSeRechaza() {
+        cargo.setTipoCargo(TipoCargo.PRECEPTOR);
+        guardada(postulacion(20L, preceptor(8L), 10, EstadoPostulacion.PENDIENTE_CERTIFICADOS));
+
+        assertRechaza("El concurso de preceptor admite una sola persona y ya tiene una postulación vigente.",
+                () -> service.alta(pedidoDe(preceptor(9L), null)));
+    }
+
+    @Test
+    void otraPersonaTrasUnaCancelacionEnConcursoDePreceptorSePermite() {
+        cargo.setTipoCargo(TipoCargo.PRECEPTOR);
+        guardada(postulacion(20L, preceptor(8L), 10, EstadoPostulacion.CANCELADO_INEFECTIVO));
+        ConcursoDocente pedido = pedidoDe(preceptor(9L), null);
+
+        assertDoesNotThrow(() -> service.alta(pedido));
+
+        assertEquals(10, pedido.getHorasElegidas());
+    }
+
+    @Test
+    void horasDeUnPreceptorNoSeModifican() {
+        cargo.setTipoCargo(TipoCargo.PRECEPTOR);
+        ConcursoDocente pendiente = postulacion(20L, preceptor(8L), 10, EstadoPostulacion.PENDIENTE_CERTIFICADOS);
+        guardada(pendiente);
+        ConcursoDocente cambio = copia(pendiente);
+        cambio.setHorasElegidas(5);
+
+        assertRechaza("En un concurso de preceptor no se modifican horas: "
+                + "el preceptor toma todas las horas del concurso.", () -> service.modificar(20L, cambio));
     }
 
     // ------------------------------------------------------------------

@@ -1,6 +1,6 @@
 <!doctype html>
 <html lang="es" xmlns:th="http://www.thymeleaf.org"
-      th:replace="~{base :: layout('Editar cargo', ~{::#encabezado}, ~{::#contenido}, '')}">
+      th:replace="~{base :: layout('Editar cargo', ~{::#encabezado}, ~{::#contenido}, ~{::#scripts})}">
 <section id="encabezado">
   <h3 th:attr="data-subtitle='Modificando: ' + ${item.descripcion}">Editar cargo</h3>
 </section>
@@ -16,12 +16,20 @@
       <input class="form-control" id="descripcion" th:field="*{descripcion}" required>
     </div>
     <div class="mb-3">
+      <label for="tipoCargo">Tipo de cargo *</label>
+      <select class="form-select" id="tipoCargo" th:field="*{tipoCargo}" required>
+        <option value="DOCENTE">Docente</option>
+        <option value="PRECEPTOR">Preceptor</option>
+      </select>
+      <div class="form-text">Un cargo de preceptor admite un solo preceptor por concurso, que toma todas las horas.</div>
+    </div>
+    <div class="mb-3">
       <label for="cargaHoraria">Carga horaria (horas cátedra) *</label>
       <input class="form-control" id="cargaHoraria" type="number" min="1" th:field="*{cargaHoraria}" required>
       <div class="form-text">Los concursos abiertos toman este valor como horas totales mientras no tengan horas propias definidas.</div>
     </div>
 
-    <div class="mb-3">
+    <div class="mb-3" id="bloqueMateria">
       <label for="materia">Materia / curso</label>
       <select class="form-select" id="materia" name="materia.id">
         <option value="">Sin materia asignada</option>
@@ -39,5 +47,32 @@
     </div>
   </form>
 
+</section>
+
+<section id="scripts">
+  <script>
+    // Preceptor: 25 h sugeridas (editables) y sin materia/curso, que se asignan fuera del sistema.
+    (function () {
+      var HORAS_PRECEPTOR = 25;
+      var tipo = document.getElementById('tipoCargo');
+      var horas = document.getElementById('cargaHoraria');
+      var bloqueMateria = document.getElementById('bloqueMateria');
+      var materia = document.getElementById('materia');
+
+      function aplicar(cambioDelUsuario) {
+        var esPreceptor = tipo.value === 'PRECEPTOR';
+        bloqueMateria.hidden = esPreceptor;
+        if (esPreceptor) {
+          materia.value = '';
+          if (cambioDelUsuario) {
+            horas.value = HORAS_PRECEPTOR;
+          }
+        }
+      }
+
+      tipo.addEventListener('change', function () { aplicar(true); });
+      aplicar(false);
+    })();
+  </script>
 </section>
 </html>

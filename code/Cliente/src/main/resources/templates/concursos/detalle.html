@@ -102,8 +102,8 @@
         <h4 class="flow-step-title">Registrar / modificar toma de horas</h4>
         <p class="flow-step-hint">Cada docente ocupa parte de las horas disponibles y queda pendiente de certificados. Las horas solo se pueden modificar mientras el concurso está abierto.</p>
       </div>
-      <a class="btn btn-sm btn-primary" th:if="${!cerrado and (horasDisponibles == null or horasDisponibles > 0)}" th:href="@{/concursos/{id}/postular(id=${item.id})}">
-        <i class="bi bi-person-plus me-1"></i>Agregar nuevo docente
+      <a class="btn btn-sm btn-primary" th:if="${!cerrado and !preceptorCubierto and (horasDisponibles == null or horasDisponibles > 0)}" th:href="@{/concursos/{id}/postular(id=${item.id})}">
+        <i class="bi bi-person-plus me-1"></i><th:block th:text="${esDePreceptor ? 'Agregar preceptor' : 'Agregar nuevo docente'}">Agregar nuevo docente</th:block>
       </a>
     </div>
     <div class="flow-step-body">
@@ -137,7 +137,7 @@
             <td>
               <div class="table-actions">
                 <a class="btn btn-sm btn-outline-secondary"
-                   th:if="${!cerrado and estadosPostulacion[postulacion.id] != T(com.elvarest.cliente.dto.enums.EstadoPostulacion).CANCELADO_INEFECTIVO and estadosPostulacion[postulacion.id] != T(com.elvarest.cliente.dto.enums.EstadoPostulacion).DESIGNACION_DEFINITIVA}"
+                   th:if="${!cerrado and !esDePreceptor and estadosPostulacion[postulacion.id] != T(com.elvarest.cliente.dto.enums.EstadoPostulacion).CANCELADO_INEFECTIVO and estadosPostulacion[postulacion.id] != T(com.elvarest.cliente.dto.enums.EstadoPostulacion).DESIGNACION_DEFINITIVA}"
                    th:href="@{/concursos/{cid}/postulaciones/{pid}/horas(cid=${item.id}, pid=${postulacion.id})}">
                   <i class="bi bi-hourglass-split"></i>Modificar horas
                 </a>
