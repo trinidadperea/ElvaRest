@@ -1,5 +1,6 @@
 package com.elvarest.servidor.services;
 
+import com.elvarest.servidor.entities.Cargo;
 import com.elvarest.servidor.entities.Concurso;
 import com.elvarest.servidor.entities.ConcursoDocente;
 import com.elvarest.servidor.entities.Designacion;
@@ -7,6 +8,7 @@ import com.elvarest.servidor.entities.enums.EstadoConcurso;
 import com.elvarest.servidor.entities.enums.EstadoDesignacion;
 import com.elvarest.servidor.entities.enums.EstadoPostulacion;
 import com.elvarest.servidor.exceptions.ErrorServiceException;
+import com.elvarest.servidor.repositories.CargoRepository;
 import com.elvarest.servidor.repositories.ConcursoDocenteRepository;
 import com.elvarest.servidor.entities.ConcursoDocente;
 import com.elvarest.servidor.entities.Docente;
@@ -24,19 +26,41 @@ public class ConcursoService extends BaseService<Concurso, Long> {
 
     private final DesignacionRepository designacionRepository;
     private final ConcursoDocenteRepository concursoDocenteRepository;
+    private final CargoRepository cargoRepository;
 
     public ConcursoService(ConcursoRepository repository,
                            DesignacionRepository designacionRepository,
-                           ConcursoDocenteRepository concursoDocenteRepository) {
+                           ConcursoDocenteRepository concursoDocenteRepository,
+                           CargoRepository cargoRepository) {
         super(repository);
         this.designacionRepository = designacionRepository;
         this.concursoDocenteRepository = concursoDocenteRepository;
+        this.cargoRepository = cargoRepository;
     }
 
     @Override
     protected void validar(Concurso concurso) throws ErrorServiceException {
         if (concurso.getEstadoConcurso() == null) {
             throw new ErrorServiceException("Debe seleccionar un estado para el concurso.");
+        }
+        validarHorasDelCargo(concurso);
+    }
+
+    /** Las horas totales del concurso no pueden superar la carga horaria del cargo (si el cargo la tiene). */
+    private void validarHorasDelCargo(Concurso concurso) throws ErrorServiceException {
+        Long cargoId = concurso.getCargo() == null ? null : concurso.getCargo().getId();
+        if (concurso.getHorasTotales() == null || cargoId == null) {
+            return;
+        }
+        // Se lee el cargo guardado: el formulario solo envía su id.
+        Optional<Cargo> cargo = cargoRepository.findById(cargoId);
+        if (cargo.isEmpty() || cargo.get().getCargaHoraria() <= 0) {
+            return;
+        }
+        int cargaHoraria = cargo.get().getCargaHoraria();
+        if (concurso.getHorasTotales() > cargaHoraria) {
+            throw new ErrorServiceException("Las horas totales del concurso (" + concurso.getHorasTotales()
+                    + " h) no pueden superar la carga horaria del cargo (" + cargaHoraria + " h).");
         }
     }
 
