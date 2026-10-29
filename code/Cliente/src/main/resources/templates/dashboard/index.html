@@ -1,5 +1,6 @@
 <!doctype html>
 <html lang="es" xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
       th:replace="~{base :: layout('Dashboard', ~{::#encabezado}, ~{::#contenido}, ~{::#scripts})}">
 <section id="encabezado">
   <h3 th:attr="data-subtitle='Resumen general al ' + ${#temporals.format(#temporals.createNow(), 'dd/MM/yyyy')}">Dashboard</h3>
@@ -202,7 +203,7 @@
             <a class="quick-action" th:href="@{/docentes/nuevo}">
               <i class="bi bi-person-plus"></i>Nuevo docente
             </a>
-            <a class="quick-action" th:href="@{/alertas/nuevo}">
+            <a class="quick-action" th:href="@{/alertas/nuevo}" sec:authorize="hasRole('ADMIN')">
               <i class="bi bi-bell"></i>Registrar alerta
             </a>
             <a class="quick-action" th:href="@{/designaciones}">
