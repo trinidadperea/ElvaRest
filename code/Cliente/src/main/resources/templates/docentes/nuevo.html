@@ -38,6 +38,14 @@
       <label for="area">Área *</label>
       <input class="form-control" id="area" th:field="*{area}" required>
     </div>
+    <div class="mb-3">
+      <label for="tipo">Tipo *</label>
+      <select class="form-select" id="tipo" th:field="*{tipo}" required>
+        <option value="DOCENTE">Docente</option>
+        <option value="PRECEPTOR">Preceptor</option>
+      </select>
+      <div class="form-text">Los preceptores solo pueden postularse a cargos de preceptor, y los docentes al resto.</div>
+    </div>
     <!-- El alta crea al docente activo por defecto para que aparezca en los listados. -->
     <input type="hidden" name="activo" value="true">
 

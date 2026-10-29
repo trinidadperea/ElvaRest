@@ -1,5 +1,6 @@
 package com.elvarest.servidor.services;
 
+import com.elvarest.servidor.entities.Cargo;
 import com.elvarest.servidor.entities.Concurso;
 import com.elvarest.servidor.entities.ConcursoDocente;
 import com.elvarest.servidor.entities.Designacion;
@@ -7,6 +8,7 @@ import com.elvarest.servidor.entities.enums.EstadoConcurso;
 import com.elvarest.servidor.entities.enums.EstadoDesignacion;
 import com.elvarest.servidor.entities.enums.EstadoPostulacion;
 import com.elvarest.servidor.exceptions.ErrorServiceException;
+import com.elvarest.servidor.repositories.CargoRepository;
 import com.elvarest.servidor.repositories.ConcursoDocenteRepository;
 import com.elvarest.servidor.repositories.ConcursoRepository;
 import com.elvarest.servidor.repositories.DesignacionRepository;
@@ -47,6 +49,8 @@ class ConcursoServiceTest {
     private ConcursoDocenteRepository concursoDocenteRepository;
     @Mock
     private AlertaService alertaService;
+    @Mock
+    private CargoRepository cargoRepository;
 
     private ConcursoService service;
     private Concurso concurso;
@@ -54,7 +58,7 @@ class ConcursoServiceTest {
     @BeforeEach
     void setUp() {
         service = new ConcursoService(concursoRepository, designacionRepository, concursoDocenteRepository,
-                alertaService);
+                alertaService, cargoRepository);
         concurso = new Concurso();
         concurso.setId(1L);
         concurso.setDescripcion("Matemática 2026");
@@ -205,5 +209,44 @@ class ConcursoServiceTest {
         when(concursoRepository.findById(1L)).thenReturn(Optional.of(concurso));
 
         assertDoesNotThrow(() -> service.validarEliminacion(1L));
+    }
+
+    // ------------------------------------------------------------------
+    // Horas totales vs. carga horaria del cargo
+    // ------------------------------------------------------------------
+
+    private void conCargoDe(int cargaHoraria, Integer horasTotales) {
+        Cargo cargo = new Cargo();
+        cargo.setId(5L);
+        cargo.setCargaHoraria(cargaHoraria);
+        when(cargoRepository.findById(5L)).thenReturn(Optional.of(cargo));
+        Cargo enviado = new Cargo();
+        enviado.setId(5L);
+        concurso.setCargo(enviado);
+        concurso.setEstadoConcurso(EstadoConcurso.PUBLICADO);
+        concurso.setHorasTotales(horasTotales);
+    }
+
+    @Test
+    void horasTotalesMayoresALaCargaDelCargoNoSePermiten() {
+        conCargoDe(10, 12);
+
+        ErrorServiceException e = assertThrows(ErrorServiceException.class, () -> service.validar(concurso));
+        assertEquals("Las horas totales del concurso (12 h) no pueden superar la carga horaria del cargo (10 h).",
+                e.getMessage());
+    }
+
+    @Test
+    void horasTotalesIgualesALaCargaDelCargoSePermiten() {
+        conCargoDe(10, 10);
+
+        assertDoesNotThrow(() -> service.validar(concurso));
+    }
+
+    @Test
+    void cargoSinCargaHorariaNoLimitaLasHoras() {
+        conCargoDe(0, 12);
+
+        assertDoesNotThrow(() -> service.validar(concurso));
     }
 }

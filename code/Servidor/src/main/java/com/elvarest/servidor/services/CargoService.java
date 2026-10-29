@@ -3,6 +3,7 @@ package com.elvarest.servidor.services;
 import com.elvarest.servidor.entities.Cargo;
 import com.elvarest.servidor.entities.Designacion;
 import com.elvarest.servidor.entities.enums.EstadoDesignacion;
+import com.elvarest.servidor.entities.enums.TipoCargo;
 import com.elvarest.servidor.exceptions.ErrorServiceException;
 import com.elvarest.servidor.repositories.CargoRepository;
 import org.springframework.stereotype.Service;
@@ -15,6 +16,23 @@ public class CargoService extends BaseService<Cargo, Long> {
 
     public CargoService(CargoRepository repository) {
         super(repository);
+    }
+
+    @Override
+    protected void preAlta(Cargo cargo) {
+        sinMateriaSiEsPreceptor(cargo);
+    }
+
+    @Override
+    protected void preModificacion(Cargo cargo) {
+        sinMateriaSiEsPreceptor(cargo);
+    }
+
+    /** Un cargo de preceptor no tiene materia, curso ni año: se asigna fuera del sistema. */
+    private void sinMateriaSiEsPreceptor(Cargo cargo) {
+        if (cargo.getTipoCargo() == TipoCargo.PRECEPTOR) {
+            cargo.setMateria(null);
+        }
     }
 
     /**

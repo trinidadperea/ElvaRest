@@ -9,6 +9,7 @@ import com.elvarest.servidor.entities.TipoCertificado;
 import com.elvarest.servidor.entities.enums.EstadoConcurso;
 import com.elvarest.servidor.entities.enums.EstadoDesignacion;
 import com.elvarest.servidor.entities.enums.EstadoPostulacion;
+import com.elvarest.servidor.entities.enums.TipoCargo;
 import com.elvarest.servidor.exceptions.ErrorServiceException;
 import com.elvarest.servidor.repositories.CertificadoRepository;
 import com.elvarest.servidor.repositories.ConcursoDocenteRepository;
@@ -96,12 +97,25 @@ public class ConcursoDocenteService
                 .filter(encontrado -> !Boolean.TRUE.equals(encontrado.getEliminado()) && encontrado.isActivo())
                 .orElseThrow(() -> new ErrorServiceException("Solo se pueden registrar docentes activos."));
 
+        boolean esDePreceptor = ReglasConcurso.esDePreceptor(concurso);
+        boolean esPreceptor = docente.getTipo() == TipoCargo.PRECEPTOR;
+        if (esDePreceptor && !esPreceptor) {
+            throw new ErrorServiceException("Este cargo es de preceptor: solo se pueden postular preceptores.");
+        }
+        if (!esDePreceptor && esPreceptor) {
+            throw new ErrorServiceException("Este cargo es docente: no se pueden postular preceptores.");
+        }
+
         List<ConcursoDocente> postulaciones = postulacionesDe(concurso.getId());
-        boolean yaPostulado = postulaciones.stream()
+        List<ConcursoDocente> vigentes = postulaciones.stream()
                 .filter(actual -> !ReglasConcurso.esCancelada(actual))
-                .anyMatch(actual -> esDelDocente(actual.getDocente(), docenteId));
-        if (yaPostulado) {
+                .toList();
+        if (vigentes.stream().anyMatch(actual -> esDelDocente(actual.getDocente(), docenteId))) {
             throw new ErrorServiceException("El docente ya tiene una toma de horas vigente en este concurso.");
+        }
+        if (esDePreceptor && !vigentes.isEmpty()) {
+            throw new ErrorServiceException("El concurso de preceptor admite una sola persona "
+                    + "y ya tiene una postulación vigente.");
         }
 
         if (tieneDesignacionEfectivaDelOrigen(concurso, docenteId)) {
@@ -111,6 +125,15 @@ public class ConcursoDocenteService
         if (tieneDesignacionActivaEnElCargo(concurso, docenteId)) {
             throw new ErrorServiceException("El docente tiene una designación efectiva vigente en este mismo cargo, "
                     + "materia y curso: no puede postularse a su propio reemplazo.");
+        }
+
+        if (esDePreceptor) {
+            // El preceptor toma todas las horas disponibles, sin importar lo que envíe el cliente.
+            Integer disponibles = ReglasConcurso.horasDisponibles(concurso, postulaciones);
+            if (disponibles == null || disponibles < 1) {
+                throw new ErrorServiceException("No quedan horas disponibles en el concurso.");
+            }
+            postulacion.setHorasElegidas(disponibles);
         }
 
         Integer horas = postulacion.getHorasElegidas();
@@ -176,6 +199,10 @@ public class ConcursoDocenteService
                                           EstadoPostulacion estadoActual, Integer horasNuevas)
             throws ErrorServiceException {
         validarAbierto(concurso, "no se pueden modificar horas");
+        if (ReglasConcurso.esDePreceptor(concurso)) {
+            throw new ErrorServiceException("En un concurso de preceptor no se modifican horas: "
+                    + "el preceptor toma todas las horas del concurso.");
+        }
         if (estadoActual != EstadoPostulacion.PENDIENTE_CERTIFICADOS
                 && estadoActual != EstadoPostulacion.DESIGNADO_PENDIENTE_POSESION) {
             throw new ErrorServiceException("Solo se pueden modificar horas de postulaciones pendientes "

@@ -35,10 +35,12 @@
         <td>
           <a class="fw-semibold text-decoration-none" th:href="@{/cargos/{id}(id=${cargo.id})}"
              th:text="${cargo.descripcion}"></a>
+          <span class="badge rounded-pill text-bg-info ms-1" th:if="${cargo.tipoCargo?.name() == 'PRECEPTOR'}">Preceptor</span>
           <span class="d-block text-secondary small">
             <th:block th:if="${cargo.materia != null}"
                       th:text="${cargo.materia.nombre + (cargo.materia.curso != null ? ' · ' + cargo.materia.curso.anio + '° Año' : '')}"></th:block>
-            <th:block th:if="${cargo.materia == null}">Sin materia asignada</th:block>
+            <th:block th:if="${cargo.materia == null}"
+                      th:text="${cargo.tipoCargo?.name() == 'PRECEPTOR' ? 'Preceptoría' : 'Sin materia asignada'}"></th:block>
           </span>
         </td>
         <td th:text="${cargo.cargaHoraria} + ' h'"></td>

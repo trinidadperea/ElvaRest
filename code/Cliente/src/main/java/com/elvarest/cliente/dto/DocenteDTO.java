@@ -1,6 +1,7 @@
 package com.elvarest.cliente.dto;
 
 import com.elvarest.cliente.dto.enums.PersonaDTO;
+import com.elvarest.cliente.dto.enums.TipoCargo;
 import jakarta.persistence.Column;
 import lombok.Getter;
 import lombok.Setter;
@@ -11,4 +12,5 @@ public class DocenteDTO extends PersonaDTO {
     private boolean activo;
     private boolean interno;
     private String area;
+    private TipoCargo tipo = TipoCargo.DOCENTE;
 }

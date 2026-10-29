@@ -1,5 +1,6 @@
 package com.elvarest.servidor.entities;
 
+import com.elvarest.servidor.entities.enums.TipoCargo;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -18,6 +19,10 @@ public class Cargo extends BaseEntity<Long> {
     private int cargaHoraria;
 
     private String descripcion;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private TipoCargo tipoCargo = TipoCargo.DOCENTE;
 
     @OneToOne
     @JoinColumn(name = "materia_id")
