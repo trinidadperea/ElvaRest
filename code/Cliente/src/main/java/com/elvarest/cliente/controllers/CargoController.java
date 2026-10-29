@@ -4,6 +4,7 @@ import com.elvarest.cliente.dto.CargoDTO;
 import com.elvarest.cliente.dto.ConcursoDTO;
 import com.elvarest.cliente.dto.ConcursoDocenteDTO;
 import com.elvarest.cliente.dto.DesignacionDTO;
+import com.elvarest.cliente.dto.enums.EstadoConcurso;
 import com.elvarest.cliente.dto.enums.EstadoDesignacion;
 import com.elvarest.cliente.exceptions.ErrorServiceException;
 import com.elvarest.cliente.services.CargoService;
@@ -70,6 +71,44 @@ public class CargoController extends BaseController<CargoDTO, Long> {
                 .filter(designacion -> designacion.getEstadoDesignacion() == EstadoDesignacion.ACTIVO)
                 .count());
         model.addAttribute("horasDesignacion", horasTomadasEnConcursos(cargo, designaciones));
+        Map<Long, String> motivosDesignacion = new HashMap<>();
+        for (DesignacionDTO designacion : designaciones) {
+            if (designacion.getId() != null) {
+                motivosDesignacion.put(designacion.getId(), motivoVisible(designacion.getOrigenVacancia()));
+            }
+        }
+        model.addAttribute("motivosDesignacion", motivosDesignacion);
+        model.addAttribute("tieneConcursoAbierto", tieneConcursoAbierto(cargo.getId()));
+    }
+
+    /**
+     * Motivo que se muestra en Cargo → Ver: el texto heredado del concurso o cargado a mano. Las
+     * designaciones históricas sin motivo guardan "Concurso: &lt;descripción&gt;" como respaldo, que
+     * se oculta (null) para no mostrarlo como si fuera un motivo. La vista muestra "—".
+     */
+    private String motivoVisible(String origenVacancia) {
+        if (origenVacancia == null || origenVacancia.isBlank() || origenVacancia.startsWith("Concurso: ")) {
+            return null;
+        }
+        return origenVacancia;
+    }
+
+    /**
+     * Indica si el cargo ya tiene un concurso abierto (estado distinto de FINALIZADO). Se usa para
+     * no ofrecer "Abrir concurso para este cargo" cuando la regla no lo permite.
+     */
+    private boolean tieneConcursoAbierto(Long cargoId) {
+        if (cargoId == null) {
+            return false;
+        }
+        try {
+            return concursoService.listarActivos().stream()
+                    .filter(concurso -> concurso.getEstadoConcurso() != EstadoConcurso.FINALIZADO)
+                    .anyMatch(concurso -> concurso.getCargo() != null
+                            && Objects.equals(concurso.getCargo().getId(), cargoId));
+        } catch (RuntimeException e) {
+            return false;
+        }
     }
 
     /** Agrega el estado (vacante/ocupado) y el conteo de designaciones activas de cada cargo al listado. */

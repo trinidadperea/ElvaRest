@@ -19,8 +19,5 @@ public class ConcursoDocenteDTO extends BaseDTO{
     // --- Campos del flujo de toma de horas (persistidos en el Servidor) ---
     private Integer horasElegidas;
     private EstadoPostulacion estadoPostulacion;
-    private Boolean certificadosRecibidos;
-    private Boolean requiereVencimientoCertificados;
-    private Integer mesesVigencia;
     private String observacion;
 }

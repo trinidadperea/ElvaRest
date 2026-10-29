@@ -7,17 +7,22 @@ import com.elvarest.servidor.exceptions.ErrorServiceException;
 import com.elvarest.servidor.repositories.ConcursoRepository;
 import com.elvarest.servidor.repositories.DesignacionRepository;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Objects;
+import java.util.Optional;
 
 @Service
 public class DesignacionService extends BaseService<Designacion, Long> {
 
     private final ConcursoRepository concursoRepository;
+    private final AlertaService alertaService;
 
-    public DesignacionService(DesignacionRepository repository, ConcursoRepository concursoRepository) {
+    public DesignacionService(DesignacionRepository repository, ConcursoRepository concursoRepository,
+                              AlertaService alertaService) {
         super(repository);
         this.concursoRepository = concursoRepository;
+        this.alertaService = alertaService;
     }
 
     /**
@@ -46,5 +51,38 @@ public class DesignacionService extends BaseService<Designacion, Long> {
         if (vigente) {
             throw new ErrorServiceException("El docente ya posee una designación vigente para este cargo.");
         }
+    }
+
+    /** Apenas se crea la designación se evalúa su fecha de fin para generar la alerta si corresponde. */
+    @Override
+    protected void postAlta(Designacion guardado) throws ErrorServiceException {
+        alertaService.evaluarVencimientoDesignacion(guardado);
+    }
+
+    /**
+     * La fecha de fin definitiva se puede corregir desde la edición, así que al guardar se
+     * reevalúan las alertas: crea la que falte, marca leídas las que ya no corresponden y
+     * reabre la que cambió de mensaje.
+     */
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public Optional<Designacion> modificar(Long id, Designacion entidad) throws ErrorServiceException {
+        Optional<Designacion> resultado = super.modificar(id, entidad);
+        resultado.ifPresent(alertaService::evaluarVencimientoDesignacion);
+        return resultado;
+    }
+
+    /**
+     * Al dar de baja la designación, su alerta de fin ya no tiene causa: queda leída en el acto
+     * (la depuración diaria la resolvería recién en la próxima corrida).
+     */
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public boolean bajaLogica(Long id) throws ErrorServiceException {
+        boolean dadoDeBaja = super.bajaLogica(id);
+        if (dadoDeBaja) {
+            repository.findById(id).ifPresent(alertaService::evaluarVencimientoDesignacion);
+        }
+        return dadoDeBaja;
     }
 }

@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="es" xmlns:th="http://www.thymeleaf.org"
       th:replace="~{base :: layout('Detalle del cargo', ~{::#encabezado}, ~{::#contenido}, '')}">
-<section id="encabezado">
+<section id="encabezado" class="detail-header">
   <h3 th:attr="data-subtitle=${item.materia != null ? 'Materia: ' + item.materia.nombre : (item.tipoCargo?.name() == 'PRECEPTOR' ? 'Preceptoría' : 'Sin materia asignada')}">
     <span th:text="${item.descripcion}"></span></h3>
 </section>
@@ -11,7 +11,7 @@
   <!-- ============ Datos del cargo ============ -->
   <div class="card">
     <div class="card-header d-flex align-items-center gap-2">
-      <h3 class="card-title mb-0">Datos del cargo</h3>
+      <h3 class="card-title section-title mb-0">Datos del cargo</h3>
       <span class="badge rounded-pill ms-auto"
             th:classappend="${vacante ? 'text-bg-warning' : 'text-bg-success'}"
             th:text="${vacante ? 'Vacante' : 'Ocupado'}"></span>
@@ -45,7 +45,7 @@
   <!-- ============ Designaciones ============ -->
   <div class="card">
     <div class="card-header d-flex align-items-center gap-2">
-      <h3 class="card-title mb-0">Designaciones del cargo</h3>
+      <h3 class="card-title section-title mb-0">Designaciones del cargo</h3>
     </div>
     <div class="card-body">
       <div class="table-responsive" th:if="${!designaciones.isEmpty()}">
@@ -58,6 +58,8 @@
             <th>Fecha inicio</th>
             <th>Fecha fin</th>
             <th>Estado</th>
+            <th>Motivo</th>
+            <th>Profesor reemplazado</th>
             <th class="text-end">Acciones</th>
           </tr>
           </thead>
@@ -79,6 +81,8 @@
                     th:classappend="${designacion.estadoDesignacion == T(com.elvarest.cliente.dto.enums.EstadoDesignacion).ACTIVO ? 'text-bg-success' : (designacion.estadoDesignacion == T(com.elvarest.cliente.dto.enums.EstadoDesignacion).PENDIENTE ? 'text-bg-warning' : 'text-bg-secondary')}"
                     th:text="${designacion.estadoDesignacion != null ? designacion.estadoDesignacion : '—'}"></span>
             </td>
+            <td th:text="${motivosDesignacion[designacion.id] != null ? motivosDesignacion[designacion.id] : '—'}"></td>
+            <td th:text="${designacion.profesorReemplazante != null and !designacion.profesorReemplazante.isBlank() ? designacion.profesorReemplazante : '—'}"></td>
             <td>
               <div class="table-actions">
                 <a class="btn btn-sm btn-outline-primary"
@@ -110,8 +114,13 @@
         <i class="bi bi-arrow-left me-1"></i>Volver al listado
       </a>
     </div>
-    <div class="d-flex flex-wrap gap-2">
-      <a class="btn btn-outline-primary" th:href="@{/concursos/nuevo-desde-cargo/{id}(id=${item.id})}">
+    <div class="d-flex flex-wrap gap-2 align-items-center">
+      <span class="badge rounded-pill text-bg-info" th:if="${tieneConcursoAbierto}"
+            title="Cierre el concurso abierto para poder generar otro sobre este cargo.">
+        <i class="bi bi-hourglass-split me-1"></i>Concurso abierto
+      </span>
+      <a class="btn btn-outline-primary" th:unless="${tieneConcursoAbierto}"
+         th:href="@{/concursos/nuevo-desde-cargo/{id}(id=${item.id})}">
         <i class="bi bi-trophy me-1"></i>Abrir concurso para este cargo
       </a>
     </div>

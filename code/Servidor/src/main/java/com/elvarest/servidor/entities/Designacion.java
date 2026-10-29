@@ -2,6 +2,7 @@ package com.elvarest.servidor.entities;
 
 import com.elvarest.servidor.entities.enums.CaracterDesignacion;
 import com.elvarest.servidor.entities.enums.EstadoDesignacion;
+import com.elvarest.servidor.entities.enums.MotivoVacancia;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -25,6 +26,21 @@ public class Designacion extends BaseEntity<Long>{
 
     @Column(nullable = false)
     private String origenVacancia;
+
+    /**
+     * Motivo de la vacancia elegido de la lista. Se guarda como varchar para poder agregar
+     * motivos sin alterar un ENUM de la base; el texto final queda en {@link #origenVacancia}.
+     */
+    @Enumerated(EnumType.STRING)
+    @Column(columnDefinition = "varchar(30)")
+    private MotivoVacancia motivoVacancia;
+
+    /**
+     * Docente que se reemplaza; dato informativo heredado del concurso o cargado a mano.
+     * No se relaciona con la entidad {@link Docente}.
+     */
+    @Column(length = 150)
+    private String profesorReemplazante;
 
     /** Concurso del que nació la designación (nulo en las manuales o históricas). */
     private Long concursoId;

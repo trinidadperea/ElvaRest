@@ -2,6 +2,7 @@ package com.elvarest.cliente.dto;
 
 import com.elvarest.cliente.dto.enums.CaracterDesignacion;
 import com.elvarest.cliente.dto.enums.EstadoConcurso;
+import com.elvarest.cliente.dto.enums.MotivoVacancia;
 import lombok.Getter;
 import lombok.Setter;
 import org.springframework.format.annotation.DateTimeFormat;
@@ -25,6 +26,12 @@ public class ConcursoDTO extends BaseDTO{
 
     /** Origen o motivo de la vacancia; las designaciones creadas desde el concurso lo heredan. */
     private String origenVacancia;
+
+    /** Motivo elegido de la lista; el texto final (etiqueta + detalle) queda en {@link #origenVacancia}. */
+    private MotivoVacancia motivoVacancia;
+
+    /** Docente que se reemplaza; dato informativo, no se asocia a un docente del sistema. */
+    private String profesorReemplazante;
 
     // --- Campos del flujo de toma de horas (persistidos en el Servidor) ---
     private Integer horasTotales;

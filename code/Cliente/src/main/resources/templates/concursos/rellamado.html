@@ -21,13 +21,22 @@
           <dd th:text="${concurso.caracterDesignacion != null ? concurso.caracterDesignacion : 'Sin definir'}"></dd>
         </div>
         <div class="detail-item">
+          <dt>Origen de la vacancia</dt>
+          <dd th:text="${concurso.origenVacancia != null and !concurso.origenVacancia.isBlank() ? concurso.origenVacancia : 'Sin definir'}"></dd>
+        </div>
+        <div class="detail-item">
+          <dt>Profesor reemplazante</dt>
+          <dd th:text="${concurso.profesorReemplazante != null and !concurso.profesorReemplazante.isBlank() ? concurso.profesorReemplazante : '—'}"></dd>
+        </div>
+        <div class="detail-item">
           <dt>Horas remanentes</dt>
           <dd th:text="${horasRemanentes} + ' h'"></dd>
         </div>
       </div>
       <p class="text-secondary small mt-3 mb-0">
         Al confirmar, el concurso original quedará <strong>cerrado definitivamente</strong> y el nuevo concurso
-        nacerá en estado <strong>abierto</strong> con las horas remanentes como totales.
+        nacerá en estado <strong>abierto</strong> con las horas remanentes como totales, el mismo origen de la vacancia
+        y el mismo profesor reemplazante.
       </p>
     </div>
   </div>

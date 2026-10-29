@@ -71,7 +71,7 @@
   <!-- ============ Suplentes vigentes ============ -->
   <div class="card" id="seccionSuplentes" style="scroll-margin-top: 80px;">
     <div class="card-header d-flex flex-wrap align-items-center gap-2">
-      <h3 class="card-title mb-0">Suplentes vigentes</h3>
+      <h3 class="card-title section-title mb-0">Suplentes vigentes</h3>
       <span class="badge text-bg-secondary" th:text="${#lists.size(suplentesVigentes)} + ' registro(s)'"></span>
       <button type="button" class="btn btn-sm btn-outline-secondary ms-auto"
               th:if="${!suplentesVigentes.isEmpty()}"
@@ -124,7 +124,7 @@
   <!-- ============ Historial de designaciones ============ -->
   <div class="card">
     <div class="card-header d-flex flex-wrap align-items-center gap-2">
-      <h3 class="card-title mb-0">Historial de designaciones</h3>
+      <h3 class="card-title section-title mb-0">Historial de designaciones</h3>
       <span class="badge text-bg-secondary" th:text="${#lists.size(historialDesignaciones)} + ' registro(s)'"></span>
       <button type="button" class="btn btn-sm btn-outline-secondary ms-auto"
               th:if="${!historialDesignaciones.isEmpty()}"
@@ -184,7 +184,7 @@
   <!-- ============ Concursos ============ -->
   <div class="card mb-0">
     <div class="card-header d-flex flex-wrap align-items-center gap-2">
-      <h3 class="card-title mb-0">Concursos</h3>
+      <h3 class="card-title section-title mb-0">Concursos</h3>
       <span class="badge text-bg-secondary" th:text="${#lists.size(concursosReporte)} + ' registro(s)'"></span>
       <button type="button" class="btn btn-sm btn-outline-secondary ms-auto"
               th:if="${!concursosReporte.isEmpty()}"
@@ -194,15 +194,7 @@
     </div>
     <div class="card-body">
 
-      <div th:if="${!chartLabels.isEmpty()}" class="mb-4">
-        <div class="d-flex align-items-center gap-2 mb-2">
-          <i class="bi bi-bar-chart text-secondary"></i>
-          <span class="text-secondary fw-semibold" style="font-size: .82rem;">Horas cubiertas vs. disponibles por concurso abierto</span>
-        </div>
-        <div class="chart-container chart-fixed chart-wide">
-          <canvas id="reporteHorasChart"></canvas>
-        </div>
-      </div>
+
 
       <div class="table-responsive" th:if="${!concursosReporte.isEmpty()}">
         <table class="table" id="tablaConcursos">

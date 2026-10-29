@@ -46,10 +46,7 @@ public class DocenteController extends BaseController<DocenteDTO, Long> {
 
     @Override
     protected void postConsulta(DocenteDTO docente) throws ErrorServiceException {
-        model.addAttribute("certificados", certificadoService.listarActivos().stream()
-                .filter(certificado -> certificado.getDocente() != null
-                        && Objects.equals(certificado.getDocente().getId(), docente.getId()))
-                .toList());
+        model.addAttribute("certificadosPorConcurso", certificadoService.agruparPorDocente(docente.getId()));
 
         // Historial: solo postulaciones con designación definitiva (cualquier estado del concurso)
         // o todavía pendientes de concretarla en concursos donde eso sigue siendo posible, más reciente primero.

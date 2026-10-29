@@ -28,6 +28,12 @@ body { background: var(--school-page) !important; color: var(--school-ink); font
 .list-toolbar .toolbar-search { flex: 1 1 240px; max-width: 340px; }
 .list-toolbar .form-control, .list-toolbar .form-select { min-height: 40px; }
 
+/* Panel de filtros de listados: agrupa búsqueda, fechas, orden y estado. Cada
+   control lleva su etiqueta para que no se confundan entre sí. */
+.filter-panel .card-body { padding: 1rem 1.15rem; }
+.filter-label { display: block; margin-bottom: .3rem; color: var(--school-muted); font-size: .76rem; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; }
+.filter-divider { height: 1px; margin: .9rem 0; background: var(--school-border); }
+
 /* Acciones dentro de tablas */
 .table-actions { display: flex; flex-wrap: wrap; gap: .35rem; justify-content: flex-end; }
 
@@ -115,6 +121,22 @@ a.mini-item-title:hover { color: var(--school-blue); }
 .detail-item dt { color: var(--school-muted); font-size: .76rem; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; margin-bottom: .25rem; }
 .detail-item dd { margin: 0; color: var(--school-ink); font-weight: 650; font-size: .95rem; }
 
+/* Cabecera de la ficha de detalle (nombre + área): el aire lo aporta la
+   separación del área y el padding inferior, no el margen del h3. La clase
+   .detail-header se aplica solo en esta vista para no alterar las demás. */
+#encabezado.detail-header { padding-bottom: .5rem; }
+#encabezado.detail-header h3 { margin-bottom: 0; }
+#encabezado.detail-header h3[data-subtitle]::after { margin-top: .35rem; }
+
+/* Encabezados de sección internos de una ficha (p. ej. Docentes → Ver).
+   AdminLTE define .card-title en 1.1rem/400: mismo tamaño y menos peso que los
+   datos, así que la sección no se distinguía de su contenido. Se recupera la
+   jerarquía con el peso y el azul del sistema sin competir con el nombre del
+   docente (1.55rem/750). El float se anula porque AdminLTE lo usa para
+   .card-title. */
+.card-header .section-title { display: flex; align-items: center; gap: .6rem; float: none; margin: 0; color: var(--school-ink); font-size: 1.1rem; font-weight: 700; line-height: 1.25; letter-spacing: -.01em; }
+.card-header .section-title::before { content: ""; flex: 0 0 auto; width: 4px; height: 1.1em; border-radius: 999px; background: var(--school-blue); }
+
 /* Gráficos */
 .chart-container { position: relative; width: 100%; max-width: 420px; margin: 0 auto; }
 .chart-container.chart-fixed { height: 260px; }
@@ -138,4 +160,197 @@ a.mini-item-title:hover { color: var(--school-blue); }
   .list-toolbar { align-items: stretch; }
   .list-toolbar .toolbar-search { max-width: none; }
   .free-hours-panel { flex-direction: column; align-items: flex-start; }
+}
+
+
+/* =========================================
+   MODO OSCURO
+   ========================================= */
+
+html[data-bs-theme="dark"] {
+  color-scheme: dark;
+
+  --school-blue: #3b82f6;
+  --school-blue-dark: #2563eb;
+  --school-ink: #e2e8f0;
+  --school-muted: #94a3b8;
+  --school-surface: #1e293b;
+  --school-page: #0f172a;
+  --school-border: #334155;
+
+  --school-teal: #2dd4bf;
+  --school-teal-soft: #134e4a;
+  --school-amber: #fbbf24;
+  --school-amber-soft: #78350f;
+  --school-red: #f87171;
+  --school-red-soft: #7f1d1d;
+  --school-violet: #a78bfa;
+  --school-violet-soft: #4c1d95;
+}
+
+/* Fondo y texto general */
+html[data-bs-theme="dark"] body,
+html[data-bs-theme="dark"] .app-main {
+  background: var(--school-page) !important;
+  color: var(--school-ink);
+}
+
+/* Barra superior */
+html[data-bs-theme="dark"] .app-header {
+  background: #172554 !important;
+}
+
+/* Menú lateral */
+html[data-bs-theme="dark"] .app-sidebar {
+  background: #111827 !important;
+  border-right-color: var(--school-border);
+}
+
+html[data-bs-theme="dark"] .brand-link {
+  color: var(--school-ink) !important;
+}
+
+html[data-bs-theme="dark"] .brand-text small {
+  color: var(--school-muted);
+}
+
+html[data-bs-theme="dark"] .sidebar-menu .nav-link {
+  color: #cbd5e1 !important;
+}
+
+html[data-bs-theme="dark"] .sidebar-menu .nav-link:hover,
+html[data-bs-theme="dark"] .sidebar-menu .nav-link.active {
+  color: #93c5fd !important;
+  background: #1e3a5f !important;
+}
+
+html[data-bs-theme="dark"] .sidebar-menu .nav-header {
+  color: #94a3b8;
+}
+
+/* Tarjetas, formularios y paneles */
+html[data-bs-theme="dark"] .card,
+html[data-bs-theme="dark"] form,
+html[data-bs-theme="dark"] #contenido > dl,
+html[data-bs-theme="dark"] .stat-card,
+html[data-bs-theme="dark"] .mini-item,
+html[data-bs-theme="dark"] .detail-item,
+html[data-bs-theme="dark"] .flow-step,
+html[data-bs-theme="dark"] .school-alert-card,
+html[data-bs-theme="dark"] .school-alert-detail,
+html[data-bs-theme="dark"] .empty-state {
+  background: var(--school-surface);
+  color: var(--school-ink);
+  border-color: var(--school-border);
+}
+
+html[data-bs-theme="dark"] .card-header,
+html[data-bs-theme="dark"] .flow-step-header {
+  background: #273449;
+  color: var(--school-ink);
+  border-bottom-color: var(--school-border);
+}
+
+/* Textos */
+html[data-bs-theme="dark"] h1,
+html[data-bs-theme="dark"] h2,
+html[data-bs-theme="dark"] h3,
+html[data-bs-theme="dark"] h4,
+html[data-bs-theme="dark"] h5,
+html[data-bs-theme="dark"] p,
+html[data-bs-theme="dark"] label,
+html[data-bs-theme="dark"] .form-label,
+html[data-bs-theme="dark"] .flow-step-title,
+html[data-bs-theme="dark"] .history-title,
+html[data-bs-theme="dark"] .detail-item dd {
+  color: var(--school-ink);
+}
+
+html[data-bs-theme="dark"] .school-alert-message,
+html[data-bs-theme="dark"] .school-alert-detail-message {
+  color: #cbd5e1;
+}
+
+/* Tablas */
+html[data-bs-theme="dark"] .table {
+  --bs-table-bg: var(--school-surface);
+  --bs-table-color: var(--school-ink);
+  --bs-table-border-color: var(--school-border);
+
+  background: var(--school-surface);
+  color: var(--school-ink);
+}
+
+html[data-bs-theme="dark"] .table thead th {
+  background: #273449;
+  color: #cbd5e1;
+  border-bottom-color: var(--school-border);
+}
+
+html[data-bs-theme="dark"] .table tbody tr:hover > * {
+  --bs-table-bg-state: #273449;
+  color: var(--school-ink);
+}
+
+/* Campos de entrada */
+html[data-bs-theme="dark"] .form-control,
+html[data-bs-theme="dark"] .form-select {
+  background-color: #111827;
+  color: var(--school-ink);
+  border-color: #475569;
+}
+
+html[data-bs-theme="dark"] .form-control::placeholder {
+  color: #94a3b8;
+}
+
+html[data-bs-theme="dark"] .form-control:focus,
+html[data-bs-theme="dark"] .form-select:focus {
+  background-color: #111827;
+  color: #f8fafc;
+  border-color: #60a5fa;
+}
+
+/* Enlaces y acciones rápidas */
+html[data-bs-theme="dark"] .quick-action {
+  background: var(--school-surface);
+  color: var(--school-ink);
+  border-color: var(--school-border);
+}
+
+html[data-bs-theme="dark"] .quick-action:hover {
+  background: #273449;
+  color: #93c5fd;
+}
+
+/* Pie de página */
+html[data-bs-theme="dark"] .app-footer {
+  background: #111827;
+  color: var(--school-muted);
+  border-top-color: var(--school-border);
+}
+
+/* Elementos que tienen fondos claros definidos previamente */
+html[data-bs-theme="dark"] .small-box {
+  background: var(--school-surface) !important;
+  color: var(--school-ink) !important;
+  border-color: var(--school-border);
+}
+
+html[data-bs-theme="dark"] .small-box p {
+  color: var(--school-muted);
+}
+
+html[data-bs-theme="dark"] .school-alert-empty {
+  background: var(--school-surface);
+  color: var(--school-muted);
+  border-color: var(--school-border);
+}
+
+html[data-bs-theme="dark"] .school-alert-empty h4 {
+  color: var(--school-ink);
+}
+
+html[data-bs-theme="dark"] .app-content-header {
+  color: var(--school-ink);
 }

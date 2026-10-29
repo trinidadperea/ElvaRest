@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{base :: layout('Tipos de certificado', ~{::#encabezado}, ~{::#contenido}, '')}">
+<section id="encabezado">
+    <h3 data-subtitle="Documentación que se pide al docente cuando gana un concurso">Tipos de certificado</h3>
+</section>
+<section id="contenido">
+    <div class="list-toolbar">
+        <span></span>
+        <a class="btn btn-primary" th:href="@{/tipos-certificado/nuevo}">
+            <i class="bi bi-plus-lg me-1"></i>Nuevo tipo
+        </a>
+    </div>
+
+    <div class="table-responsive" th:if="${!items.isEmpty()}">
+        <table class="table">
+            <thead>
+            <tr>
+                <th>Código</th>
+                <th>Nombre</th>
+                <th>Obligatorio para aprobar</th>
+                <th>Admite provisorio</th>
+                <th class="text-end">Acciones</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr th:each="item : ${items}">
+                <td th:text="${item.codigo}"></td>
+                <td th:text="${item.nombre}"></td>
+                <td th:text="${item.obligatorio ? 'Sí' : 'No'}"></td>
+                <td th:text="${item.permiteProvisorio ? 'Sí' : 'No'}"></td>
+                <td>
+                    <div class="table-actions">
+                        <a class="btn btn-sm btn-outline-secondary" th:href="@{/tipos-certificado/{id}/editar(id=${item.id})}">
+                            <i class="bi bi-pencil"></i>Editar
+                        </a>
+                        <a class="btn btn-sm btn-outline-danger" th:href="@{/tipos-certificado/baja/{id}(id=${item.id})}"
+                           th:attr="data-confirm='¿Dar de baja este tipo de certificado?'">
+                            <i class="bi bi-trash"></i>Eliminar
+                        </a>
+                    </div>
+                </td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <div class="empty-state" th:if="${items.isEmpty()}">
+        <i class="bi bi-file-earmark-medical"></i>
+        <p class="empty-title">Sin tipos de certificado</p>
+    </div>
+</section>
+</html>

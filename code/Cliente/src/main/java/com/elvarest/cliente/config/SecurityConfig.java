@@ -37,6 +37,7 @@ public class SecurityConfig {
         return http
                 .authorizeHttpRequests(authorize -> authorize
                         .requestMatchers("/login", "/adminlte/**").permitAll()
+                        .requestMatchers("/tipos-certificado/**").hasRole("ADMIN")
                         .anyRequest().authenticated()
                 )
                 .formLogin(form -> form

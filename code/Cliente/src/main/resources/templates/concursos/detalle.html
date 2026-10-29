@@ -2,294 +2,302 @@
 <html lang="es" xmlns:th="http://www.thymeleaf.org"
       th:replace="~{base :: layout('Detalle de concurso', ~{::#encabezado}, ~{::#contenido}, '')}">
 <section id="encabezado">
-  <h3 th:attr="data-subtitle=${item.cargo != null ? 'Cargo: ' + item.cargo.descripcion : 'Sin cargo asociado'}">Concurso:
-    <span th:text="${item.descripcion}"></span></h3>
+    <h3 th:attr="data-subtitle=${item.cargo != null ? 'Cargo: ' + item.cargo.descripcion : 'Sin cargo asociado'}">Concurso:
+        <span th:text="${item.descripcion}"></span></h3>
 </section>
 <section id="contenido">
 
-  <!-- Encabezado de acciones -->
-  <div class="list-toolbar">
-    <div class="toolbar-filters">
+    <!-- Encabezado de acciones -->
+    <div class="list-toolbar">
+        <div class="toolbar-filters">
       <span class="badge rounded-pill"
             th:classappend="${cerrado ? 'text-bg-secondary' : 'text-bg-primary'}"
             th:text="${item.estadoConcurso == T(com.elvarest.cliente.dto.enums.EstadoConcurso).PUBLICADO ? 'Publicado' : (item.estadoConcurso == T(com.elvarest.cliente.dto.enums.EstadoConcurso).EN_PROCESO ? 'Proceso' : 'Finalizado')}"></span>
-      <span class="badge text-bg-info" th:if="${esRellamado}">
+            <span class="badge text-bg-info" th:if="${esRellamado}">
         <i class="bi bi-arrow-repeat me-1"></i>Rellamado
       </span>
-      <span class="badge text-bg-light text-secondary" th:text="${cantidadPostulantes} + ' docente(s) registrado(s)'"></span>
+            <span class="badge text-bg-light text-secondary" th:text="${cantidadPostulantes} + ' docente(s) registrado(s)'"></span>
+        </div>
+        <div class="d-flex flex-wrap gap-2">
+            <a class="btn btn-outline-secondary" th:href="@{/concursos/list}">
+                <i class="bi bi-arrow-left me-1"></i>Volver
+            </a>
+            <a class="btn btn-outline-primary" target="_blank" rel="noopener"
+               th:href="@{/reportes/concurso/{id}/pdf(id=${item.id})}">
+                <i class="bi bi-file-earmark-pdf me-1"></i>Descargar PDF
+            </a>
+        </div>
     </div>
-    <div class="d-flex flex-wrap gap-2">
-      <a class="btn btn-outline-secondary" th:href="@{/concursos/list}">
-        <i class="bi bi-arrow-left me-1"></i>Volver
-      </a>
-      <a class="btn btn-outline-primary" target="_blank" rel="noopener"
-         th:href="@{/reportes/concurso/{id}/pdf(id=${item.id})}">
-        <i class="bi bi-file-earmark-pdf me-1"></i>Descargar PDF
-      </a>
-    </div>
-  </div>
 
-  <!-- Resumen de horas -->
-  <div class="card">
-    <div class="card-body">
-      <div class="hours-summary">
-        <div>
-          <div class="hours-value" th:text="${horasTotales != null ? horasTotales + ' h' : '—'}">—</div>
-          <div class="hours-label">Horas totales</div>
+    <!-- Resumen de horas -->
+    <div class="card">
+        <div class="card-body">
+            <div class="hours-summary">
+                <div>
+                    <div class="hours-value" th:text="${horasTotales != null ? horasTotales + ' h' : '—'}">—</div>
+                    <div class="hours-label">Horas totales</div>
+                </div>
+                <div>
+                    <div class="hours-value" th:text="${horasAsignadas} + ' h'">0 h</div>
+                    <div class="hours-label">Horas asignadas</div>
+                </div>
+                <div>
+                    <div class="hours-value" th:text="${horasDisponibles != null ? horasDisponibles + ' h' : '—'}">—</div>
+                    <div class="hours-label">Horas disponibles</div>
+                </div>
+                <div class="flex-grow-1" style="min-width: 200px;" th:if="${horasTotales != null}">
+                    <div class="hours-progress">
+                        <div class="progress-bar" th:classappend="${horasDisponibles != null and horasDisponibles <= 0 ? 'bg-full' : ''}"
+                             th:style="'width:' + ${porcentajeHoras} + '%'"></div>
+                    </div>
+                    <span class="text-secondary small" th:text="${porcentajeHoras} + '% de las horas asignadas'"></span>
+                </div>
+            </div>
+            <p class="text-secondary small mt-3 mb-0" th:if="${horasTotales == null}">
+                <i class="bi bi-exclamation-triangle me-1"></i>
+                Este concurso no tiene horas configuradas. Edítelo o asígnele un cargo con carga horaria para habilitar el control de saldo.
+            </p>
         </div>
-        <div>
-          <div class="hours-value" th:text="${horasAsignadas} + ' h'">0 h</div>
-          <div class="hours-label">Horas asignadas</div>
-        </div>
-        <div>
-          <div class="hours-value" th:text="${horasDisponibles != null ? horasDisponibles + ' h' : '—'}">—</div>
-          <div class="hours-label">Horas disponibles</div>
-        </div>
-        <div class="flex-grow-1" style="min-width: 200px;" th:if="${horasTotales != null}">
-          <div class="hours-progress">
-            <div class="progress-bar" th:classappend="${horasDisponibles != null and horasDisponibles <= 0 ? 'bg-full' : ''}"
-                 th:style="'width:' + ${porcentajeHoras} + '%'"></div>
-          </div>
-          <span class="text-secondary small" th:text="${porcentajeHoras} + '% de las horas asignadas'"></span>
-        </div>
-      </div>
-      <p class="text-secondary small mt-3 mb-0" th:if="${horasTotales == null}">
-        <i class="bi bi-exclamation-triangle me-1"></i>
-        Este concurso no tiene horas configuradas. Edítelo o asígnele un cargo con carga horaria para habilitar el control de saldo.
-      </p>
     </div>
-  </div>
 
-  <!-- Datos generales -->
-  <div class="card">
-    <div class="card-body">
-      <div class="detail-grid">
-        <div class="detail-item">
-          <dt>Fecha del concurso</dt>
-          <dd th:text="${item.fechaConcurso != null ? #temporals.format(item.fechaConcurso, 'dd/MM/yyyy HH:mm') : (item.fechaCierre != null ? #temporals.format(item.fechaCierre, 'dd/MM/yyyy') : '—')}"></dd>
+    <!-- Datos generales -->
+    <div class="card">
+        <div class="card-body">
+            <div class="detail-grid">
+                <div class="detail-item">
+                    <dt>Fecha del concurso</dt>
+                    <dd th:text="${item.fechaConcurso != null ? #temporals.format(item.fechaConcurso, 'dd/MM/yyyy HH:mm') : (item.fechaCierre != null ? #temporals.format(item.fechaCierre, 'dd/MM/yyyy') : '—')}"></dd>
+                </div>
+                <div class="detail-item">
+                    <dt>Cargo</dt>
+                    <dd th:text="${item.cargo != null ? item.cargo.descripcion : 'Sin cargo asociado'}"></dd>
+                </div>
+                <div class="detail-item">
+                    <dt>Carácter previsto</dt>
+                    <dd th:text="${item.caracterDesignacion != null ? item.caracterDesignacion : 'Sin definir'}"></dd>
+                </div>
+                <div class="detail-item">
+                    <dt>Origen de la vacancia</dt>
+                    <dd th:text="${item.origenVacancia != null and !item.origenVacancia.isBlank() ? item.origenVacancia : 'Sin definir'}"></dd>
+                </div>
+                <div class="detail-item">
+                    <dt>Profesor reemplazante</dt>
+                    <dd th:text="${item.profesorReemplazante != null and !item.profesorReemplazante.isBlank() ? item.profesorReemplazante : '—'}"></dd>
+                </div>
+            </div>
         </div>
-        <div class="detail-item">
-          <dt>Cargo</dt>
-          <dd th:text="${item.cargo != null ? item.cargo.descripcion : 'Sin cargo asociado'}"></dd>
-        </div>
-        <div class="detail-item">
-          <dt>Carácter previsto</dt>
-          <dd th:text="${item.caracterDesignacion != null ? item.caracterDesignacion : 'Sin definir'}"></dd>
-        </div>
-      </div>
     </div>
-  </div>
 
-  <!-- Origen del rellamado -->
-  <div class="card" th:if="${concursoOrigen != null}">
-    <div class="card-body d-flex align-items-center gap-3">
-      <i class="bi bi-arrow-repeat fs-4 text-primary"></i>
-      <div>
-        <div class="fw-semibold">Concurso de rellamado</div>
-        <div class="text-secondary small">
-          Hereda el cargo y las horas remanentes de
-          <a th:href="@{/concursos/{id}(id=${concursoOrigen.id})}" th:text="${concursoOrigen.descripcion}">concurso origen</a>.
+    <!-- Origen del rellamado -->
+    <div class="card" th:if="${concursoOrigen != null}">
+        <div class="card-body d-flex align-items-center gap-3">
+            <i class="bi bi-arrow-repeat fs-4 text-primary"></i>
+            <div>
+                <div class="fw-semibold">Concurso de rellamado</div>
+                <div class="text-secondary small">
+                    Hereda el cargo y las horas remanentes de
+                    <a th:href="@{/concursos/{id}(id=${concursoOrigen.id})}" th:text="${concursoOrigen.descripcion}">concurso origen</a>.
+                </div>
+            </div>
         </div>
-      </div>
     </div>
-  </div>
 
-  <!-- ============================ PASO 1 ============================ -->
-  <div class="flow-step">
-    <div class="flow-step-header">
-      <div class="flow-step-number">1</div>
-      <div class="flex-grow-1">
-        <h4 class="flow-step-title">Registrar / modificar toma de horas</h4>
-        <p class="flow-step-hint">Cada docente ocupa parte de las horas disponibles y queda pendiente de certificados. Las horas solo se pueden modificar mientras el concurso está abierto.</p>
-      </div>
-      <a class="btn btn-sm btn-primary" th:if="${!cerrado and !preceptorCubierto and (horasDisponibles == null or horasDisponibles > 0)}" th:href="@{/concursos/{id}/postular(id=${item.id})}">
-        <i class="bi bi-person-plus me-1"></i><th:block th:text="${esDePreceptor ? 'Agregar preceptor' : 'Agregar nuevo docente'}">Agregar nuevo docente</th:block>
-      </a>
-    </div>
-    <div class="flow-step-body">
-      <div class="table-responsive" th:if="${!postulantes.isEmpty()}">
-        <table class="table">
-          <thead>
-          <tr>
-            <th>Docente</th>
-            <th>Horas</th>
-            <th>Estado</th>
-            <th>Observación</th>
-            <th class="text-end">Acciones</th>
-          </tr>
-          </thead>
-          <tbody>
-          <tr th:each="postulacion : ${postulantes}">
-            <td>
+    <!-- ============================ PASO 1 ============================ -->
+    <div class="flow-step">
+        <div class="flow-step-header">
+            <div class="flow-step-number">1</div>
+            <div class="flex-grow-1">
+                <h4 class="flow-step-title">Registrar / modificar toma de horas</h4>
+                <p class="flow-step-hint">Cada docente ocupa parte de las horas disponibles y queda pendiente de certificados. Las horas solo se pueden modificar mientras el concurso está abierto.</p>
+            </div>
+            <a class="btn btn-sm btn-primary" th:if="${!cerrado and !preceptorCubierto and (horasDisponibles == null or horasDisponibles > 0)}" th:href="@{/concursos/{id}/postular(id=${item.id})}">
+                <i class="bi bi-person-plus me-1"></i><th:block th:text="${esDePreceptor ? 'Agregar preceptor' : 'Agregar nuevo docente'}">Agregar nuevo docente</th:block>
+            </a>
+        </div>
+        <div class="flow-step-body">
+            <div class="table-responsive" th:if="${!postulantes.isEmpty()}">
+                <table class="table">
+                    <thead>
+                    <tr>
+                        <th>Docente</th>
+                        <th>Horas</th>
+                        <th>Estado</th>
+                        <th>Observación</th>
+                        <th class="text-end">Acciones</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr th:each="postulacion : ${postulantes}">
+                        <td>
               <span class="fw-semibold"
                     th:text="${postulacion.docente != null ? postulacion.docente.apellido + ', ' + postulacion.docente.nombre : 'Docente sin datos'}"></span>
-              <span class="d-block text-secondary small" th:if="${postulacion.docente != null}"
-                    th:text="'DNI ' + ${postulacion.docente.numeroDocumento}"></span>
-            </td>
-            <td th:text="${horasPostulacion[postulacion.id] != null ? horasPostulacion[postulacion.id] + ' h' : '—'}"></td>
-            <td>
+                            <span class="d-block text-secondary small" th:if="${postulacion.docente != null}"
+                                  th:text="'DNI ' + ${postulacion.docente.numeroDocumento}"></span>
+                        </td>
+                        <td th:text="${horasPostulacion[postulacion.id] != null ? horasPostulacion[postulacion.id] + ' h' : '—'}"></td>
+                        <td>
               <span class="status-badge"
                     th:classappend="${estadosPostulacion[postulacion.id].badgeClass}"
                     th:text="${estadosPostulacion[postulacion.id].etiqueta}"></span>
-            </td>
-            <td class="text-secondary small"
-                th:text="${observaciones[postulacion.id] != null ? observaciones[postulacion.id] : '—'}"></td>
-            <td>
-              <div class="table-actions">
-                <a class="btn btn-sm btn-outline-secondary"
-                   th:if="${!cerrado and !esDePreceptor and estadosPostulacion[postulacion.id] != T(com.elvarest.cliente.dto.enums.EstadoPostulacion).CANCELADO_INEFECTIVO and estadosPostulacion[postulacion.id] != T(com.elvarest.cliente.dto.enums.EstadoPostulacion).DESIGNACION_DEFINITIVA}"
-                   th:href="@{/concursos/{cid}/postulaciones/{pid}/horas(cid=${item.id}, pid=${postulacion.id})}">
-                  <i class="bi bi-hourglass-split"></i>Modificar horas
+                        </td>
+                        <td class="text-secondary small"
+                            th:text="${observaciones[postulacion.id] != null ? observaciones[postulacion.id] : '—'}"></td>
+                        <td>
+                            <div class="table-actions">
+                                <a class="btn btn-sm btn-outline-secondary"
+                                   th:if="${!cerrado and !esDePreceptor and estadosPostulacion[postulacion.id] != T(com.elvarest.cliente.dto.enums.EstadoPostulacion).CANCELADO_INEFECTIVO and estadosPostulacion[postulacion.id] != T(com.elvarest.cliente.dto.enums.EstadoPostulacion).DESIGNACION_DEFINITIVA}"
+                                   th:href="@{/concursos/{cid}/postulaciones/{pid}/horas(cid=${item.id}, pid=${postulacion.id})}">
+                                    <i class="bi bi-hourglass-split"></i>Modificar horas
+                                </a>
+                            </div>
+                        </td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="empty-state" th:if="${postulantes.isEmpty()}">
+                <i class="bi bi-people"></i>
+                <p class="empty-title">Sin docentes en la toma de horas</p>
+                <p th:if="${!cerrado}">Registre el primer docente para comenzar a ocupar las horas del concurso.</p>
+                <p th:if="${cerrado}">El concurso se cerró sin docentes registrados.</p>
+            </div>
+
+            <div class="free-hours-panel mt-3" th:if="${!cerrado and horasDisponibles != null and horasDisponibles > 0}">
+                <i class="bi bi-info-circle fs-5"></i>
+                <p class="free-hours-text"
+                   th:text="'Quedan ' + ${horasDisponibles} + ' h libres: puede ampliar las horas de un docente ya registrado o sumar un nuevo docente con «Agregar nuevo docente». Si no hay más interesados, cierre el concurso para generar un rellamado.'"></p>
+            </div>
+        </div>
+    </div>
+
+    <!-- ============================ PASO 2 ============================ -->
+    <div class="flow-step">
+        <div class="flow-step-header">
+            <div class="flow-step-number">2</div>
+            <div class="flex-grow-1">
+                <h4 class="flow-step-title">Validar / cargar certificados</h4>
+                <p class="flow-step-hint">Cargue el apto psicofísico (obligatorio) y la declaración jurada del docente para este concurso. Si se rechazan, las horas vuelven a estar disponibles.</p>
+            </div>
+        </div>
+        <div class="flow-step-body">
+            <ul class="mini-list" th:if="${!pendientesCertificados.isEmpty()}">
+                <li class="mini-item mini-amber" th:each="postulacion : ${pendientesCertificados}">
+                    <span class="mini-item-icon"><i class="bi bi-file-earmark-medical"></i></span>
+                    <div class="mini-item-body">
+            <span class="mini-item-title"
+                  th:text="${postulacion.docente != null ? postulacion.docente.apellido + ', ' + postulacion.docente.nombre : 'Docente sin datos'}"></span>
+                        <div class="mini-item-meta">
+                            <span th:text="${horasPostulacion[postulacion.id] != null ? horasPostulacion[postulacion.id] + ' h reservadas' : 'Sin horas registradas'}"></span>
+                            <span class="status-badge" th:classappend="${estadosPostulacion[postulacion.id].badgeClass}"
+                                  th:text="${estadosPostulacion[postulacion.id].etiqueta}"></span>
+                        </div>
+                    </div>
+                    <a class="btn btn-sm btn-primary align-self-center" th:if="${!cerrado}"
+                       th:href="@{/concursos/{cid}/postulaciones/{pid}/certificados(cid=${item.id}, pid=${postulacion.id})}">
+                        <i class="bi bi-patch-check me-1"></i>Validar
+                    </a>
+                </li>
+            </ul>
+            <div class="empty-state" th:if="${pendientesCertificados.isEmpty()}">
+                <i class="bi bi-clipboard-check"></i>
+                <p class="empty-title">No hay certificaciones pendientes</p>
+                <p>Los certificados de los docentes registrados ya fueron validados.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- ============================ PASO 3 ============================ -->
+    <div class="flow-step">
+        <div class="flow-step-header">
+            <div class="flow-step-number">3</div>
+            <div class="flex-grow-1">
+                <h4 class="flow-step-title">Confirmación de toma de posesión (alta efectiva)</h4>
+                <p class="flow-step-hint">Al confirmar, la designación queda definitiva y activa. Si el docente no se presenta, declare la designación inefectiva para liberar sus horas.</p>
+            </div>
+        </div>
+        <div class="flow-step-body">
+            <ul class="mini-list" th:if="${!pendientesPosesion.isEmpty()}">
+                <li class="mini-item mini-violet" th:each="postulacion : ${pendientesPosesion}">
+                    <span class="mini-item-icon"><i class="bi bi-person-badge"></i></span>
+                    <div class="mini-item-body">
+            <span class="mini-item-title"
+                  th:text="${postulacion.docente != null ? postulacion.docente.apellido + ', ' + postulacion.docente.nombre : 'Docente sin datos'}"></span>
+                        <div class="mini-item-meta">
+                            <span th:text="${horasPostulacion[postulacion.id] != null ? horasPostulacion[postulacion.id] + ' h asignadas' : 'Sin horas registradas'}"></span>
+                            <span class="status-badge" th:classappend="${estadosPostulacion[postulacion.id].badgeClass}"
+                                  th:text="${estadosPostulacion[postulacion.id].etiqueta}"></span>
+                        </div>
+                    </div>
+                    <div class="d-flex flex-wrap gap-2 align-self-center" th:if="${!cerrado}">
+                        <a class="btn btn-sm btn-success"
+                           th:href="@{/concursos/{cid}/postulaciones/{pid}/posesion(cid=${item.id}, pid=${postulacion.id})}">
+                            <i class="bi bi-person-check me-1"></i>Confirmar posesión
+                        </a>
+                        <a class="btn btn-sm btn-outline-danger"
+                           th:href="@{/concursos/{cid}/postulaciones/{pid}/inefectivo(cid=${item.id}, pid=${postulacion.id})}">
+                            <i class="bi bi-person-x me-1"></i>Declarar inefectivo
+                        </a>
+                    </div>
+                </li>
+            </ul>
+            <div class="empty-state" th:if="${pendientesPosesion.isEmpty()}">
+                <i class="bi bi-person-check"></i>
+                <p class="empty-title">No hay docentes pendientes de posesión</p>
+                <p>No hay designaciones esperando la confirmación de toma de posesión.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- ============================ PASO 4 ============================ -->
+    <div class="flow-step">
+        <div class="flow-step-header">
+            <div class="flow-step-number">4</div>
+            <div class="flex-grow-1">
+                <h4 class="flow-step-title">Cierre y rellamado</h4>
+                <p class="flow-step-hint">El concurso se cierra cuando todas las horas quedan con designación definitiva, o manualmente si no hay más interesados.</p>
+            </div>
+        </div>
+        <div class="flow-step-body">
+            <div class="d-flex flex-wrap gap-2 mb-3">
+                <span class="badge rounded-pill text-bg-success" th:text="${designados} + ' con designación definitiva'"></span>
+                <span class="badge rounded-pill text-bg-warning"
+                      th:text="${#lists.size(pendientesCertificados)} + ' pendiente(s) de certificados'"></span>
+                <span class="badge rounded-pill text-bg-primary"
+                      th:text="${#lists.size(pendientesPosesion)} + ' pendiente(s) de posesión'"></span>
+                <span class="badge rounded-pill text-bg-danger" th:text="${canceladas} + ' cancelada(s)'"></span>
+            </div>
+
+            <div class="alert alert-info" th:if="${!cerrado and listoParaCierre}">
+                <i class="bi bi-check2-circle me-1"></i>
+                Todas las horas están cubiertas con designación definitiva: el concurso se cerrará automáticamente o puede cerrarlo ahora.
+            </div>
+
+            <div class="free-hours-panel mb-3" th:if="${cerrado and horasDisponibles != null and horasDisponibles > 0}">
+                <i class="bi bi-arrow-repeat fs-5"></i>
+                <p class="free-hours-text"
+                   th:text="'El concurso está cerrado con ' + ${horasDisponibles} + ' h remanentes. Puede abrir un nuevo concurso asociado (rellamado) que herede el cargo y tome esas horas como totales.'"></p>
+                <a class="btn btn-sm btn-primary" th:href="@{/concursos/{id}/rellamado(id=${item.id})}">
+                    <i class="bi bi-arrow-repeat me-1"></i>Abrir nuevo concurso (rellamado)
                 </a>
-              </div>
-            </td>
-          </tr>
-          </tbody>
-        </table>
-      </div>
-
-      <div class="empty-state" th:if="${postulantes.isEmpty()}">
-        <i class="bi bi-people"></i>
-        <p class="empty-title">Sin docentes en la toma de horas</p>
-        <p th:if="${!cerrado}">Registre el primer docente para comenzar a ocupar las horas del concurso.</p>
-        <p th:if="${cerrado}">El concurso se cerró sin docentes registrados.</p>
-      </div>
-
-      <div class="free-hours-panel mt-3" th:if="${!cerrado and horasDisponibles != null and horasDisponibles > 0}">
-        <i class="bi bi-info-circle fs-5"></i>
-        <p class="free-hours-text"
-           th:text="'Quedan ' + ${horasDisponibles} + ' h libres: puede ampliar las horas de un docente ya registrado o sumar un nuevo docente con «Agregar nuevo docente». Si no hay más interesados, cierre el concurso para generar un rellamado.'"></p>
-      </div>
-    </div>
-  </div>
-
-  <!-- ============================ PASO 2 ============================ -->
-  <div class="flow-step">
-    <div class="flow-step-header">
-      <div class="flow-step-number">2</div>
-      <div class="flex-grow-1">
-        <h4 class="flow-step-title">Validar / cargar certificados</h4>
-        <p class="flow-step-hint">Indique si los certificados fueron recibidos y si requieren vencimiento. Si se rechazan, las horas vuelven a estar disponibles.</p>
-      </div>
-    </div>
-    <div class="flow-step-body">
-      <ul class="mini-list" th:if="${!pendientesCertificados.isEmpty()}">
-        <li class="mini-item mini-amber" th:each="postulacion : ${pendientesCertificados}">
-          <span class="mini-item-icon"><i class="bi bi-file-earmark-medical"></i></span>
-          <div class="mini-item-body">
-            <span class="mini-item-title"
-                  th:text="${postulacion.docente != null ? postulacion.docente.apellido + ', ' + postulacion.docente.nombre : 'Docente sin datos'}"></span>
-            <div class="mini-item-meta">
-              <span th:text="${horasPostulacion[postulacion.id] != null ? horasPostulacion[postulacion.id] + ' h reservadas' : 'Sin horas registradas'}"></span>
-              <span class="status-badge" th:classappend="${estadosPostulacion[postulacion.id].badgeClass}"
-                    th:text="${estadosPostulacion[postulacion.id].etiqueta}"></span>
             </div>
-          </div>
-          <a class="btn btn-sm btn-primary align-self-center" th:if="${!cerrado}"
-             th:href="@{/concursos/{cid}/postulaciones/{pid}/certificados(cid=${item.id}, pid=${postulacion.id})}">
-            <i class="bi bi-patch-check me-1"></i>Validar
-          </a>
-        </li>
-      </ul>
-      <div class="empty-state" th:if="${pendientesCertificados.isEmpty()}">
-        <i class="bi bi-clipboard-check"></i>
-        <p class="empty-title">No hay certificaciones pendientes</p>
-        <p>Los certificados de los docentes registrados ya fueron validados.</p>
-      </div>
-    </div>
-  </div>
 
-  <!-- ============================ PASO 3 ============================ -->
-  <div class="flow-step">
-    <div class="flow-step-header">
-      <div class="flow-step-number">3</div>
-      <div class="flex-grow-1">
-        <h4 class="flow-step-title">Confirmación de toma de posesión (alta efectiva)</h4>
-        <p class="flow-step-hint">Al confirmar, la designación queda definitiva y activa. Si el docente no se presenta, declare la designación inefectiva para liberar sus horas.</p>
-      </div>
-    </div>
-    <div class="flow-step-body">
-      <ul class="mini-list" th:if="${!pendientesPosesion.isEmpty()}">
-        <li class="mini-item mini-violet" th:each="postulacion : ${pendientesPosesion}">
-          <span class="mini-item-icon"><i class="bi bi-person-badge"></i></span>
-          <div class="mini-item-body">
-            <span class="mini-item-title"
-                  th:text="${postulacion.docente != null ? postulacion.docente.apellido + ', ' + postulacion.docente.nombre : 'Docente sin datos'}"></span>
-            <div class="mini-item-meta">
-              <span th:text="${horasPostulacion[postulacion.id] != null ? horasPostulacion[postulacion.id] + ' h asignadas' : 'Sin horas registradas'}"></span>
-              <span class="status-badge" th:classappend="${estadosPostulacion[postulacion.id].badgeClass}"
-                    th:text="${estadosPostulacion[postulacion.id].etiqueta}"></span>
-            </div>
-          </div>
-          <div class="d-flex flex-wrap gap-2 align-self-center" th:if="${!cerrado}">
-            <a class="btn btn-sm btn-success"
-               th:href="@{/concursos/{cid}/postulaciones/{pid}/posesion(cid=${item.id}, pid=${postulacion.id})}">
-              <i class="bi bi-person-check me-1"></i>Confirmar posesión
-            </a>
-            <a class="btn btn-sm btn-outline-danger"
-               th:href="@{/concursos/{cid}/postulaciones/{pid}/inefectivo(cid=${item.id}, pid=${postulacion.id})}">
-              <i class="bi bi-person-x me-1"></i>Declarar inefectivo
-            </a>
-          </div>
-        </li>
-      </ul>
-      <div class="empty-state" th:if="${pendientesPosesion.isEmpty()}">
-        <i class="bi bi-person-check"></i>
-        <p class="empty-title">No hay docentes pendientes de posesión</p>
-        <p>No hay designaciones esperando la confirmación de toma de posesión.</p>
-      </div>
-    </div>
-  </div>
-
-  <!-- ============================ PASO 4 ============================ -->
-  <div class="flow-step">
-    <div class="flow-step-header">
-      <div class="flow-step-number">4</div>
-      <div class="flex-grow-1">
-        <h4 class="flow-step-title">Cierre y rellamado</h4>
-        <p class="flow-step-hint">El concurso se cierra cuando todas las horas quedan con designación definitiva, o manualmente si no hay más interesados.</p>
-      </div>
-    </div>
-    <div class="flow-step-body">
-      <div class="d-flex flex-wrap gap-2 mb-3">
-        <span class="badge rounded-pill text-bg-success" th:text="${designados} + ' con designación definitiva'"></span>
-        <span class="badge rounded-pill text-bg-warning"
-              th:text="${#lists.size(pendientesCertificados)} + ' pendiente(s) de certificados'"></span>
-        <span class="badge rounded-pill text-bg-primary"
-              th:text="${#lists.size(pendientesPosesion)} + ' pendiente(s) de posesión'"></span>
-        <span class="badge rounded-pill text-bg-danger" th:text="${canceladas} + ' cancelada(s)'"></span>
-      </div>
-
-      <div class="alert alert-info" th:if="${!cerrado and listoParaCierre}">
-        <i class="bi bi-check2-circle me-1"></i>
-        Todas las horas están cubiertas con designación definitiva: el concurso se cerrará automáticamente o puede cerrarlo ahora.
-      </div>
-
-      <div class="free-hours-panel mb-3" th:if="${cerrado and horasDisponibles != null and horasDisponibles > 0}">
-        <i class="bi bi-arrow-repeat fs-5"></i>
-        <p class="free-hours-text"
-           th:text="'El concurso está cerrado con ' + ${horasDisponibles} + ' h remanentes. Puede abrir un nuevo concurso asociado (rellamado) que herede el cargo y tome esas horas como totales.'"></p>
-        <a class="btn btn-sm btn-primary" th:href="@{/concursos/{id}/rellamado(id=${item.id})}">
-          <i class="bi bi-arrow-repeat me-1"></i>Abrir nuevo concurso (rellamado)
-        </a>
-      </div>
-
-      <div class="d-flex flex-wrap gap-2 align-items-center">
-        <form th:if="${!cerrado}" method="post" th:action="@{/concursos/{id}/cerrar(id=${item.id})}"
-              class="inline-action-form"
-              data-confirm="¿Cerrar el concurso? Se bloqueará la modificación de horas de todas las designaciones.">
-          <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
-          <button class="btn btn-outline-dark"><i class="bi bi-lock me-1"></i>Cerrar concurso</button>
-        </form>
-        <span class="text-secondary" th:if="${cerrado and (horasDisponibles == null or horasDisponibles <= 0)}">
+            <div class="d-flex flex-wrap gap-2 align-items-center">
+                <form th:if="${!cerrado}" method="post" th:action="@{/concursos/{id}/cerrar(id=${item.id})}"
+                      class="inline-action-form"
+                      data-confirm="¿Cerrar el concurso? Se bloqueará la modificación de horas de todas las designaciones.">
+                    <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
+                    <button class="btn btn-outline-dark"><i class="bi bi-lock me-1"></i>Cerrar concurso</button>
+                </form>
+                <span class="text-secondary" th:if="${cerrado and (horasDisponibles == null or horasDisponibles <= 0)}">
           <i class="bi bi-check2-circle me-1"></i>Concurso cerrado: no admite modificaciones de horas.
         </span>
-        <span class="text-secondary" th:if="${!cerrado and !listoParaCierre and postulantes.isEmpty()}">
+                <span class="text-secondary" th:if="${!cerrado and !listoParaCierre and postulantes.isEmpty()}">
           Registre docentes o cierre el concurso manualmente para finalizarlo.
         </span>
-      </div>
+            </div>
+        </div>
     </div>
-  </div>
 
 </section>
 </html>

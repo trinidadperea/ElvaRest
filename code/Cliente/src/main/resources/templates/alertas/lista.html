@@ -3,88 +3,97 @@
       xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
       th:replace="~{base :: layout('Alertas', ~{::#encabezado}, ~{::#contenido}, '')}">
 <section id="encabezado">
-  <h3 data-subtitle="Avisos importantes para el seguimiento de la comunidad educativa">Centro de alertas</h3>
+    <h3 data-subtitle="Avisos importantes para el seguimiento de la comunidad educativa">Centro de alertas</h3>
 </section>
 <section id="contenido">
-  <div class="alerts-heading">
-    <p class="text-secondary mb-0">Avisos importantes para el seguimiento de la comunidad educativa.</p>
-    <a class="btn btn-primary" th:href="@{/alertas/nuevo}" sec:authorize="hasRole('ADMIN')">
-      <i class="bi bi-plus-lg me-1"></i>Nueva alerta
-    </a>
-  </div>
-
-
-  <div class="list-toolbar">
-    <div class="toolbar-filters" role="group" aria-label="Filtrar alertas">
-      <button type="button" class="btn btn-sm btn-outline-primary active"
-              data-filter-btn data-filter-group="alertas" data-filter-target="#listaAlertas" data-filter-value="">
-        Todas
-      </button>
-      <button type="button" class="btn btn-sm btn-outline-primary"
-              data-filter-btn data-filter-group="alertas" data-filter-target="#listaAlertas" data-filter-value="sin-leer">
-        Sin leer
-      </button>
-      <button type="button" class="btn btn-sm btn-outline-primary"
-              data-filter-btn data-filter-group="alertas" data-filter-target="#listaAlertas" data-filter-value="leida">
-        Leídas
-      </button>
-      <button type="button" class="btn btn-sm btn-outline-primary"
-              data-filter-btn data-filter-group="alertas" data-filter-target="#listaAlertas" data-filter-value="alta">
-        Prioridad alta
-      </button>
+    <div class="alerts-heading">
+        <p class="text-secondary mb-0">Avisos importantes para el seguimiento de la comunidad educativa.</p>
+        <a class="btn btn-primary" th:href="@{/alertas/nuevo}" sec:authorize="hasRole('ADMIN')">
+            <i class="bi bi-plus-lg me-1"></i>Nueva alerta
+        </a>
     </div>
-    <span class="text-secondary small" th:text="${#lists.size(items)} + ' alerta(s) en total'"></span>
-  </div>
 
-  <div class="alerts-list" id="listaAlertas">
-    <article class="school-alert-card" data-filter-item
-             th:each="item : ${items}"
-             th:attr="data-filter-tags=${(item.leida ? 'leida' : 'sin-leer') + ' ' + (item.prioridad?.name() == 'ALTA' ? 'alta' : 'media')}"
-             th:classappend="${item.prioridad == T(com.elvarest.cliente.dto.enums.PrioridadAlerta).ALTA ? ' school-alert-high' : ' school-alert-medium'}">
-      <div class="school-alert-icon" aria-hidden="true">
-        <i th:class="${item.prioridad == T(com.elvarest.cliente.dto.enums.PrioridadAlerta).ALTA ? 'bi bi-exclamation-triangle-fill' : 'bi bi-info-circle-fill'}"></i>
-      </div>
-      <div class="school-alert-content">
-        <div class="school-alert-meta">
+
+    <div class="list-toolbar">
+        <div class="toolbar-filters" role="group" aria-label="Filtrar alertas">
+            <button type="button" class="btn btn-sm btn-outline-primary active"
+                    data-filter-btn data-filter-group="alertas" data-filter-target="#listaAlertas" data-filter-value="">
+                Todas
+            </button>
+            <button type="button" class="btn btn-sm btn-outline-primary"
+                    data-filter-btn data-filter-group="alertas" data-filter-target="#listaAlertas" data-filter-value="sin-leer">
+                Sin leer
+            </button>
+            <button type="button" class="btn btn-sm btn-outline-primary"
+                    data-filter-btn data-filter-group="alertas" data-filter-target="#listaAlertas" data-filter-value="leida">
+                Leídas
+            </button>
+            <button type="button" class="btn btn-sm btn-outline-primary"
+                    data-filter-btn data-filter-group="alertas" data-filter-target="#listaAlertas" data-filter-value="alta">
+                Prioridad alta
+            </button>
+        </div>
+        <div class="d-flex flex-wrap align-items-center gap-2">
+            <label class="filter-label mb-0" for="alertaOrden">Ordenar por</label>
+            <select id="alertaOrden" class="form-select form-select-sm w-auto" data-sort-target="#listaAlertas"
+                    aria-label="Ordenar alertas">
+                <option value="recientes">Más recientes</option>
+                <option value="antiguos">Más antiguas</option>
+            </select>
+            <span class="text-secondary small" th:text="${#lists.size(items)} + ' alerta(s) en total'"></span>
+        </div>
+    </div>
+
+    <div class="alerts-list" id="listaAlertas">
+        <article class="school-alert-card" data-filter-item
+                 th:each="item : ${items}"
+                 th:attr="data-filter-tags=${(item.leida ? 'leida' : 'sin-leer') + ' ' + (item.prioridad?.name() == 'ALTA' ? 'alta' : 'media')}, data-sort-id=${item.id}"
+                 th:data-sort-date="${item.fechaEmision != null ? #temporals.format(item.fechaEmision, 'yyyy-MM-dd') : ''}"
+                 th:classappend="${item.prioridad == T(com.elvarest.cliente.dto.enums.PrioridadAlerta).ALTA ? ' school-alert-high' : ' school-alert-medium'}">
+            <div class="school-alert-icon" aria-hidden="true">
+                <i th:class="${item.prioridad == T(com.elvarest.cliente.dto.enums.PrioridadAlerta).ALTA ? 'bi bi-exclamation-triangle-fill' : 'bi bi-info-circle-fill'}"></i>
+            </div>
+            <div class="school-alert-content">
+                <div class="school-alert-meta">
           <span class="badge rounded-pill"
                 th:classappend="${item.prioridad == T(com.elvarest.cliente.dto.enums.PrioridadAlerta).ALTA ? ' badge-priority-high' : ' badge-priority-medium'}"
                 th:text="${item.prioridad == T(com.elvarest.cliente.dto.enums.PrioridadAlerta).ALTA ? 'Prioridad alta' : 'Prioridad media'}"></span>
-          <span class="badge rounded-pill"
-                th:classappend="${item.leida ? ' badge-alert-read' : ' badge-alert-unread'}"
-                th:text="${item.leida ? 'Leída' : 'Pendiente de lectura'}"></span>
-          <span class="school-alert-date">
+                    <span class="badge rounded-pill"
+                          th:classappend="${item.leida ? ' badge-alert-read' : ' badge-alert-unread'}"
+                          th:text="${item.leida ? 'Leída' : 'Pendiente de lectura'}"></span>
+                    <span class="school-alert-date">
             <i class="bi bi-calendar3 me-1"></i>
             <time th:if="${item.fechaEmision != null}" th:text="${#temporals.format(item.fechaEmision, 'dd/MM/yyyy')}"></time>
             <span th:if="${item.fechaEmision == null}">Sin fecha</span>
           </span>
-        </div>
-        <p class="school-alert-message" th:text="${item.mensaje}"></p>
-        <div class="school-alert-actions">
-          <a class="btn btn-sm btn-outline-primary" th:href="@{/alertas/{id}(id=${item.id})}">
-            <i class="bi bi-eye me-1"></i>Ver aviso
-          </a>
-          <a class="btn btn-sm btn-outline-secondary" th:href="@{/alertas/{id}/editar(id=${item.id})}">
-            <i class="bi bi-pencil me-1"></i>Editar
-          </a>
-          <a class="btn btn-sm btn-outline-danger" th:href="@{/alertas/baja/{id}(id=${item.id})}"
-             th:attr="data-confirm='¿Eliminar esta alerta? Se dará de baja del listado.'">
-            <i class="bi bi-trash me-1"></i>Eliminar
-          </a>
-        </div>
-      </div>
-    </article>
-  </div>
+                </div>
+                <p class="school-alert-message" th:text="${item.mensaje}"></p>
+                <div class="school-alert-actions">
+                    <a class="btn btn-sm btn-outline-primary" th:href="@{/alertas/{id}(id=${item.id})}">
+                        <i class="bi bi-eye me-1"></i>Ver aviso
+                    </a>
+                    <a class="btn btn-sm btn-outline-secondary" th:href="@{/alertas/{id}/editar(id=${item.id})}">
+                        <i class="bi bi-pencil me-1"></i>Editar
+                    </a>
+                    <a class="btn btn-sm btn-outline-danger" th:href="@{/alertas/baja/{id}(id=${item.id})}"
+                       th:attr="data-confirm='¿Eliminar esta alerta? Se dará de baja del listado.'">
+                        <i class="bi bi-trash me-1"></i>Eliminar
+                    </a>
+                </div>
+            </div>
+        </article>
+    </div>
 
-  <div class="school-alert-empty" th:if="${#lists.isEmpty(items)}">
-    <span class="school-alert-empty-icon"><i class="bi bi-bell-slash"></i></span>
-    <h4>Todo tranquilo por aquí</h4>
-    <p class="mb-0">No hay avisos escolares registrados. Las nuevas alertas aparecerán en esta sección.</p>
-  </div>
+    <div class="school-alert-empty" th:if="${#lists.isEmpty(items)}">
+        <span class="school-alert-empty-icon"><i class="bi bi-bell-slash"></i></span>
+        <h4>Todo tranquilo por aquí</h4>
+        <p class="mb-0">No hay avisos escolares registrados. Las nuevas alertas aparecerán en esta sección.</p>
+    </div>
 
-  <div class="school-alert-empty d-none" data-filter-empty="listaAlertas" th:if="${!items.isEmpty()}">
-    <span class="school-alert-empty-icon"><i class="bi bi-funnel"></i></span>
-    <h4>Sin resultados para el filtro</h4>
-    <p class="mb-0">Ninguna alerta coincide con el filtro seleccionado.</p>
-  </div>
+    <div class="school-alert-empty d-none" data-filter-empty="listaAlertas" th:if="${!items.isEmpty()}">
+        <span class="school-alert-empty-icon"><i class="bi bi-funnel"></i></span>
+        <h4>Sin resultados para el filtro</h4>
+        <p class="mb-0">Ninguna alerta coincide con el filtro seleccionado.</p>
+    </div>
 </section>
 </html>

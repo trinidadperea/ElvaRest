@@ -1,21 +1,27 @@
 package com.elvarest.cliente.controllers;
 
 import com.elvarest.cliente.dto.CargoDTO;
+import com.elvarest.cliente.dto.CertificadoDTO;
 import com.elvarest.cliente.dto.ConcursoDTO;
 import com.elvarest.cliente.dto.ConcursoDocenteDTO;
 import com.elvarest.cliente.dto.DesignacionDTO;
 import com.elvarest.cliente.dto.DocenteDTO;
+import com.elvarest.cliente.dto.TipoCertificadoDTO;
 import com.elvarest.cliente.dto.enums.CaracterDesignacion;
 import com.elvarest.cliente.dto.enums.EstadoConcurso;
 import com.elvarest.cliente.dto.enums.EstadoDesignacion;
 import com.elvarest.cliente.dto.enums.EstadoPostulacion;
+import com.elvarest.cliente.dto.enums.MotivoVacancia;
 import com.elvarest.cliente.dto.enums.TipoCargo;
 import com.elvarest.cliente.services.CargoService;
+import com.elvarest.cliente.services.CertificadoService;
 import com.elvarest.cliente.services.ConcursoDocenteService;
 import com.elvarest.cliente.services.ConcursoService;
 import com.elvarest.cliente.services.DesignacionService;
 import com.elvarest.cliente.services.DocenteService;
 import com.elvarest.cliente.services.FlujoConcursoService;
+import com.elvarest.cliente.services.TipoCertificadoService;
+import com.elvarest.cliente.services.ValidacionCertificadosService;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -53,17 +59,29 @@ public class ConcursoController extends BaseController<ConcursoDTO, Long> {
     private final CargoService cargoService;
     private final DesignacionService designacionService;
     private final FlujoConcursoService flujoService;
+    private final CertificadoService certificadoService;
+    private final TipoCertificadoService tipoCertificadoService;
+    private final ValidacionCertificadosService validacionCertificadosService;
+
+    private static final String CARGO_CONCURSO_ABIERTO =
+            "El cargo ya tiene un concurso abierto: ciérrelo antes de abrir otro.";
 
     public ConcursoController(ConcursoService service, ConcursoDocenteService concursoDocenteService,
                               DocenteService docenteService, CargoService cargoService,
                               DesignacionService designacionService,
-                              FlujoConcursoService flujoService) {
+                              FlujoConcursoService flujoService,
+                              CertificadoService certificadoService,
+                              TipoCertificadoService tipoCertificadoService,
+                              ValidacionCertificadosService validacionCertificadosService) {
         super(service);
         this.concursoDocenteService = concursoDocenteService;
         this.docenteService = docenteService;
         this.cargoService = cargoService;
         this.designacionService = designacionService;
         this.flujoService = flujoService;
+        this.certificadoService = certificadoService;
+        this.tipoCertificadoService = tipoCertificadoService;
+        this.validacionCertificadosService = validacionCertificadosService;
         initController(new ConcursoDTO(), "Lista de concursos", "Editar concurso", "concursos/");
     }
 
@@ -82,6 +100,8 @@ public class ConcursoController extends BaseController<ConcursoDTO, Long> {
             Map<Long, ConcursoDocenteDTO> ganadores = new HashMap<>();
             Map<Long, Integer> horasTotalesMap = new HashMap<>();
             Map<Long, Integer> horasDisponiblesMap = new HashMap<>();
+            Map<Long, String> fechasConcursos = new HashMap<>();
+            Map<Long, String> aperturasConcursos = new HashMap<>();
 
             for (ConcursoDTO concurso : concursos) {
                 List<ConcursoDocenteDTO> propias = postulaciones.stream()
@@ -100,6 +120,9 @@ public class ConcursoController extends BaseController<ConcursoDTO, Long> {
                 if (disponibles != null) {
                     horasDisponiblesMap.put(concurso.getId(), disponibles);
                 }
+                fechasConcursos.put(concurso.getId(), fechaDelConcurso(concurso));
+                aperturasConcursos.put(concurso.getId(), concurso.getFechaApertura() != null
+                        ? concurso.getFechaApertura().toString() : "");
             }
 
             model.addAttribute("items", concursos);
@@ -107,6 +130,8 @@ public class ConcursoController extends BaseController<ConcursoDTO, Long> {
             model.addAttribute("ganadores", ganadores);
             model.addAttribute("horasTotalesMap", horasTotalesMap);
             model.addAttribute("horasDisponiblesMap", horasDisponiblesMap);
+            model.addAttribute("fechasConcursos", fechasConcursos);
+            model.addAttribute("aperturasConcursos", aperturasConcursos);
             model.addAttribute("titleList", titleList);
             model.addAttribute("nameEntityLower", nameEntityLower);
         } catch (Exception e) {
@@ -115,9 +140,21 @@ public class ConcursoController extends BaseController<ConcursoDTO, Long> {
             model.addAttribute("ganadores", Map.of());
             model.addAttribute("horasTotalesMap", Map.of());
             model.addAttribute("horasDisponiblesMap", Map.of());
+            model.addAttribute("fechasConcursos", Map.of());
+            model.addAttribute("aperturasConcursos", Map.of());
             model.addAttribute("msgError", "No se pudo recuperar el listado de concursos: " + e.getMessage());
         }
         return viewList;
+    }
+
+    /**
+     * Fecha que representa al concurso en el listado (la misma que se muestra): la de toma de
+     * horas o, si todavía no se registró, la de cierre. Se usa para el filtro por rango de fechas.
+     */
+    private String fechaDelConcurso(ConcursoDTO concurso) {
+        LocalDate fecha = concurso.getFechaConcurso() != null
+                ? concurso.getFechaConcurso().toLocalDate() : concurso.getFechaCierre();
+        return fecha != null ? fecha.toString() : "";
     }
 
     @Override
@@ -210,7 +247,7 @@ public class ConcursoController extends BaseController<ConcursoDTO, Long> {
 
     @Override
     protected void preAlta() {
-        model.addAttribute("cargos", cargoService.listarActivos());
+        model.addAttribute("cargos", cargosDisponibles(null));
     }
 
     /**
@@ -223,6 +260,9 @@ public class ConcursoController extends BaseController<ConcursoDTO, Long> {
             CargoDTO cargo = cargoService.obtener(cargoId);
             if (cargo == null) {
                 throw new IllegalArgumentException("No se encontró el cargo.");
+            }
+            if (cargoTieneConcursoAbierto(cargoId, null)) {
+                throw new IllegalArgumentException(CARGO_CONCURSO_ABIERTO);
             }
             ConcursoDTO concurso = new ConcursoDTO();
             concurso.setCargo(cargo);
@@ -244,15 +284,29 @@ public class ConcursoController extends BaseController<ConcursoDTO, Long> {
         if (model == null) {
             return;
         }
+        Object item = model.getAttribute("item");
+        ConcursoDTO actual = item instanceof ConcursoDTO concurso ? concurso : null;
         if (!model.containsAttribute("cargos")) {
-            model.addAttribute("cargos", cargoService.listarActivos());
+            model.addAttribute("cargos", cargosDisponibles(actual));
         }
         // Al editar, si no hay fecha/hora de concurso se propone la fecha de cierre registrada
-        Object item = model.getAttribute("item");
         Object disabled = model.getAttribute("isDisabled");
-        if (item instanceof ConcursoDTO concurso && Boolean.FALSE.equals(disabled)
-                && concurso.getFechaConcurso() == null && concurso.getFechaCierre() != null) {
-            concurso.setFechaConcurso(concurso.getFechaCierre().atStartOfDay());
+        if (actual != null && Boolean.FALSE.equals(disabled)
+                && actual.getFechaConcurso() == null && actual.getFechaCierre() != null) {
+            actual.setFechaConcurso(actual.getFechaCierre().atStartOfDay());
+        }
+        // El motivo se deduce del texto guardado para los concursos anteriores al selector. En el
+        // formulario, origenVacancia se edita como detalle del motivo y se muestra sin el motivo
+        // ("Renuncia del titular" -> "del titular") para no recomponer "Renuncia – Renuncia" al
+        // guardar. En el detalle (isDisabled) se conserva el texto completo.
+        if (actual != null) {
+            if (actual.getMotivoVacancia() == null) {
+                actual.setMotivoVacancia(MotivoVacancia.desdeTexto(actual.getOrigenVacancia()));
+            }
+            if (Boolean.FALSE.equals(disabled)) {
+                actual.setOrigenVacancia(MotivoVacancia.detalleDesdeTexto(
+                        actual.getMotivoVacancia(), actual.getOrigenVacancia()));
+            }
         }
     }
 
@@ -267,9 +321,14 @@ public class ConcursoController extends BaseController<ConcursoDTO, Long> {
                              RedirectAttributes attributes, Model model) {
         try {
             this.model = model;
+            // El formulario envía en origenVacancia el detalle libre del motivo elegido.
             if (entidad.getOrigenVacancia() != null) {
-                String origenVacancia = entidad.getOrigenVacancia().trim();
-                entidad.setOrigenVacancia(origenVacancia.isEmpty() ? null : origenVacancia);
+                String detalle = entidad.getOrigenVacancia().trim();
+                entidad.setOrigenVacancia(detalle.isEmpty() ? null : detalle);
+            }
+            if (entidad.getProfesorReemplazante() != null) {
+                String reemplazante = entidad.getProfesorReemplazante().trim();
+                entidad.setProfesorReemplazante(reemplazante.isEmpty() ? null : reemplazante);
             }
             if (entidad.getCargo() != null && entidad.getCargo().getId() == null) {
                 entidad.setCargo(null);
@@ -295,9 +354,16 @@ public class ConcursoController extends BaseController<ConcursoDTO, Long> {
                         throw new IllegalArgumentException("El concurso origen no tiene horas remanentes para transferir.");
                     }
                     entidad.setCargo(origen.getCargo());
+                    if (cargoTieneConcursoAbierto(entidad.getCargo() != null ? entidad.getCargo().getId() : null, null)) {
+                        throw new IllegalArgumentException(CARGO_CONCURSO_ABIERTO);
+                    }
                     entidad.setCaracterDesignacion(origen.getCaracterDesignacion());
                     // El rellamado cubre la misma vacancia: hereda el origen capturado en el concurso original.
                     entidad.setOrigenVacancia(origen.getOrigenVacancia());
+                    entidad.setMotivoVacancia(origen.getMotivoVacancia() != null
+                            ? origen.getMotivoVacancia()
+                            : MotivoVacancia.desdeTexto(origen.getOrigenVacancia()));
+                    entidad.setProfesorReemplazante(origen.getProfesorReemplazante());
                     entidad.setEsRellamado(true);
                     entidad.setHorasTotales(remanentes);
                     // Las horas remanentes quedan transferidas al rellamado: el origen queda sin disponibles.
@@ -314,8 +380,9 @@ public class ConcursoController extends BaseController<ConcursoDTO, Long> {
                     if (entidad.getCaracterDesignacion() == null) {
                         throw new IllegalArgumentException("Seleccione la designación (carácter de designación) del concurso.");
                     }
-                    if (entidad.getOrigenVacancia() == null) {
-                        throw new IllegalArgumentException("Indique el origen de la vacancia del concurso.");
+                    aplicarMotivoVacancia(entidad);
+                    if (cargoTieneConcursoAbierto(entidad.getCargo().getId(), null)) {
+                        throw new IllegalArgumentException(CARGO_CONCURSO_ABIERTO);
                     }
                     entidad.setEsRellamado(false);
                 }
@@ -357,6 +424,7 @@ public class ConcursoController extends BaseController<ConcursoDTO, Long> {
                     entidad.setEsRellamado(actual.getEsRellamado());
                     entidad.setConcursoOrigenId(actual.getConcursoOrigenId());
                 }
+                aplicarMotivoVacancia(entidad);
                 service.modificar(entidad.getId(), entidad);
             }
 
@@ -368,7 +436,7 @@ public class ConcursoController extends BaseController<ConcursoDTO, Long> {
             model.addAttribute("isDisabled", false);
             model.addAttribute("titleEdit", titleEdit);
             model.addAttribute("nameEntityLower", nameEntityLower);
-            model.addAttribute("cargos", cargoService.listarActivos());
+            model.addAttribute("cargos", cargosDisponibles(entidad));
             if (entidad.getId() == null) {
                 return viewCreate;
             }
@@ -544,14 +612,19 @@ public class ConcursoController extends BaseController<ConcursoDTO, Long> {
         try {
             ConcursoDTO concurso = obtenerConcurso(concursoId);
             ConcursoDocenteDTO postulacion = obtenerPostulacion(concursoId, postulacionId);
-            validarAbierto(concurso, "no se pueden validar certificados");
-            if (estadoEfectivo(postulacion) != EstadoPostulacion.PENDIENTE_CERTIFICADOS) {
-                throw new IllegalArgumentException("La postulación no está pendiente de certificados.");
-            }
+            validacionCertificadosService.validarPendiente(concurso, postulacion);
+
+            List<CertificadoDTO> certificados = certificadoService.listarPorPostulacion(postulacionId);
+            CertificadoDTO nuevo = new CertificadoDTO();
+            nuevo.setTipoCertificado(new TipoCertificadoDTO());
+
             model.addAttribute("concurso", concurso);
             model.addAttribute("postulacion", postulacion);
             model.addAttribute("horasPostulacion", horasEfectivas(postulacion));
-            model.addAttribute("datos", postulacion);
+            model.addAttribute("certificados", certificados);
+            model.addAttribute("obligatoriosFaltantes", validacionCertificadosService.obligatoriosFaltantes(certificados));
+            model.addAttribute("tiposCertificado", tipoCertificadoService.listarActivos());
+            model.addAttribute("item", nuevo);
             return "concursos/validar-certificados";
         } catch (RuntimeException e) {
             attributes.addFlashAttribute("msgError", e.getMessage());
@@ -561,70 +634,20 @@ public class ConcursoController extends BaseController<ConcursoDTO, Long> {
 
     @PostMapping("/{concursoId}/postulaciones/{postulacionId}/certificados")
     public String validarCertificados(@PathVariable Long concursoId, @PathVariable Long postulacionId,
-                                      @RequestParam(value = "recibidos", required = false) Boolean recibidos,
-                                      @RequestParam(value = "requiereVencimiento", required = false) Boolean requiereVencimiento,
-                                      @RequestParam(value = "mesesVigencia", required = false) Integer mesesVigencia,
                                       @RequestParam(value = "decision", required = false) String decision,
                                       @RequestParam(value = "observacion", required = false) String observacion,
-                                      Model model, RedirectAttributes attributes) {
+                                      RedirectAttributes attributes) {
         try {
             ConcursoDTO concurso = obtenerConcurso(concursoId);
             ConcursoDocenteDTO postulacion = obtenerPostulacion(concursoId, postulacionId);
-            validarAbierto(concurso, "no se pueden validar certificados");
-            if (estadoEfectivo(postulacion) != EstadoPostulacion.PENDIENTE_CERTIFICADOS) {
-                throw new IllegalArgumentException("La postulación no está pendiente de certificados.");
-            }
-            boolean aprobar = "APROBAR".equalsIgnoreCase(decision);
-            boolean rechazar = "RECHAZAR".equalsIgnoreCase(decision);
-            if (!aprobar && !rechazar) {
-                throw new IllegalArgumentException("Seleccione Aprobar o Rechazar la certificación.");
-            }
-            if (aprobar) {
-                if (!Boolean.TRUE.equals(recibidos)) {
-                    throw new IllegalArgumentException("No se puede aprobar: indique que los certificados fueron recibidos.");
-                }
-                if (Boolean.TRUE.equals(requiereVencimiento) && (mesesVigencia == null || mesesVigencia < 1)) {
-                    // Punto 5.6: no se cierra la ventana con un redirect; se vuelve a mostrar el formulario
-                    // conservando lo ya cargado para que el usuario pueda corregir los meses de vigencia.
-                    postulacion.setCertificadosRecibidos(recibidos);
-                    postulacion.setRequiereVencimientoCertificados(requiereVencimiento);
-                    if (observacion != null && !observacion.isBlank()) {
-                        postulacion.setObservacion(observacion.trim());
-                    }
-                    model.addAttribute("concurso", concurso);
-                    model.addAttribute("postulacion", postulacion);
-                    model.addAttribute("horasPostulacion", horasEfectivas(postulacion));
-                    model.addAttribute("datos", postulacion);
-                    model.addAttribute("msgError", "Indique los meses de vigencia de los certificados (mínimo 1).");
-                    return "concursos/validar-certificados";
-                }
-            }
-
-            postulacion.setCertificadosRecibidos(recibidos);
-            postulacion.setRequiereVencimientoCertificados(requiereVencimiento);
-            postulacion.setMesesVigencia(Boolean.TRUE.equals(requiereVencimiento) ? mesesVigencia : null);
-            if (observacion != null && !observacion.isBlank()) {
-                postulacion.setObservacion(observacion.trim());
-            }
-
-            if (aprobar) {
-                postulacion.setEstadoPostulacion(EstadoPostulacion.DESIGNADO_PENDIENTE_POSESION);
-                concursoDocenteService.modificar(postulacion.getId(), postulacion);
-                attributes.addFlashAttribute("msgExito", "Certificación aprobada: el docente queda pendiente de la toma de posesión.");
-            } else {
-                postulacion.setEstadoPostulacion(EstadoPostulacion.CANCELADO_INEFECTIVO);
-                if (postulacion.getObservacion() == null || postulacion.getObservacion().isBlank()) {
-                    postulacion.setObservacion("Certificados rechazados / no presentados.");
-                }
-                concursoDocenteService.modificar(postulacion.getId(), postulacion);
-                Integer liberadas = horasEfectivas(postulacion);
-                attributes.addFlashAttribute("msgExito", "Se canceló la reserva del docente"
-                        + (liberadas != null ? " y se restituyeron " + liberadas + " h al concurso." : "."));
-            }
+            String mensaje = validacionCertificadosService.resolver(concurso, postulacion, decision, observacion);
+            attributes.addFlashAttribute("msgExito", mensaje);
+            return "redirect:/concursos/" + concursoId;
         } catch (RuntimeException e) {
+            // Se vuelve al paso 2 (no al concurso) para que el usuario pueda cargar lo que falta.
             attributes.addFlashAttribute("msgError", e.getMessage());
+            return "redirect:/concursos/" + concursoId + "/postulaciones/" + postulacionId + "/certificados";
         }
-        return "redirect:/concursos/" + concursoId;
     }
 
     // ------------------------------------------------------------------
@@ -678,6 +701,9 @@ public class ConcursoController extends BaseController<ConcursoDTO, Long> {
             designacion.setCaracterDesignacion(concurso.getCaracterDesignacion());
             designacion.setEstadoDesignacion(EstadoDesignacion.ACTIVO);
             designacion.setOrigenVacancia(origenVacanciaDelConcurso(concurso));
+            designacion.setMotivoVacancia(concurso.getMotivoVacancia());
+            // El docente reemplazado tambien se guarda en la designacion para que se vea en el detalle del docente.
+            designacion.setProfesorReemplazante(concurso.getProfesorReemplazante());
             designacion.setConcursoId(concursoId);
 
             CargoDTO cargo = concurso.getCargo() != null ? cargoService.obtener(concurso.getCargo().getId()) : null;
@@ -802,6 +828,9 @@ public class ConcursoController extends BaseController<ConcursoDTO, Long> {
             if (disponibles == null || disponibles <= 0) {
                 throw new IllegalArgumentException("No hay horas remanentes para un rellamado.");
             }
+            if (cargoTieneConcursoAbierto(concurso.getCargo() != null ? concurso.getCargo().getId() : null, concursoId)) {
+                throw new IllegalArgumentException(CARGO_CONCURSO_ABIERTO);
+            }
             ConcursoDTO rellamado = new ConcursoDTO();
             rellamado.setDescripcion("Rellamado – " + concurso.getDescripcion());
             rellamado.setFechaApertura(LocalDate.now());
@@ -835,6 +864,9 @@ public class ConcursoController extends BaseController<ConcursoDTO, Long> {
             if (disponibles == null || disponibles <= 0) {
                 throw new IllegalArgumentException("No hay horas remanentes para un rellamado.");
             }
+            if (cargoTieneConcursoAbierto(origen.getCargo() != null ? origen.getCargo().getId() : null, concursoId)) {
+                throw new IllegalArgumentException(CARGO_CONCURSO_ABIERTO);
+            }
             if (rellamado.getDescripcion() == null || rellamado.getDescripcion().isBlank()) {
                 rellamado.setDescripcion("Rellamado – " + origen.getDescripcion());
             }
@@ -854,6 +886,10 @@ public class ConcursoController extends BaseController<ConcursoDTO, Long> {
             rellamado.setConcursoOrigenId(origen.getId());
             // El rellamado cubre la misma vacancia: hereda el origen capturado en el concurso original.
             rellamado.setOrigenVacancia(origen.getOrigenVacancia());
+            rellamado.setMotivoVacancia(origen.getMotivoVacancia() != null
+                    ? origen.getMotivoVacancia()
+                    : MotivoVacancia.desdeTexto(origen.getOrigenVacancia()));
+            rellamado.setProfesorReemplazante(origen.getProfesorReemplazante());
             if (rellamado.getFechaConcurso() != null) {
                 rellamado.setFechaCierre(rellamado.getFechaConcurso().toLocalDate());
             }
@@ -932,6 +968,9 @@ public class ConcursoController extends BaseController<ConcursoDTO, Long> {
             designacion.setFechaInicioEfectiva(hoy);
             designacion.setFechaFinDefinitiva(hoy.plusYears(1));
             designacion.setOrigenVacancia(origenVacanciaDelConcurso(concurso));
+            designacion.setMotivoVacancia(concurso.getMotivoVacancia());
+            // El docente reemplazado tambien se guarda en la designacion para que se vea en el detalle del docente.
+            designacion.setProfesorReemplazante(concurso.getProfesorReemplazante());
             model.addAttribute("item", designacion);
             model.addAttribute("concurso", concurso);
             model.addAttribute("tipoDesignaciones", CaracterDesignacion.values());
@@ -965,6 +1004,9 @@ public class ConcursoController extends BaseController<ConcursoDTO, Long> {
             designacion.setEstadoDesignacion(
                     designacion.getEstadoDesignacion() == null ? EstadoDesignacion.PENDIENTE : designacion.getEstadoDesignacion());
             designacion.setOrigenVacancia(origenVacanciaDelConcurso(concurso));
+            designacion.setMotivoVacancia(concurso.getMotivoVacancia());
+            // El docente reemplazado tambien se guarda en la designacion para que se vea en el detalle del docente.
+            designacion.setProfesorReemplazante(concurso.getProfesorReemplazante());
             designacion.setConcursoId(concursoId);
             DesignacionDTO nuevaDesignacion = designacionService.alta(designacion);
 
@@ -998,6 +1040,20 @@ public class ConcursoController extends BaseController<ConcursoDTO, Long> {
             return origen;
         }
         return "Concurso: " + concurso.getDescripcion();
+    }
+
+    /**
+     * Valida el motivo elegido y arma el texto que se persiste en origenVacancia: la etiqueta
+     * del motivo más su detalle opcional, o el texto libre cuando el motivo es "Otro".
+     */
+    private void aplicarMotivoVacancia(ConcursoDTO concurso) {
+        if (concurso.getMotivoVacancia() == null) {
+            throw new IllegalArgumentException("Seleccione el motivo de la vacancia del concurso.");
+        }
+        if (concurso.getMotivoVacancia() == MotivoVacancia.OTRO && concurso.getOrigenVacancia() == null) {
+            throw new IllegalArgumentException("Escriba el motivo de la vacancia del concurso.");
+        }
+        concurso.setOrigenVacancia(MotivoVacancia.texto(concurso.getMotivoVacancia(), concurso.getOrigenVacancia()));
     }
 
     private ConcursoDTO obtenerConcurso(Long concursoId) {
@@ -1058,6 +1114,54 @@ public class ConcursoController extends BaseController<ConcursoDTO, Long> {
 
     private boolean esCerrado(ConcursoDTO concurso) {
         return flujoService.esCerrado(concurso);
+    }
+
+    /**
+     * Cargos que se ofrecen en el formulario: excluye los que ya tienen un concurso abierto
+     * (estado distinto de FINALIZADO) distinto del que se está editando. El cargo del concurso
+     * actual se conserva aunque aparezca duplicado en registros históricos, para no perderlo al
+     * guardar. Si el Servidor no responde, no se restringe (la regla se valida igual al guardar).
+     */
+    private List<CargoDTO> cargosDisponibles(ConcursoDTO actual) {
+        List<CargoDTO> cargos;
+        try {
+            cargos = cargoService.listarActivos();
+        } catch (RuntimeException e) {
+            return List.of();
+        }
+        List<Long> ocupados = concursosAbiertos(actual != null ? actual.getId() : null).stream()
+                .map(concurso -> concurso.getCargo() != null ? concurso.getCargo().getId() : null)
+                .filter(Objects::nonNull)
+                .toList();
+        List<CargoDTO> disponibles = new ArrayList<>(cargos.stream()
+                .filter(cargo -> !ocupados.contains(cargo.getId()))
+                .toList());
+        if (actual != null && actual.getCargo() != null
+                && disponibles.stream().noneMatch(cargo -> Objects.equals(cargo.getId(), actual.getCargo().getId()))) {
+            disponibles.add(actual.getCargo());
+        }
+        return disponibles;
+    }
+
+    /** Concursos abiertos: manda el estado (distinto de FINALIZADO), no las fechas. */
+    private List<ConcursoDTO> concursosAbiertos(Long concursoExcluido) {
+        try {
+            return service.listarActivos().stream()
+                    .filter(concurso -> !esCerrado(concurso))
+                    .filter(concurso -> !Objects.equals(concurso.getId(), concursoExcluido))
+                    .toList();
+        } catch (RuntimeException e) {
+            return List.of();
+        }
+    }
+
+    private boolean cargoTieneConcursoAbierto(Long cargoId, Long concursoExcluido) {
+        if (cargoId == null) {
+            return false;
+        }
+        return concursosAbiertos(concursoExcluido).stream()
+                .anyMatch(concurso -> concurso.getCargo() != null
+                        && Objects.equals(concurso.getCargo().getId(), cargoId));
     }
 
     /**

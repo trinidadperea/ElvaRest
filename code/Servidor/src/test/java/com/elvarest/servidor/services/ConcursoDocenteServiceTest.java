@@ -1,18 +1,12 @@
 package com.elvarest.servidor.services;
 
-import com.elvarest.servidor.entities.Cargo;
-import com.elvarest.servidor.entities.Concurso;
-import com.elvarest.servidor.entities.ConcursoDocente;
-import com.elvarest.servidor.entities.Designacion;
-import com.elvarest.servidor.entities.Docente;
+import com.elvarest.servidor.entities.*;
 import com.elvarest.servidor.entities.enums.EstadoConcurso;
 import com.elvarest.servidor.entities.enums.EstadoDesignacion;
 import com.elvarest.servidor.entities.enums.EstadoPostulacion;
 import com.elvarest.servidor.entities.enums.TipoCargo;
 import com.elvarest.servidor.exceptions.ErrorServiceException;
-import com.elvarest.servidor.repositories.ConcursoDocenteRepository;
-import com.elvarest.servidor.repositories.ConcursoRepository;
-import com.elvarest.servidor.repositories.DocenteRepository;
+import com.elvarest.servidor.repositories.*;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -42,6 +36,10 @@ class ConcursoDocenteServiceTest {
     private ConcursoRepository concursoRepository;
     @Mock
     private DocenteRepository docenteRepository;
+    @Mock
+    private CertificadoRepository certificadoRepository;
+    @Mock
+    private TipoCertificadoRepository tipoCertificadoRepository;
 
     private ConcursoDocenteService service;
     private Cargo cargo;
@@ -51,7 +49,8 @@ class ConcursoDocenteServiceTest {
 
     @BeforeEach
     void setUp() {
-        service = new ConcursoDocenteService(concursoDocenteRepository, concursoRepository, docenteRepository);
+        service = new ConcursoDocenteService(concursoDocenteRepository, concursoRepository, docenteRepository,
+                certificadoRepository, tipoCertificadoRepository);
 
         cargo = new Cargo();
         cargo.setId(5L);
@@ -295,6 +294,44 @@ class ConcursoDocenteServiceTest {
 
         assertRechaza("No se puede pasar una postulación de «Pendiente de certificados» a «Designación definitiva».",
                 () -> service.modificar(20L, definitiva));
+    }
+
+    @Test
+    void aprobarSinElCertificadoObligatorioSeRechaza() {
+        TipoCertificado apto = tipo(1L, "Apto psicofísico", true);
+        TipoCertificado ddjj = tipo(2L, "Declaración jurada", false);
+        lenient().when(tipoCertificadoRepository.findAll()).thenReturn(List.of(apto, ddjj));
+
+        ConcursoDocente pendiente = postulacion(20L, docente, 4, EstadoPostulacion.PENDIENTE_CERTIFICADOS);
+        guardada(pendiente);
+        ConcursoDocente aprobada = copia(pendiente);
+        aprobada.setEstadoPostulacion(EstadoPostulacion.DESIGNADO_PENDIENTE_POSESION);
+
+        // Solo la declaración jurada (no obligatoria): se rechaza.
+        lenient().when(certificadoRepository.findByConcursoDocenteIdAndActualTrueAndEliminadoFalse(20L))
+                .thenReturn(List.of(certificado(ddjj)));
+        assertRechaza("No se puede aprobar: falta cargar el certificado obligatorio: Apto psicofísico.",
+                () -> service.modificar(20L, aprobada));
+
+        // Con el apto cargado: se aprueba.
+        lenient().when(certificadoRepository.findByConcursoDocenteIdAndActualTrueAndEliminadoFalse(20L))
+                .thenReturn(List.of(certificado(apto)));
+        assertDoesNotThrow(() -> service.modificar(20L, aprobada));
+    }
+
+    private TipoCertificado tipo(Long id, String nombre, boolean obligatorio) {
+        TipoCertificado tipo = new TipoCertificado();
+        tipo.setId(id);
+        tipo.setNombre(nombre);
+        tipo.setObligatorio(obligatorio);
+        return tipo;
+    }
+
+    private Certificado certificado(TipoCertificado tipo) {
+        Certificado certificado = new Certificado();
+        certificado.setTipoCertificado(tipo);
+        certificado.setActual(true);
+        return certificado;
     }
 
     @Test

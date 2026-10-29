@@ -109,11 +109,100 @@ PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
 
 
 -- ---------------------------------------------------------------------
--- 7. cargo.tipo_cargo y docente.tipo: los cargos de preceptor solo
---    admiten preceptores (§3.2). Hibernate crea las columnas al arrancar
---    el Servidor; los registros previos quedan como DOCENTE. Correr este
---    paso después de ese primer arranque (si la columna no existe, no
---    hace nada).
+-- 7. Motivo de la vacancia como lista (§1, §3.1) y profesor reemplazante.
+--    ddl-auto agrega las columnas al iniciar el Servidor; se dejan acá
+--    para las bases donde todavía no se levantó. Se usa VARCHAR y no el
+--    ENUM nativo que genera Hibernate, así agregar un motivo nuevo no
+--    requiere ALTER ... MODIFY (mismo problema que estado_concurso).
+--    origen_vacancia sigue siendo el texto final que se muestra y hereda.
+-- ---------------------------------------------------------------------
+SET @sql = IF(
+    (SELECT COUNT(*) FROM information_schema.COLUMNS
+     WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'concurso' AND COLUMN_NAME = 'motivo_vacancia') = 0,
+    'ALTER TABLE concurso ADD COLUMN motivo_vacancia VARCHAR(30) NULL',
+    'DO 0');
+PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
+
+SET @sql = IF(
+    (SELECT COUNT(*) FROM information_schema.COLUMNS
+     WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'concurso' AND COLUMN_NAME = 'profesor_reemplazante') = 0,
+    'ALTER TABLE concurso ADD COLUMN profesor_reemplazante VARCHAR(150) NULL',
+    'DO 0');
+PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
+
+SET @sql = IF(
+    (SELECT COUNT(*) FROM information_schema.COLUMNS
+     WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'designacion' AND COLUMN_NAME = 'motivo_vacancia') = 0,
+    'ALTER TABLE designacion ADD COLUMN motivo_vacancia VARCHAR(30) NULL',
+    'DO 0');
+PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
+
+
+-- ---------------------------------------------------------------------
+-- 8. designacion.profesor_reemplazante: el docente reemplazado también se
+--    guarda en la designación (§4) para mostrarlo en Docente → Ver. Las
+--    designaciones creadas desde un concurso lo heredan y las manuales lo
+--    cargan en el formulario.
+-- ---------------------------------------------------------------------
+SET @sql = IF(
+    (SELECT COUNT(*) FROM information_schema.COLUMNS
+     WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'designacion'
+       AND COLUMN_NAME = 'profesor_reemplazante') = 0,
+    'ALTER TABLE designacion ADD COLUMN profesor_reemplazante VARCHAR(150) NULL',
+    'DO 0');
+PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
+
+
+-- ---------------------------------------------------------------------
+-- 9. alerta.concurso_id: vínculo de la alerta automática de concurso sin
+--    cerrar (§10). Es un id plano, igual que designacion.concurso_id.
+--    ddl-auto agrega la columna al iniciar el Servidor; se deja acá para
+--    las bases donde todavía no se levantó.
+-- ---------------------------------------------------------------------
+SET @sql = IF(
+    (SELECT COUNT(*) FROM information_schema.COLUMNS
+     WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'alerta' AND COLUMN_NAME = 'concurso_id') = 0,
+    'ALTER TABLE alerta ADD COLUMN concurso_id BIGINT NULL',
+    'DO 0');
+PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
+
+
+-- ---------------------------------------------------------------------
+-- 10. alerta.tipo: distingue las dos alertas automáticas de un concurso
+--     (§10): CONCURSO_SIN_CERRAR y CONCURSO_HORAS_SIN_CUBRIR. Se guarda
+--     como VARCHAR y no como ENUM nativo para poder agregar orígenes sin
+--     ALTER ... MODIFY (mismo criterio que motivo_vacancia). ddl-auto la
+--     agrega al iniciar el Servidor.
+-- ---------------------------------------------------------------------
+SET @sql = IF(
+    (SELECT COUNT(*) FROM information_schema.COLUMNS
+     WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'alerta' AND COLUMN_NAME = 'tipo') = 0,
+    'ALTER TABLE alerta ADD COLUMN tipo VARCHAR(30) NULL',
+    'DO 0');
+PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
+
+
+-- ---------------------------------------------------------------------
+-- 11. alerta.fecha_resolucion: fecha real en que la alerta quedó
+--     resuelta (leída). La fija el Servidor al resolverla y se limpia si
+--     vuelve a pendiente; las leídas anteriores a esta columna quedan en
+--     NULL y el detalle no inventa la fecha. ddl-auto la agrega al
+--     iniciar el Servidor.
+-- ---------------------------------------------------------------------
+SET @sql = IF(
+    (SELECT COUNT(*) FROM information_schema.COLUMNS
+     WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'alerta' AND COLUMN_NAME = 'fecha_resolucion') = 0,
+    'ALTER TABLE alerta ADD COLUMN fecha_resolucion DATE NULL',
+    'DO 0');
+PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
+
+
+-- ---------------------------------------------------------------------
+-- 12. cargo.tipo_cargo y docente.tipo: los cargos de preceptor solo
+--     admiten preceptores (§3.2). Hibernate crea las columnas al arrancar
+--     el Servidor; los registros previos quedan como DOCENTE. Correr este
+--     paso después de ese primer arranque (si la columna no existe, no
+--     hace nada).
 -- ---------------------------------------------------------------------
 SET @sql = IF(
     (SELECT COUNT(*) FROM information_schema.COLUMNS

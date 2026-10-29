@@ -2,6 +2,7 @@ package com.elvarest.cliente.dto;
 
 import com.elvarest.cliente.dto.enums.CaracterDesignacion;
 import com.elvarest.cliente.dto.enums.EstadoDesignacion;
+import com.elvarest.cliente.dto.enums.MotivoVacancia;
 import org.springframework.format.annotation.DateTimeFormat;
 import lombok.Getter;
 import lombok.Setter;
@@ -18,6 +19,10 @@ public class DesignacionDTO extends BaseDTO{
     @DateTimeFormat(pattern = "yyyy-MM-dd")
     private LocalDate fechaFinDefinitiva;
     private String origenVacancia;
+    /** Motivo elegido de la lista; el texto final (etiqueta + detalle) queda en {@link #origenVacancia}. */
+    private MotivoVacancia motivoVacancia;
+    /** Docente que se reemplaza (texto informativo, sin relación con la entidad Docente). */
+    private String profesorReemplazante;
     /** Concurso del que nació la designación (nulo en las manuales). */
     private Long concursoId;
     private CaracterDesignacion caracterDesignacion;

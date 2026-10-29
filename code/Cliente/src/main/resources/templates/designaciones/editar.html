@@ -31,8 +31,25 @@
       <div class="form-text">Complete este campo solo si la designación ya finalizó.</div>
     </div>
     <div class="mb-3">
-      <label for="origenVacancia">Origen de vacancia *</label>
-      <input class="form-control" id="origenVacancia" th:field="*{origenVacancia}" required>
+      <label for="motivoVacancia">Motivo de la vacancia *</label>
+      <select class="form-select" id="motivoVacancia" th:field="*{motivoVacancia}" required>
+        <option value="">Seleccione el motivo</option>
+        <option th:each="value : ${T(com.elvarest.cliente.dto.enums.MotivoVacancia).values()}"
+                th:value="${value}" th:text="${value.etiqueta}"></option>
+      </select>
+    </div>
+    <div class="mb-3">
+      <label for="origenVacancia">Detalle del motivo</label>
+      <input class="form-control" id="origenVacancia" th:field="*{origenVacancia}" maxlength="150"
+             placeholder="Ej.: Licencia por maternidad de la titular"
+             data-required-when="#motivoVacancia" data-required-value="OTRO">
+      <div class="form-text">Opcional para los motivos de la lista y obligatorio si elige «Otro».</div>
+    </div>
+    <div class="mb-3">
+      <label for="profesorReemplazante">Profesor reemplazante</label>
+      <input class="form-control" id="profesorReemplazante" th:field="*{profesorReemplazante}" maxlength="150"
+             placeholder="Ej.: Gutiérrez, Ana">
+      <div class="form-text">Docente que se reemplaza. Dato informativo: no se asocia a un docente del sistema.</div>
     </div>
     <div class="mb-3">
       <label for="caracterDesignacion">Carácter *</label>

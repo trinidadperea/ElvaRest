@@ -15,14 +15,10 @@ public class TipoCertificadoService extends BaseService<TipoCertificado, Long> {
     }
     @Override
     protected void validar(TipoCertificado entidad) throws ErrorServiceException {
-        if (entidad.getMesesVigencia() <= 0) {
-            throw new ErrorServiceException("Los meses de vigencia deben ser mayores a cero");
-        }
         tipoCertificadoRepository.findByCodigo(entidad.getCodigo())
                 .filter(existente -> !existente.getId().equals(entidad.getId()))
                 .ifPresent(existente -> {
                     throw new RuntimeException("Ya existe un tipo de certificado con ese código");
                 });
     }
-
 }

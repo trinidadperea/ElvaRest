@@ -19,4 +19,11 @@ public class AlertaDTO extends BaseDTO{
     private LocalDate fechaEmision;
     private boolean leida;
     private PrioridadAlerta prioridad;
+    /** Fecha en que la alerta quedó resuelta; la registra el Servidor. Nula si está pendiente. */
+    @DateTimeFormat(pattern = "yyyy-MM-dd")
+    private LocalDate fechaResolucion;
+    /** Certificado que originó la alerta (nulo en las alertas manuales). Llega sin la postulación. */
+    private CertificadoDTO certificado;
+    /** Concurso que originó la alerta automática (id plano); nulo en las de certificado y designación. */
+    private Long concursoId;
 }
