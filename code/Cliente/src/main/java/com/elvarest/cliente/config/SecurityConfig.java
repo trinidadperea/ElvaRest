@@ -38,6 +38,10 @@ public class SecurityConfig {
                 .authorizeHttpRequests(authorize -> authorize
                         .requestMatchers("/login", "/adminlte/**").permitAll()
                         .requestMatchers("/tipos-certificado/**").hasRole("ADMIN")
+                        // Alertas: cualquiera las consulta; crear, editar, resolver y eliminar es de ADMIN
+                        .requestMatchers("/alertas/nuevo", "/alertas/alta", "/alertas/actualizar",
+                                "/alertas/*/editar", "/alertas/modificar/**", "/alertas/baja/**",
+                                "/alertas/*/marcar-leida").hasRole("ADMIN")
                         .anyRequest().authenticated()
                 )
                 .formLogin(form -> form
