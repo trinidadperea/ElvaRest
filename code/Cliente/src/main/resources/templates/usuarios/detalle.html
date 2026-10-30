@@ -1,5 +1,6 @@
 <!doctype html>
 <html lang="es" xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.w3.org/1999/xhtml"
       th:replace="~{base :: layout('Detalle del usuario', ~{::#encabezado}, ~{::#contenido}, '')}">
 <section id="encabezado">
   <h3 th:attr="data-subtitle=${item.rol?.name() == 'ADMIN' ? 'Administrador del sistema' : 'Usuario del sistema'}">
@@ -16,6 +17,10 @@
             th:text="${item.rol == T(com.elvarest.cliente.dto.enums.Rol).ADMIN ? 'Administrador' : 'Usuario'}"></span>
     </div>
     <div class="card-body">
+      <div class="alert alert-warning" role="status" th:if="${item.debeCambiarPassword}">
+        <i class="bi bi-key me-2"></i>
+        Este usuario tiene pendiente el cambio obligatorio de contraseña en su próximo inicio.
+      </div>
       <div class="detail-grid">
         <div class="detail-item">
           <dt>Nombre de usuario</dt>
@@ -52,11 +57,24 @@
       </a>
     </div>
     <div class="d-flex flex-wrap gap-2">
-      <a class="btn btn-outline-danger" th:href="@{/usuarios/baja/{id}(id=${item.id})}"
-         th:attr="data-confirm='¿Dar de baja al usuario ' + ${item.apellido + ', ' + item.nombre} + '?'">
-        <i class="bi bi-trash me-1"></i>Eliminar
-      </a>
-      <a class="btn btn-primary" th:href="@{/usuarios/{id}/editar(id=${item.id})}">
+      <form sec:authorize="hasRole('ADMIN')" method="post"
+            th:action="@{/usuarios/{uuid}/restablecer-contrasena(uuid=${usuarioUuid})}"
+            class="inline-action-form"
+            data-confirm="La contraseña volverá a ser el nombre de usuario y se exigirá cambiarla en el próximo inicio. ¿Restablecer?">
+        <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
+        <button class="btn btn-outline-warning" type="submit">
+          <i class="bi bi-key me-1"></i>Restablecer contraseña
+        </button>
+      </form>
+      <form method="post" th:action="@{/usuarios/baja/{uuid}(uuid=${usuarioUuid})}"
+            class="inline-action-form"
+            th:attr="data-confirm='¿Dar de baja al usuario ' + ${item.apellido + ', ' + item.nombre} + '?'">
+        <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
+        <button class="btn btn-outline-danger" type="submit">
+          <i class="bi bi-trash me-1"></i>Eliminar
+        </button>
+      </form>
+      <a class="btn btn-primary" th:href="@{/usuarios/editar/{uuid}(uuid=${usuarioUuid})}">
         <i class="bi bi-pencil me-1"></i>Editar usuario
       </a>
     </div>

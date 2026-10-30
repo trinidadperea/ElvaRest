@@ -1,5 +1,6 @@
 <!doctype html>
 <html lang="es" xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.w3.org/1999/xhtml"
       th:replace="~{base :: layout('Usuarios', ~{::#encabezado}, ~{::#contenido}, '')}">
 <section id="encabezado">
   <h3 data-subtitle="Cuentas con acceso al sistema">Usuarios</h3>
@@ -33,7 +34,7 @@
       <tbody>
       <tr th:each="item : ${items}">
         <td>
-          <a class="fw-semibold text-decoration-none" th:href="@{/usuarios/{id}(id=${item.id})}"
+          <a class="fw-semibold text-decoration-none" th:href="@{/usuarios/ver/{uuid}(uuid=${uuidLinks[item.id]})}"
              th:text="${item.apellido + ', ' + item.nombre}"></a>
         </td>
         <td th:text="${item.nombreUsuario != null and !item.nombreUsuario.isBlank() ? item.nombreUsuario : '—'}"></td>
@@ -42,19 +43,33 @@
           <span class="badge rounded-pill"
                 th:classappend="${item.rol == T(com.elvarest.cliente.dto.enums.Rol).ADMIN ? 'text-bg-primary' : 'text-bg-secondary'}"
                 th:text="${item.rol == T(com.elvarest.cliente.dto.enums.Rol).ADMIN ? 'Administrador' : 'Usuario'}"></span>
+          <span class="badge rounded-pill text-bg-warning ms-1" th:if="${item.debeCambiarPassword}">Requiere cambio de contraseña</span>
         </td>
         <td>
           <div class="table-actions">
-            <a class="btn btn-sm btn-outline-primary" th:href="@{/usuarios/{id}(id=${item.id})}">
+            <a class="btn btn-sm btn-outline-primary" th:href="@{/usuarios/ver/{uuid}(uuid=${uuidLinks[item.id]})}">
               <i class="bi bi-eye"></i>Ver
             </a>
-            <a class="btn btn-sm btn-outline-secondary" th:href="@{/usuarios/{id}/editar(id=${item.id})}">
+            <a class="btn btn-sm btn-outline-secondary" th:href="@{/usuarios/editar/{uuid}(uuid=${uuidLinks[item.id]})}">
               <i class="bi bi-pencil"></i>Editar
             </a>
-            <a class="btn btn-sm btn-outline-danger" th:href="@{/usuarios/baja/{id}(id=${item.id})}"
-               th:attr="data-confirm='¿Dar de baja al usuario ' + ${item.apellido + ', ' + item.nombre} + '?'">
-              <i class="bi bi-trash"></i>Eliminar
-            </a>
+            <form sec:authorize="hasRole('ADMIN')" method="post"
+                  th:action="@{/usuarios/{uuid}/restablecer-contrasena(uuid=${uuidLinks[item.id]})}"
+                  class="inline-action-form"
+                  th:attr="data-confirm='¿Restablecer la contraseña de ' + ${item.apellido + ', ' + item.nombre} + '? Volverá a ser su nombre de usuario.'">
+              <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
+              <button class="btn btn-sm btn-outline-warning" type="submit">
+                <i class="bi bi-key"></i>Restablecer
+              </button>
+            </form>
+            <form method="post" th:action="@{/usuarios/baja/{uuid}(uuid=${uuidLinks[item.id]})}"
+                  class="inline-action-form"
+                  th:attr="data-confirm='¿Dar de baja al usuario ' + ${item.apellido + ', ' + item.nombre} + '?'">
+              <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
+              <button class="btn btn-sm btn-outline-danger" type="submit">
+                <i class="bi bi-trash"></i>Eliminar
+              </button>
+            </form>
           </div>
         </td>
       </tr>

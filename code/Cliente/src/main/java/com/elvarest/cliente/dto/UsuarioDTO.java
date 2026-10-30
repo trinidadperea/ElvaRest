@@ -14,4 +14,6 @@ public class UsuarioDTO extends PersonaDTO {
     private String nombreUsuario;
     private String contraseña;
     private Rol rol;
+    // Lo gestiona el Servidor: el Cliente solo lo lee para exigir el cambio de contraseña en el primer ingreso.
+    private Boolean debeCambiarPassword;
 }

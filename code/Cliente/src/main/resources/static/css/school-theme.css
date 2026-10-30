@@ -58,6 +58,12 @@ a:hover .stat-card { transform: translateY(-1px); border-color: #bfd3ff; box-sha
 /* Formularios de acción en línea (no deben parecer tarjetas) */
 form.inline-action-form { max-width: none; padding: 0; border: 0; border-radius: 0; background: transparent; box-shadow: none; }
 
+/* Formularios de autenticación (login y cambio de contraseña): no llevan el
+   layout de los formularios de alta/edición (tarjeta, dos columnas); conservan
+   el layout de input-group de AdminLTE (campo + icono en línea) */
+form.auth-form { max-width: none; padding: 0; border: 0; border-radius: 0; background: transparent; box-shadow: none; }
+form.auth-form > .mb-3 { display: flex; width: 100%; margin-right: 0; }
+
 /* Listas compactas (pendientes, próximos vencimientos) */
 .mini-list { list-style: none; margin: 0; padding: 0; display: grid; gap: .55rem; }
 .mini-item { display: flex; gap: .7rem; align-items: flex-start; padding: .65rem .8rem; border: 1px solid var(--school-border); border-radius: 11px; background: #fff; }
@@ -249,6 +255,10 @@ html[data-bs-theme="dark"] .flow-step-header {
   background: #273449;
   color: var(--school-ink);
   border-bottom-color: var(--school-border);
+}
+
+html[data-bs-theme="dark"] form.auth-form {
+  background: transparent;
 }
 
 /* Textos */

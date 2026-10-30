@@ -7,55 +7,53 @@
 <section id="contenido">
 
 
+  <div class="alert alert-info" role="status">
+    <i class="bi bi-info-circle me-2"></i>
+    Solo el nombre de usuario puede modificarse: el resto de los datos queda bloqueado.
+  </div>
+
   <form method="post" th:action="@{/usuarios/actualizar}" th:object="${item}" data-loading>
     <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
     <input type="hidden" th:field="*{id}">
 
     <div class="mb-3">
       <label for="nombre">Nombre</label>
-      <input class="form-control" id="nombre" th:field="*{nombre}" required>
+      <input class="form-control" id="nombre" th:field="*{nombre}" disabled>
     </div>
     <div class="mb-3">
       <label for="apellido">Apellido</label>
-      <input class="form-control" id="apellido" th:field="*{apellido}" required>
+      <input class="form-control" id="apellido" th:field="*{apellido}" disabled>
     </div>
     <div class="mb-3">
       <label for="fechaNacimiento">Fecha de nacimiento</label>
-      <input class="form-control" id="fechaNacimiento" type="date" th:field="*{fechaNacimiento}" required>
+      <input class="form-control" id="fechaNacimiento" type="date" th:field="*{fechaNacimiento}" disabled>
     </div>
     <div class="mb-3">
       <label for="numeroDocumento">Documento</label>
-      <input class="form-control" id="numeroDocumento" th:field="*{numeroDocumento}" required>
+      <input class="form-control" id="numeroDocumento" th:field="*{numeroDocumento}" disabled>
     </div>
     <div class="mb-3">
       <label for="telefono">Teléfono</label>
-      <input class="form-control" id="telefono" th:field="*{telefono}" required>
+      <input class="form-control" id="telefono" th:field="*{telefono}" disabled>
     </div>
     <div class="mb-3">
       <label for="correoElectronico">Correo electrónico</label>
-      <input class="form-control" id="correoElectronico" type="email" th:field="*{correoElectronico}" required>
+      <input class="form-control" id="correoElectronico" type="email" th:field="*{correoElectronico}" disabled>
     </div>
     <div class="mb-3">
       <label for="nombreUsuario">Nombre de usuario</label>
       <input class="form-control" id="nombreUsuario" th:field="*{nombreUsuario}" autocomplete="off" required>
     </div>
     <div class="mb-3">
-      <label for="contrasena">Contraseña</label>
-      <input class="form-control" id="contrasena" type="password" th:field="*{contraseña}"
-             autocomplete="new-password" required>
-      <div class="form-text">La contraseña se reemplaza al guardar: ingrese la contraseña deseada para esta cuenta.</div>
-    </div>
-    <div class="mb-3">
       <label for="rol">Rol</label>
-      <select class="form-select" id="rol" th:field="*{rol}" required>
+      <select class="form-select" id="rol" th:field="*{rol}" disabled>
         <option th:each="value : ${T(com.elvarest.cliente.dto.enums.Rol).values()}"
                 th:value="${value}" th:text="${value}"></option>
       </select>
-      <div class="form-text">El rol Administrador habilita la gestión completa del sistema.</div>
     </div>
 
     <div class="d-flex flex-wrap gap-2 mt-3">
-      <a class="btn btn-outline-secondary" th:href="@{/usuarios/{id}(id=${item.id})}">
+      <a class="btn btn-outline-secondary" th:href="@{/usuarios/ver/{uuid}(uuid=${usuarioUuid})}">
         <i class="bi bi-arrow-left me-1"></i>Cancelar
       </a>
       <button type="submit" class="btn btn-primary">

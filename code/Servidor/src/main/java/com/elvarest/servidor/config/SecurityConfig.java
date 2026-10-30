@@ -20,6 +20,8 @@ public class SecurityConfig {
                 .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
                         // esto debemos ajustarlo segun endpoints y roles - SOLO PRUEABABAA-
+                        // Un usuario puede cambiar su propia contraseña; el resto de /usuarios sigue siendo del ADMIN
+                        .requestMatchers(HttpMethod.POST, "/usuarios/cambiar-contrasena").hasAnyRole("ADMIN", "USER")
                         .requestMatchers("/usuarios/**").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.GET, "/**").hasAnyRole("ADMIN", "USER")
                         .anyRequest().hasRole("ADMIN")

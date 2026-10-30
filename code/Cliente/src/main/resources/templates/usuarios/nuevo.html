@@ -10,6 +10,11 @@
   <form method="post" th:action="@{/usuarios/actualizar}" th:object="${item}" data-loading>
     <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
 
+    <div class="alert alert-info" role="status">
+      <i class="bi bi-info-circle me-2"></i>
+      La contraseña inicial será el nombre de usuario elegido y el sistema exigirá cambiarla en el primer inicio.
+    </div>
+
     <div class="mb-3">
       <label for="nombre">Nombre</label>
       <input class="form-control" id="nombre" th:field="*{nombre}" required>
@@ -37,11 +42,6 @@
     <div class="mb-3">
       <label for="nombreUsuario">Nombre de usuario</label>
       <input class="form-control" id="nombreUsuario" th:field="*{nombreUsuario}" autocomplete="off" required>
-    </div>
-    <div class="mb-3">
-      <label for="contrasena">Contraseña</label>
-      <input class="form-control" id="contrasena" type="password" th:field="*{contraseña}"
-             autocomplete="new-password" required>
     </div>
     <div class="mb-3">
       <label for="rol">Rol</label>

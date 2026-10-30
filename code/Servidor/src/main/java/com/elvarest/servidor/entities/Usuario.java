@@ -27,4 +27,9 @@ public class Usuario extends Persona{
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private Rol rol;
+
+    // El flag lo gestiona solo el servidor: el cliente puede leerlo pero no modificarlo
+    @JsonProperty(access = JsonProperty.Access.READ_ONLY)
+    @Column(nullable = false, columnDefinition = "boolean default false")
+    private Boolean debeCambiarPassword = false;
 }
