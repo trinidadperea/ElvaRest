@@ -3,6 +3,7 @@ package com.elvarest.servidor.services;
 import com.elvarest.servidor.entities.Concurso;
 import com.elvarest.servidor.entities.ConcursoDocente;
 import com.elvarest.servidor.entities.enums.EstadoPostulacion;
+import com.elvarest.servidor.entities.enums.TipoCargo;
 
 import java.util.List;
 import java.util.Objects;
@@ -24,6 +25,19 @@ public final class ReglasConcurso {
         return postulacion.isGanador()
                 ? EstadoPostulacion.DESIGNACION_DEFINITIVA
                 : EstadoPostulacion.PENDIENTE_CERTIFICADOS;
+    }
+
+    /** Tipo del cargo del concurso; los registros sin tipo (previos a la migración) son DOCENTE. */
+    public static TipoCargo tipoCargo(Concurso concurso) {
+        if (concurso.getCargo() == null || concurso.getCargo().getTipoCargo() == null) {
+            return TipoCargo.DOCENTE;
+        }
+        return concurso.getCargo().getTipoCargo();
+    }
+
+    /** Un concurso de preceptor admite una sola persona, que toma todas las horas. */
+    public static boolean esDePreceptor(Concurso concurso) {
+        return tipoCargo(concurso) == TipoCargo.PRECEPTOR;
     }
 
     public static boolean esCancelada(ConcursoDocente postulacion) {

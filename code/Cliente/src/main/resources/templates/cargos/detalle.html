@@ -2,7 +2,7 @@
 <html lang="es" xmlns:th="http://www.thymeleaf.org"
       th:replace="~{base :: layout('Detalle del cargo', ~{::#encabezado}, ~{::#contenido}, '')}">
 <section id="encabezado" class="detail-header">
-  <h3 th:attr="data-subtitle=${item.materia != null ? 'Materia: ' + item.materia.nombre : 'Sin materia asignada'}">
+  <h3 th:attr="data-subtitle=${item.materia != null ? 'Materia: ' + item.materia.nombre : (item.tipoCargo?.name() == 'PRECEPTOR' ? 'Preceptoría' : 'Sin materia asignada')}">
     <span th:text="${item.descripcion}"></span></h3>
 </section>
 <section id="contenido">
@@ -19,12 +19,16 @@
     <div class="card-body">
       <div class="detail-grid">
         <div class="detail-item">
+          <dt>Tipo de cargo</dt>
+          <dd th:text="${item.tipoCargo?.name() == 'PRECEPTOR' ? 'Preceptor' : 'Docente'}"></dd>
+        </div>
+        <div class="detail-item">
           <dt>Carga horaria</dt>
           <dd th:text="${item.cargaHoraria} + ' h'"></dd>
         </div>
         <div class="detail-item">
           <dt>Materia</dt>
-          <dd th:text="${item.materia != null ? item.materia.nombre : 'Sin materia asignada'}"></dd>
+          <dd th:text="${item.materia != null ? item.materia.nombre : (item.tipoCargo?.name() == 'PRECEPTOR' ? 'Preceptoría' : 'Sin materia asignada')}"></dd>
         </div>
         <div class="detail-item">
           <dt>Curso</dt>

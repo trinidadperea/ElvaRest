@@ -24,19 +24,32 @@
     </div>
   </div>
 
-  <form method="post" th:action="@{/concursos/{id}/postular(id=${concurso.id})}" th:object="${item}" data-loading>
+  <div class="alert alert-warning" th:if="${preceptorCubierto}">
+    Este concurso es de un cargo de preceptor y ya tiene una persona con postulación vigente.
+    Solo se puede registrar otro preceptor si la postulación actual se declara inefectiva.
+  </div>
+
+  <form method="post" th:action="@{/concursos/{id}/postular(id=${concurso.id})}" th:object="${item}" data-loading
+        th:unless="${preceptorCubierto}">
     <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
 
     <div class="mb-3">
-      <label for="docenteId">Docente</label>
+      <label for="docenteId" th:text="${esDePreceptor ? 'Preceptor' : 'Docente'}">Docente</label>
       <select id="docenteId" class="form-select" name="docente.id" required>
-        <option value="">Seleccione un docente</option>
+        <option value="" th:text="${esDePreceptor ? 'Seleccione un preceptor' : 'Seleccione un docente'}">Seleccione un docente</option>
         <option th:each="docente : ${docentes}" th:value="${docente.id}"
                 th:text="${docente.apellido + ', ' + docente.nombre + ' – DNI ' + docente.numeroDocumento}"></option>
       </select>
     </div>
 
-    <div class="mb-3">
+    <div class="mb-3" th:if="${esDePreceptor}">
+      <label>Horas tomadas</label>
+      <p class="form-control-plaintext mb-0"
+         th:text="${horasDisponibles != null ? horasDisponibles + ' h (todas las horas disponibles del concurso)' : '—'}"></p>
+      <div class="form-text">En un cargo de preceptor, la persona designada toma todas las horas del concurso.</div>
+    </div>
+
+    <div class="mb-3" th:unless="${esDePreceptor}">
       <label for="horasElegidas">Horas tomadas</label>
       <input id="horasElegidas" class="form-control" type="number" min="1" th:field="*{horasElegidas}" required
              th:attr="max=${horasDisponibles}">
@@ -47,7 +60,8 @@
       </div>
     </div>
 
-    <p th:if="${#lists.isEmpty(docentes)}" class="text-secondary">
+    <p th:if="${#lists.isEmpty(docentes)}" class="text-secondary"
+       th:text="${esDePreceptor ? 'No hay preceptores activos disponibles para registrar en este concurso.' : 'No hay docentes activos disponibles para registrar en este concurso.'}">
       No hay docentes activos disponibles para registrar en este concurso.
     </p>
 
@@ -58,7 +72,7 @@
       </button>
     </div>
     <p class="text-secondary small mt-3 mb-0">
-      Al registrar, el docente queda en estado <strong>pendiente de certificados</strong> y sus horas quedan reservadas.
+      Al registrar, <th:block th:text="${esDePreceptor ? 'el preceptor' : 'el docente'}">el docente</th:block> queda en estado <strong>pendiente de certificados</strong> y sus horas quedan reservadas.
     </p>
   </form>
 </section>

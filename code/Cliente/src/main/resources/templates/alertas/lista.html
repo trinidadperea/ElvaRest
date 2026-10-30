@@ -72,10 +72,12 @@
                     <a class="btn btn-sm btn-outline-primary" th:href="@{/alertas/{id}(id=${item.id})}">
                         <i class="bi bi-eye me-1"></i>Ver aviso
                     </a>
-                    <a class="btn btn-sm btn-outline-secondary" th:href="@{/alertas/{id}/editar(id=${item.id})}">
+                    <a class="btn btn-sm btn-outline-secondary" th:href="@{/alertas/{id}/editar(id=${item.id})}"
+                       sec:authorize="hasRole('ADMIN')">
                         <i class="bi bi-pencil me-1"></i>Editar
                     </a>
                     <a class="btn btn-sm btn-outline-danger" th:href="@{/alertas/baja/{id}(id=${item.id})}"
+                       sec:authorize="hasRole('ADMIN')"
                        th:attr="data-confirm='¿Eliminar esta alerta? Se dará de baja del listado.'">
                         <i class="bi bi-trash me-1"></i>Eliminar
                     </a>

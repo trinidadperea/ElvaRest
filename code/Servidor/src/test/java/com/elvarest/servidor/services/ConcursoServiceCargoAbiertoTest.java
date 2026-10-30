@@ -4,6 +4,7 @@ import com.elvarest.servidor.entities.Cargo;
 import com.elvarest.servidor.entities.Concurso;
 import com.elvarest.servidor.entities.enums.EstadoConcurso;
 import com.elvarest.servidor.exceptions.ErrorServiceException;
+import com.elvarest.servidor.repositories.CargoRepository;
 import com.elvarest.servidor.repositories.ConcursoDocenteRepository;
 import com.elvarest.servidor.repositories.ConcursoRepository;
 import com.elvarest.servidor.repositories.DesignacionRepository;
@@ -42,13 +43,15 @@ class ConcursoServiceCargoAbiertoTest {
     private ConcursoDocenteRepository concursoDocenteRepository;
     @Mock
     private AlertaService alertaService;
+    @Mock
+    private CargoRepository cargoRepository;
 
     private ConcursoService service;
 
     @BeforeEach
     void setUp() {
         service = new ConcursoService(concursoRepository, designacionRepository, concursoDocenteRepository,
-                alertaService);
+                alertaService, cargoRepository);
     }
 
     private Concurso concurso(Long id, Long cargoId, EstadoConcurso estado, boolean eliminado) {

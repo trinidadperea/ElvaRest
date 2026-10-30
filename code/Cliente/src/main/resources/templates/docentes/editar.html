@@ -39,6 +39,14 @@
       <label for="area">Área *</label>
       <input class="form-control" id="area" th:field="*{area}" required>
     </div>
+    <div class="mb-3">
+      <label for="tipo">Tipo *</label>
+      <select class="form-select" id="tipo" th:field="*{tipo}" required>
+        <option value="DOCENTE">Docente</option>
+        <option value="PRECEPTOR">Preceptor</option>
+      </select>
+      <div class="form-text">Los preceptores solo pueden postularse a cargos de preceptor, y los docentes al resto.</div>
+    </div>
 
     <!-- Activo oculto: preserva el estado actual del docente al guardar la modificación. -->
     <input type="hidden" name="activo" th:value="${item.activo}">
