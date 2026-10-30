@@ -21,7 +21,7 @@
             Usuario o contraseña incorrectos.
           </div>
 
-        <form method="post" th:action="@{/login}">
+        <form method="post" th:action="@{/login}" class="auth-form">
           <input type="hidden" th:if="${_csrf != null}"
                  th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
           <div class="input-group mb-3">

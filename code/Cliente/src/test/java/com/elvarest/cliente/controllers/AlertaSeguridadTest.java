@@ -1,5 +1,6 @@
 package com.elvarest.cliente.controllers;
 
+import com.elvarest.cliente.auth.AuthService;
 import com.elvarest.cliente.config.SecurityConfig;
 import com.elvarest.cliente.dto.AlertaDTO;
 import com.elvarest.cliente.services.AlertaService;
@@ -37,6 +38,8 @@ class AlertaSeguridadTest {
     @Autowired
     private MockMvc mvc;
 
+    @MockitoBean
+    private AuthService authService;
     @MockitoBean
     private AlertaService alertaService;
     @MockitoBean
