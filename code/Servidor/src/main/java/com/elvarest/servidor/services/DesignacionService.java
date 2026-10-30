@@ -9,6 +9,7 @@ import com.elvarest.servidor.repositories.DesignacionRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
 import java.util.Objects;
 import java.util.Optional;
 
@@ -23,6 +24,46 @@ public class DesignacionService extends BaseService<Designacion, Long> {
         super(repository);
         this.concursoRepository = concursoRepository;
         this.alertaService = alertaService;
+    }
+
+    /**
+     * El estado se deriva de la fecha de fin definitiva en toda alta y edición: sin fecha o con una
+     * fecha futura queda ACTIVO; con la fecha de fin alcanzada (hoy o anterior) queda FINALIZADO.
+     * PENDIENTE se conserva, porque la toma de posesión la maneja el flujo del concurso y no depende
+     * de las fechas. Además se rechaza una fecha de fin anterior a la de inicio.
+     */
+    @Override
+    protected void validar(Designacion entidad) throws ErrorServiceException {
+        if (entidad.getFechaFinDefinitiva() != null && entidad.getFechaInicioEfectiva() != null
+                && entidad.getFechaFinDefinitiva().isBefore(entidad.getFechaInicioEfectiva())) {
+            throw new ErrorServiceException(
+                    "La fecha de fin definitiva no puede ser anterior a la fecha de inicio efectiva.");
+        }
+        entidad.setEstadoDesignacion(
+                estadoSegunFechaFin(estadoSolicitado(entidad), entidad.getFechaFinDefinitiva()));
+    }
+
+    /**
+     * Estado con el que se guarda: el que envía el cliente o, si no envía (el formulario ya no elige
+     * el estado), el que tenía guardada la designación. Sin estado previo, todo se deriva de la fecha.
+     */
+    private EstadoDesignacion estadoSolicitado(Designacion entidad) {
+        if (entidad.getEstadoDesignacion() != null || entidad.getId() == null) {
+            return entidad.getEstadoDesignacion();
+        }
+        return repository.findById(entidad.getId())
+                .map(Designacion::getEstadoDesignacion)
+                .orElse(null);
+    }
+
+    /** Sin fecha de fin o con fecha futura -> ACTIVO; con la fecha de fin alcanzada -> FINALIZADO. */
+    private EstadoDesignacion estadoSegunFechaFin(EstadoDesignacion solicitado, LocalDate fechaFin) {
+        if (solicitado == EstadoDesignacion.PENDIENTE) {
+            return EstadoDesignacion.PENDIENTE;
+        }
+        return fechaFin != null && !fechaFin.isAfter(LocalDate.now())
+                ? EstadoDesignacion.FINALIZADO
+                : EstadoDesignacion.ACTIVO;
     }
 
     /**
@@ -60,9 +101,9 @@ public class DesignacionService extends BaseService<Designacion, Long> {
     }
 
     /**
-     * La fecha de fin definitiva se puede corregir desde la edición, así que al guardar se
-     * reevalúan las alertas: crea la que falte, marca leídas las que ya no corresponden y
-     * reabre la que cambió de mensaje.
+     * La fecha de fin definitiva se puede corregir desde la edición: al guardar se deriva el estado
+     * (ver {@link #validar}) y se reevalúan las alertas: crea la que falte, marca leídas las que ya
+     * no corresponden y reabre la que cambió de mensaje.
      */
     @Override
     @Transactional(rollbackFor = Exception.class)
@@ -70,6 +111,30 @@ public class DesignacionService extends BaseService<Designacion, Long> {
         Optional<Designacion> resultado = super.modificar(id, entidad);
         resultado.ifPresent(alertaService::evaluarVencimientoDesignacion);
         return resultado;
+    }
+
+    /**
+     * Finaliza las designaciones ACTIVO cuya fecha de fin definitiva ya se alcanzó, sin esperar a que
+     * alguien las edite. La revisión diaria la ejecuta antes de depurar las alertas, así el fin de una
+     * designación vencida no queda como alerta pendiente.
+     *
+     * @return cantidad de designaciones finalizadas en esta corrida
+     */
+    @Transactional(rollbackFor = Exception.class)
+    public int finalizarVencidas() {
+        int finalizadas = 0;
+        for (Designacion designacion : repository.findAll()) {
+            if (Boolean.TRUE.equals(designacion.getEliminado())
+                    || designacion.getEstadoDesignacion() != EstadoDesignacion.ACTIVO
+                    || designacion.getFechaFinDefinitiva() == null
+                    || designacion.getFechaFinDefinitiva().isAfter(LocalDate.now())) {
+                continue;
+            }
+            designacion.setEstadoDesignacion(EstadoDesignacion.FINALIZADO);
+            repository.save(designacion);
+            finalizadas++;
+        }
+        return finalizadas;
     }
 
     /**

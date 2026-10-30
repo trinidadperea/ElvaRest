@@ -2,7 +2,6 @@ package com.elvarest.servidor.services;
 
 import com.elvarest.servidor.entities.ConcursoDocente;
 import com.elvarest.servidor.entities.Docente;
-import com.elvarest.servidor.entities.enums.EstadoDesignacion;
 import com.elvarest.servidor.entities.enums.EstadoPostulacion;
 import com.elvarest.servidor.exceptions.ErrorServiceException;
 import com.elvarest.servidor.repositories.ConcursoDocenteRepository;
@@ -29,11 +28,11 @@ public class DocenteService extends BaseService<Docente, Long> {
 
     /**
      * Reglas de eliminación de docentes:
-     * - No se elimina con designaciones activas (estado ACTIVO).
-     * - No se elimina con designaciones pendientes de certificados o de toma de posesión:
-     *   designaciones en estado PENDIENTE o postulaciones vigentes sin designación definitiva
-     *   (no canceladas), contempladas en cualquier concurso. Los registros sin estado de
-     *   postulación se tratan de forma conservadora.
+     * - No se elimina si tiene cualquier designación asociada, sin importar su estado (activa,
+     *   pendiente o finalizada): el historial de designaciones queda vinculado al docente.
+     * - No se elimina con postulaciones vigentes sin designación definitiva (no canceladas),
+     *   contempladas en cualquier concurso. Los registros sin estado de postulación se tratan de
+     *   forma conservadora.
      */
     public void validarEliminacion(Long id) throws ErrorServiceException {
         Optional<Docente> encontrado = repository.findById(id);
@@ -41,26 +40,20 @@ public class DocenteService extends BaseService<Docente, Long> {
             return;
         }
 
-        boolean tieneDesignacionesActivas = designacionRepository.findAll().stream()
+        boolean tieneDesignaciones = designacionRepository.findAll().stream()
                 .filter(designacion -> !Boolean.TRUE.equals(designacion.getEliminado()))
-                .filter(designacion -> designacion.getDocente() != null
-                        && Objects.equals(designacion.getDocente().getId(), id))
-                .anyMatch(designacion -> designacion.getEstadoDesignacion() == EstadoDesignacion.ACTIVO);
-        if (tieneDesignacionesActivas) {
-            throw new ErrorServiceException("No se puede eliminar el docente porque tiene designaciones activas asociadas.");
+                .anyMatch(designacion -> designacion.getDocente() != null
+                        && Objects.equals(designacion.getDocente().getId(), id));
+        if (tieneDesignaciones) {
+            throw new ErrorServiceException("No se puede eliminar el docente porque tiene designaciones asociadas.");
         }
 
-        boolean tieneDesignacionesPendientes = designacionRepository.findAll().stream()
-                .filter(designacion -> !Boolean.TRUE.equals(designacion.getEliminado()))
-                .filter(designacion -> designacion.getDocente() != null
-                        && Objects.equals(designacion.getDocente().getId(), id))
-                .anyMatch(designacion -> designacion.getEstadoDesignacion() == EstadoDesignacion.PENDIENTE);
         boolean tienePostulacionesVigentes = concursoDocenteRepository.findAll().stream()
                 .filter(postulacion -> !Boolean.TRUE.equals(postulacion.getEliminado()))
                 .filter(postulacion -> postulacion.getDocente() != null
                         && Objects.equals(postulacion.getDocente().getId(), id))
                 .anyMatch(this::esPendiente);
-        if (tieneDesignacionesPendientes || tienePostulacionesVigentes) {
+        if (tienePostulacionesVigentes) {
             throw new ErrorServiceException("No se puede eliminar el docente porque tiene designaciones "
                     + "pendientes de certificados o de toma de posesión.");
         }
