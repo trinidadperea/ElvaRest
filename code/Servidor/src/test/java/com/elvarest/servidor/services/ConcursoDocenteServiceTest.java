@@ -1,6 +1,7 @@
 package com.elvarest.servidor.services;
 
 import com.elvarest.servidor.entities.*;
+import com.elvarest.servidor.entities.enums.CaracterDesignacion;
 import com.elvarest.servidor.entities.enums.EstadoConcurso;
 import com.elvarest.servidor.entities.enums.EstadoDesignacion;
 import com.elvarest.servidor.entities.enums.EstadoPostulacion;
@@ -22,7 +23,11 @@ import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.lenient;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 
 /**
  * Reglas de postulación validadas en el servidor: alta (§3.2), horas (§3.3) y ciclo de estados (§3.4 a §3.6).
@@ -40,6 +45,12 @@ class ConcursoDocenteServiceTest {
     private CertificadoRepository certificadoRepository;
     @Mock
     private TipoCertificadoRepository tipoCertificadoRepository;
+    @Mock
+    private DesignacionService designacionService;
+    @Mock
+    private ConcursoService concursoService;
+    @Mock
+    private CargoRepository cargoRepository;
 
     private ConcursoDocenteService service;
     private Cargo cargo;
@@ -50,7 +61,8 @@ class ConcursoDocenteServiceTest {
     @BeforeEach
     void setUp() {
         service = new ConcursoDocenteService(concursoDocenteRepository, concursoRepository, docenteRepository,
-                certificadoRepository, tipoCertificadoRepository);
+                certificadoRepository, tipoCertificadoRepository, designacionService, concursoService,
+                cargoRepository);
 
         cargo = new Cargo();
         cargo.setId(5L);
@@ -408,5 +420,128 @@ class ConcursoDocenteServiceTest {
 
         assertRechaza("Solo se pueden modificar horas de postulaciones pendientes de certificados o de posesión.",
                 () -> service.modificar(20L, cambio));
+    }
+
+    // ------------------------------------------------------------------
+    // Eliminación
+    // ------------------------------------------------------------------
+
+    @Test
+    void unaPostulacionNoSeEliminaSeCancelaDeclarandolaInefectiva() {
+        ConcursoDocente pendiente = postulacion(20L, docente, 4, EstadoPostulacion.PENDIENTE_CERTIFICADOS);
+        guardada(pendiente);
+
+        assertRechaza("Las postulaciones no se eliminan: se cancelan declarándolas inefectivas.",
+                () -> service.bajaLogica(20L));
+        assertFalse(pendiente.getEliminado());
+    }
+
+    // ------------------------------------------------------------------
+    // Paso 3: confirmación de toma de posesión (§3.7)
+    // ------------------------------------------------------------------
+
+    private Designacion datosDePosesion() {
+        Designacion datos = new Designacion();
+        datos.setFechaInicioEfectiva(LocalDate.now());
+        datos.setFechaFinDefinitiva(LocalDate.now().plusYears(1));
+        return datos;
+    }
+
+    private ConcursoDocente pendienteDePosesion(Integer horas) {
+        ConcursoDocente pendiente = postulacion(20L, docente, horas, EstadoPostulacion.DESIGNADO_PENDIENTE_POSESION);
+        guardada(pendiente);
+        return pendiente;
+    }
+
+    @Test
+    void confirmarPosesionCreaLaDesignacionYCompletaLaPostulacion() {
+        concurso.setCaracterDesignacion(CaracterDesignacion.SUPLENTE);
+        concurso.setOrigenVacancia("Licencia");
+        concurso.setProfesorReemplazante("Pérez, Ana");
+        ConcursoDocente pendiente = pendienteDePosesion(4);
+        lenient().when(designacionService.alta(any())).thenAnswer(invocacion -> invocacion.getArgument(0));
+        lenient().when(cargoRepository.findById(5L)).thenReturn(Optional.of(cargo));
+
+        Designacion datos = datosDePosesion();
+        assertDoesNotThrow(() -> service.confirmarPosesion(1L, 20L, datos));
+
+        assertEquals(EstadoDesignacion.ACTIVO, datos.getEstadoDesignacion());
+        assertEquals(docente, datos.getDocente());
+        assertEquals(1L, datos.getConcursoId());
+        assertEquals(CaracterDesignacion.SUPLENTE, datos.getCaracterDesignacion());
+        assertEquals("Licencia", datos.getOrigenVacancia());
+        assertEquals("Pérez, Ana", datos.getProfesorReemplazante());
+        assertEquals(EstadoPostulacion.DESIGNACION_DEFINITIVA, pendiente.getEstadoPostulacion());
+        assertTrue(pendiente.isGanador());
+        assertTrue(cargo.getDesignaciones().contains(datos));
+        // Quedan 6 h libres de 10: el concurso sigue abierto.
+        verify(concursoService, never()).modificar(any(), any());
+    }
+
+    @Test
+    void confirmarPosesionCierraElConcursoCuandoSeCubrenTodasLasHoras() {
+        concurso.setCaracterDesignacion(CaracterDesignacion.INTERINO);
+        pendienteDePosesion(10);
+        lenient().when(designacionService.alta(any())).thenAnswer(invocacion -> invocacion.getArgument(0));
+        lenient().when(cargoRepository.findById(5L)).thenReturn(Optional.of(cargo));
+
+        assertDoesNotThrow(() -> service.confirmarPosesion(1L, 20L, datosDePosesion()));
+
+        assertEquals(EstadoConcurso.FINALIZADO, concurso.getEstadoConcurso());
+        verify(concursoService).modificar(1L, concurso);
+    }
+
+    @Test
+    void confirmarPosesionDeUnaPostulacionPendienteDeCertificadosSeRechaza() {
+        ConcursoDocente pendiente = postulacion(20L, docente, 4, EstadoPostulacion.PENDIENTE_CERTIFICADOS);
+        guardada(pendiente);
+
+        assertRechaza("La postulación no está pendiente de toma de posesión.",
+                () -> service.confirmarPosesion(1L, 20L, datosDePosesion()));
+    }
+
+    @Test
+    void confirmarPosesionSinCaracterDelConcursoSeRechaza() {
+        pendienteDePosesion(4);
+
+        assertRechaza("El concurso no tiene un carácter de designación definido. "
+                + "Complete el carácter del concurso antes de confirmar la toma de posesión.",
+                () -> service.confirmarPosesion(1L, 20L, datosDePosesion()));
+    }
+
+    @Test
+    void confirmarPosesionSinFechasSeRechaza() {
+        concurso.setCaracterDesignacion(CaracterDesignacion.SUPLENTE);
+        pendienteDePosesion(4);
+
+        assertRechaza("Complete las fechas de inicio efectiva y de fin definitiva.",
+                () -> service.confirmarPosesion(1L, 20L, new Designacion()));
+    }
+
+    @Test
+    void confirmarPosesionConElConcursoCerradoSeRechaza() {
+        concurso.setEstadoConcurso(EstadoConcurso.FINALIZADO);
+        concurso.setCaracterDesignacion(CaracterDesignacion.SUPLENTE);
+        pendienteDePosesion(4);
+
+        assertRechaza("El concurso está cerrado: no se puede confirmar la toma de posesión.",
+                () -> service.confirmarPosesion(1L, 20L, datosDePosesion()));
+    }
+
+    @Test
+    void confirmarPosesionDeUnaPostulacionDeOtroConcursoSeRechaza() {
+        Concurso otro = new Concurso();
+        otro.setId(9L);
+        ConcursoDocente ajena = postulacion(21L, docente, 4, EstadoPostulacion.DESIGNADO_PENDIENTE_POSESION);
+        ajena.setConcurso(otro);
+        guardada(ajena);
+
+        assertRechaza("La postulación no pertenece a este concurso.",
+                () -> service.confirmarPosesion(1L, 21L, datosDePosesion()));
+    }
+
+    @Test
+    void confirmarPosesionSinDatosSeRechaza() {
+        assertRechaza("Complete los datos de la designación.", () -> service.confirmarPosesion(1L, 20L, null));
     }
 }

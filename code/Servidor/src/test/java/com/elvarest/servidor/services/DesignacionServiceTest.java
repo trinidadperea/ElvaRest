@@ -113,7 +113,8 @@ class DesignacionServiceTest {
 
     @Test
     void alEliminarLaDesignacionSeResuelveSuAlertaEnElActo() throws Exception {
-        Designacion guardada = designacion(EstadoDesignacion.ACTIVO, null);
+        // Solo las PENDIENTE residuales se eliminan: las efectivas son historial.
+        Designacion guardada = designacion(EstadoDesignacion.PENDIENTE, null);
         guardada.setId(15L);
         when(designacionRepository.findById(15L)).thenReturn(Optional.of(guardada));
 
@@ -121,6 +122,58 @@ class DesignacionServiceTest {
 
         assertTrue(guardada.getEliminado(), "La baja es lógica: la designación se conserva.");
         verify(alertaService).evaluarVencimientoDesignacion(guardada);
+    }
+
+    @Test
+    void unaDesignacionPendienteSeElimina() {
+        Designacion pendiente = designacion(EstadoDesignacion.PENDIENTE, null);
+        pendiente.setId(15L);
+        when(designacionRepository.findById(15L)).thenReturn(Optional.of(pendiente));
+
+        assertDoesNotThrow(() -> service.validarEliminacion(15L));
+    }
+
+    @Test
+    void unaDesignacionActivaNoSeElimina() {
+        Designacion activa = designacion(EstadoDesignacion.ACTIVO, null);
+        activa.setId(15L);
+        when(designacionRepository.findById(15L)).thenReturn(Optional.of(activa));
+
+        ErrorServiceException ex = assertThrows(ErrorServiceException.class, () -> service.validarEliminacion(15L));
+        assertEquals("No se puede eliminar una designación activa: "
+                + "cárguele la fecha de fin definitiva para finalizarla.", ex.getMessage());
+    }
+
+    @Test
+    void unaDesignacionFinalizadaNoSeElimina() {
+        Designacion finalizada = designacion(EstadoDesignacion.FINALIZADO, null);
+        finalizada.setId(15L);
+        when(designacionRepository.findById(15L)).thenReturn(Optional.of(finalizada));
+
+        ErrorServiceException ex = assertThrows(ErrorServiceException.class, () -> service.validarEliminacion(15L));
+        assertEquals("No se puede eliminar una designación finalizada: forma parte del historial.",
+                ex.getMessage());
+    }
+
+    @Test
+    void unaDesignacionHistoricaSinEstadoNoSeElimina() {
+        Designacion historica = designacion(null, null);
+        historica.setId(15L);
+        when(designacionRepository.findById(15L)).thenReturn(Optional.of(historica));
+
+        ErrorServiceException ex = assertThrows(ErrorServiceException.class, () -> service.validarEliminacion(15L));
+        assertEquals("No se puede eliminar una designación histórica: forma parte del historial.",
+                ex.getMessage());
+    }
+
+    @Test
+    void unaDesignacionYaEliminadaNoSeValida() {
+        Designacion eliminada = designacion(EstadoDesignacion.FINALIZADO, null);
+        eliminada.setId(15L);
+        eliminada.setEliminado(true);
+        when(designacionRepository.findById(15L)).thenReturn(Optional.of(eliminada));
+
+        assertDoesNotThrow(() -> service.validarEliminacion(15L));
     }
 
     @Test

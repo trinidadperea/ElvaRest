@@ -13,6 +13,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.util.Objects;
+import java.util.Optional;
 
 /**
  * Certificados de una postulación (docente + concurso).
@@ -21,7 +22,7 @@ import java.util.Objects;
  * - No se editan: renovar = cargar uno nuevo; el anterior del mismo tipo queda en el historial (actual = false).
  * - Al cargar un provisorio se evalúa en el momento si corresponde alerta de vencimiento; al renovar,
  *   la alerta del certificado reemplazado se resuelve en el momento (no espera la depuración diaria).
- * - Al darse de baja, su alerta de vencimiento se resuelve en el momento.
+ * - No se eliminan: forman parte de la postulación y se reemplazan cargando uno nuevo del mismo tipo.
  */
 @Service
 public class CertificadoService extends BaseService<Certificado, Long> {
@@ -120,6 +121,20 @@ public class CertificadoService extends BaseService<Certificado, Long> {
     @Override
     protected void preModificacion(Certificado certificado) throws ErrorServiceException {
         throw new ErrorServiceException("Los certificados no se modifican: para renovarlo, cargue uno nuevo "
+                + "(el anterior queda en el historial).");
+    }
+
+    /**
+     * Los certificados no se eliminan: se reemplazan cargando uno nuevo del mismo tipo y el anterior
+     * pasa al historial. Borrarlos dejaría la postulación sin el respaldo que la habilitó.
+     */
+    @Override
+    protected void preBaja(Long id) throws ErrorServiceException {
+        Optional<Certificado> encontrado = repository.findById(id);
+        if (encontrado.isEmpty() || Boolean.TRUE.equals(encontrado.get().getEliminado())) {
+            return; // BaseService responde "no encontrada".
+        }
+        throw new ErrorServiceException("Los certificados no se eliminan: para reemplazarlo, cargue uno nuevo "
                 + "(el anterior queda en el historial).");
     }
 

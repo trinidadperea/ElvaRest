@@ -138,6 +138,37 @@ public class DesignacionService extends BaseService<Designacion, Long> {
     }
 
     /**
+     * Reglas de eliminación de designaciones: solo se eliminan las PENDIENTE residuales. Las ACTIVO
+     * se finalizan cargándoles la fecha de fin definitiva, y las FINALIZADO (y las históricas sin
+     * estado) son historial: borrarlas perdería el registro de la designación.
+     */
+    public void validarEliminacion(Long id) throws ErrorServiceException {
+        Optional<Designacion> encontrado = repository.findById(id);
+        if (encontrado.isEmpty() || Boolean.TRUE.equals(encontrado.get().getEliminado())) {
+            return;
+        }
+        EstadoDesignacion estado = encontrado.get().getEstadoDesignacion();
+        if (estado == EstadoDesignacion.ACTIVO) {
+            throw new ErrorServiceException("No se puede eliminar una designación activa: "
+                    + "cárguele la fecha de fin definitiva para finalizarla.");
+        }
+        if (estado == null) {
+            throw new ErrorServiceException("No se puede eliminar una designación histórica: "
+                    + "forma parte del historial.");
+        }
+        if (estado != EstadoDesignacion.PENDIENTE) {
+            throw new ErrorServiceException("No se puede eliminar una designación finalizada: "
+                    + "forma parte del historial.");
+        }
+    }
+
+    /** La regla se aplica en el servicio: cualquier vía de baja queda validada, no solo el DELETE. */
+    @Override
+    protected void preBaja(Long id) throws ErrorServiceException {
+        validarEliminacion(id);
+    }
+
+    /**
      * Al dar de baja la designación, su alerta de fin ya no tiene causa: queda leída en el acto
      * (la depuración diaria la resolvería recién en la próxima corrida).
      */

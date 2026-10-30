@@ -3,11 +3,15 @@ package com.elvarest.servidor.services;
 import com.elvarest.servidor.entities.BaseEntity;
 import com.elvarest.servidor.exceptions.ErrorServiceException;
 import com.elvarest.servidor.repositories.BaseRepository;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.List;
 import java.util.Optional;
 
 public abstract class BaseService<T extends BaseEntity<ID>, ID> {
+
+    private static final Logger log = LoggerFactory.getLogger(BaseService.class);
 
     protected final BaseRepository<T, ID> repository;
 
@@ -28,9 +32,8 @@ public abstract class BaseService<T extends BaseEntity<ID>, ID> {
             return guardado;
 
         }catch(Exception e) {
-            System.out.println("----- ERROR REAL DE BASE DE DATOS -----");
-            e.printStackTrace();
-            System.out.println("---------------------------------------");
+            // La traza queda en el log del Servidor: al Cliente solo se le devuelve el mensaje de la causa.
+            log.error("Error al dar de alta {}", entidad.getClass().getSimpleName(), e);
             throw new ErrorServiceException(e.getMessage());
         }
     }
@@ -63,6 +66,9 @@ public abstract class BaseService<T extends BaseEntity<ID>, ID> {
                 return true;
             }).orElse(false);
 
+        }catch(ErrorServiceException e) {
+            // Las reglas de baja (preBaja) conservan su mensaje: el usuario ve la causa y no un error genérico.
+            throw e;
         }catch(Exception e) {
             throw new ErrorServiceException("Error de Sistemas");
         }

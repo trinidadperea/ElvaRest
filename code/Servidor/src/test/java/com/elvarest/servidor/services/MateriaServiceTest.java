@@ -91,4 +91,14 @@ class MateriaServiceTest {
 
         assertDoesNotThrow(() -> service.validarEliminacion(1L));
     }
+
+    @Test
+    void bajaLogicaAplicaLaReglaEnElServicio() {
+        // La regla tiene que estar enganchada en preBaja: si no, el DELETE la saltea.
+        when(materiaRepository.findById(1L)).thenReturn(Optional.of(materia));
+        when(cargoRepository.findAll()).thenReturn(List.of(cargoDe(materia, false)));
+
+        ErrorServiceException ex = assertThrows(ErrorServiceException.class, () -> service.bajaLogica(1L));
+        assertEquals(MENSAJE_REGLA_7, ex.getMessage());
+    }
 }

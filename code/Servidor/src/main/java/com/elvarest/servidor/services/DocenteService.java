@@ -1,6 +1,5 @@
 package com.elvarest.servidor.services;
 
-import com.elvarest.servidor.entities.ConcursoDocente;
 import com.elvarest.servidor.entities.Docente;
 import com.elvarest.servidor.entities.enums.EstadoPostulacion;
 import com.elvarest.servidor.exceptions.ErrorServiceException;
@@ -30,9 +29,9 @@ public class DocenteService extends BaseService<Docente, Long> {
      * Reglas de eliminación de docentes:
      * - No se elimina si tiene cualquier designación asociada, sin importar su estado (activa,
      *   pendiente o finalizada): el historial de designaciones queda vinculado al docente.
-     * - No se elimina con postulaciones vigentes sin designación definitiva (no canceladas),
-     *   contempladas en cualquier concurso. Los registros sin estado de postulación se tratan de
-     *   forma conservadora.
+     * - No se elimina si está asociado a un concurso con alguna postulación no eliminada ni
+     *   declarada inefectiva, haya ganado o no: la toma de horas es su historial en el concurso.
+     *   Los registros sin estado de postulación se tratan de forma conservadora.
      */
     public void validarEliminacion(Long id) throws ErrorServiceException {
         Optional<Docente> encontrado = repository.findById(id);
@@ -48,27 +47,20 @@ public class DocenteService extends BaseService<Docente, Long> {
             throw new ErrorServiceException("No se puede eliminar el docente porque tiene designaciones asociadas.");
         }
 
-        boolean tienePostulacionesVigentes = concursoDocenteRepository.findAll().stream()
+        boolean tienePostulaciones = concursoDocenteRepository.findAll().stream()
                 .filter(postulacion -> !Boolean.TRUE.equals(postulacion.getEliminado()))
                 .filter(postulacion -> postulacion.getDocente() != null
                         && Objects.equals(postulacion.getDocente().getId(), id))
-                .anyMatch(this::esPendiente);
-        if (tienePostulacionesVigentes) {
-            throw new ErrorServiceException("No se puede eliminar el docente porque tiene designaciones "
-                    + "pendientes de certificados o de toma de posesión.");
+                .anyMatch(postulacion -> postulacion.getEstadoPostulacion() != EstadoPostulacion.CANCELADO_INEFECTIVO);
+        if (tienePostulaciones) {
+            throw new ErrorServiceException("No se puede eliminar el docente porque tiene postulaciones en concursos.");
         }
     }
 
-    /**
-     * Una postulación cuenta como pendiente si no obtuvo designación definitiva y no fue cancelada.
-     * Los registros sin estado de postulación (anteriores a la persistencia del campo) se tratan de
-     * forma conservadora, como pendientes.
-     */
-    private boolean esPendiente(ConcursoDocente postulacion) {
-        if (postulacion.isGanador()) {
-            return false;
-        }
-        return postulacion.getEstadoPostulacion() != EstadoPostulacion.CANCELADO_INEFECTIVO;
+    /** La regla se aplica en el servicio: cualquier vía de baja queda validada, no solo el DELETE. */
+    @Override
+    protected void preBaja(Long id) throws ErrorServiceException {
+        validarEliminacion(id);
     }
 
     @Override

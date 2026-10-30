@@ -3,6 +3,8 @@ package com.elvarest.cliente.controllers;
 import com.elvarest.cliente.dto.Identifiable;
 import com.elvarest.cliente.exceptions.ErrorServiceException;
 import com.elvarest.cliente.services.BaseService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
@@ -14,6 +16,8 @@ import java.util.List;
 
 @Controller
 public abstract class BaseController<T extends Identifiable<ID>, ID> {
+
+    private static final Logger log = LoggerFactory.getLogger(BaseController.class);
 
     protected final BaseService<T, ID> service;
     private String nameClass = "";
@@ -81,7 +85,7 @@ public abstract class BaseController<T extends Identifiable<ID>, ID> {
             this.model.addAttribute("titleList", titleList);
             this.model.addAttribute("nameEntityLower", nameEntityLower);
         } catch (Exception e) {
-            e.printStackTrace();
+            log.error("No se pudo recuperar el listado de {}", nameEntityLower, e);
             model.addAttribute("items", List.of());
             model.addAttribute("msgError", "No se pudo recuperar el listado: " + e.getMessage());
         }
@@ -161,12 +165,9 @@ public abstract class BaseController<T extends Identifiable<ID>, ID> {
     }
 
     @GetMapping("/baja/{id}")
-    public String eliminar(@PathVariable ID id, RedirectAttributes attributes, Model model) {
+    public String eliminar(@PathVariable ID id, RedirectAttributes attributes) {
         try {
-            this.model = model;
-            preBaja();
             service.bajaLogica(id);
-            postBaja();
             attributes.addFlashAttribute("msgExito", "La acción fue realizada correctamente.");
             return redirectList;
         } catch (ErrorServiceException e) {
@@ -251,12 +252,6 @@ public abstract class BaseController<T extends Identifiable<ID>, ID> {
     }
 
     protected void postConsulta(T found) throws ErrorServiceException {
-    }
-
-    protected void preBaja() throws ErrorServiceException {
-    }
-
-    protected void postBaja() throws ErrorServiceException {
     }
 
     protected void preActualziacion() throws ErrorServiceException {

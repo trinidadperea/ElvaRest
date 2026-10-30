@@ -2,6 +2,7 @@ package com.elvarest.servidor.services;
 
 import com.elvarest.servidor.entities.Concurso;
 import com.elvarest.servidor.entities.ConcursoDocente;
+import com.elvarest.servidor.entities.enums.EstadoConcurso;
 import com.elvarest.servidor.entities.enums.EstadoPostulacion;
 import com.elvarest.servidor.entities.enums.TipoCargo;
 
@@ -84,5 +85,35 @@ public final class ReglasConcurso {
             case DESIGNACION_DEFINITIVA -> "Designación definitiva";
             case CANCELADO_INEFECTIVO -> "Cancelado / inefectivo";
         };
+    }
+
+    /** Descripción del concurso o "#id" cuando falta (registros antiguos), para textos al usuario. */
+    public static String descripcion(Concurso concurso) {
+        if (concurso.getDescripcion() != null && !concurso.getDescripcion().isBlank()) {
+            return concurso.getDescripcion();
+        }
+        return "#" + concurso.getId();
+    }
+
+    /**
+     * Cierre automático: el concurso no está cerrado, todas las postulaciones vigentes quedaron con
+     * designación definitiva y no quedan horas disponibles (ni sin asignar ni transferidas).
+     */
+    public static boolean esListoParaCierre(Concurso concurso, List<ConcursoDocente> postulaciones) {
+        if (concurso.getEstadoConcurso() == EstadoConcurso.FINALIZADO
+                || postulaciones == null || postulaciones.isEmpty()) {
+            return false;
+        }
+        List<ConcursoDocente> vigentes = postulaciones.stream()
+                .filter(postulacion -> !Boolean.TRUE.equals(postulacion.getEliminado()))
+                .filter(postulacion -> !esCancelada(postulacion))
+                .toList();
+        if (vigentes.isEmpty()) {
+            return false;
+        }
+        boolean todosDefinitivos = vigentes.stream()
+                .allMatch(postulacion -> estadoEfectivo(postulacion) == EstadoPostulacion.DESIGNACION_DEFINITIVA);
+        Integer disponibles = horasDisponibles(concurso, postulaciones);
+        return todosDefinitivos && disponibles != null && disponibles <= 0;
     }
 }
