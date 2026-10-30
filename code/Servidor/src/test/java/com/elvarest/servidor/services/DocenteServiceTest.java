@@ -25,17 +25,17 @@ import static org.mockito.Mockito.when;
 
 /**
  * Reglas de eliminación de docentes:
- * - Regla 3: docente con al menos una designación activa.
- * - Regla 4: docente con designación pendiente de certificados o de toma de posesión en cualquier
- *   concurso: postulaciones no canceladas (las canceladas ya no bloquean). Los registros sin estado
- *   de postulación se tratan de forma conservadora (bloquean).
+ * - Cualquier designación asociada bloquea la baja, sin importar su estado (activa, pendiente o
+ *   finalizada): se conserva el historial.
+ * - Las postulaciones vigentes sin designación definitiva también la bloquean (las canceladas no).
+ *   Los registros sin estado de postulación se tratan de forma conservadora (bloquean).
  */
 @ExtendWith(MockitoExtension.class)
 class DocenteServiceTest {
 
-    private static final String MENSAJE_REGLA_3 =
-            "No se puede eliminar el docente porque tiene designaciones activas asociadas.";
-    private static final String MENSAJE_REGLA_4 =
+    private static final String MENSAJE_DESIGNACIONES =
+            "No se puede eliminar el docente porque tiene designaciones asociadas.";
+    private static final String MENSAJE_POSTULACIONES =
             "No se puede eliminar el docente porque tiene designaciones pendientes de certificados o de toma de posesión.";
 
     @Mock
@@ -80,7 +80,7 @@ class DocenteServiceTest {
                 .thenReturn(List.of(designacionDe(docente, EstadoDesignacion.ACTIVO, false)));
 
         ErrorServiceException ex = assertThrows(ErrorServiceException.class, () -> service.validarEliminacion(1L));
-        assertEquals(MENSAJE_REGLA_3, ex.getMessage());
+        assertEquals(MENSAJE_DESIGNACIONES, ex.getMessage());
     }
 
     @Test
@@ -90,7 +90,17 @@ class DocenteServiceTest {
                 .thenReturn(List.of(designacionDe(docente, EstadoDesignacion.PENDIENTE, false)));
 
         ErrorServiceException ex = assertThrows(ErrorServiceException.class, () -> service.validarEliminacion(1L));
-        assertEquals(MENSAJE_REGLA_4, ex.getMessage());
+        assertEquals(MENSAJE_DESIGNACIONES, ex.getMessage());
+    }
+
+    @Test
+    void docenteConDesignacionFinalizadaRechazaEliminacion() {
+        when(docenteRepository.findById(1L)).thenReturn(Optional.of(docente));
+        when(designacionRepository.findAll())
+                .thenReturn(List.of(designacionDe(docente, EstadoDesignacion.FINALIZADO, false)));
+
+        ErrorServiceException ex = assertThrows(ErrorServiceException.class, () -> service.validarEliminacion(1L));
+        assertEquals(MENSAJE_DESIGNACIONES, ex.getMessage());
     }
 
     @Test
@@ -100,7 +110,7 @@ class DocenteServiceTest {
         when(concursoDocenteRepository.findAll()).thenReturn(List.of(postulacionDe(docente, false, null)));
 
         ErrorServiceException ex = assertThrows(ErrorServiceException.class, () -> service.validarEliminacion(1L));
-        assertEquals(MENSAJE_REGLA_4, ex.getMessage());
+        assertEquals(MENSAJE_POSTULACIONES, ex.getMessage());
     }
 
     @Test
@@ -111,7 +121,7 @@ class DocenteServiceTest {
                 .thenReturn(List.of(postulacionDe(docente, false, EstadoPostulacion.PENDIENTE_CERTIFICADOS)));
 
         ErrorServiceException ex = assertThrows(ErrorServiceException.class, () -> service.validarEliminacion(1L));
-        assertEquals(MENSAJE_REGLA_4, ex.getMessage());
+        assertEquals(MENSAJE_POSTULACIONES, ex.getMessage());
     }
 
     @Test
@@ -122,7 +132,7 @@ class DocenteServiceTest {
                 .thenReturn(List.of(postulacionDe(docente, false, EstadoPostulacion.DESIGNADO_PENDIENTE_POSESION)));
 
         ErrorServiceException ex = assertThrows(ErrorServiceException.class, () -> service.validarEliminacion(1L));
-        assertEquals(MENSAJE_REGLA_4, ex.getMessage());
+        assertEquals(MENSAJE_POSTULACIONES, ex.getMessage());
     }
 
     @Test
@@ -143,10 +153,12 @@ class DocenteServiceTest {
     }
 
     @Test
-    void docenteConDesignacionFinalizadaYPostulacionGanadoraPermiteEliminacion() {
+    void docenteConDesignacionFinalizadaDeOtroDocenteYPostulacionGanadoraPermiteEliminacion() {
+        Docente otro = new Docente();
+        otro.setId(99L);
         when(docenteRepository.findById(1L)).thenReturn(Optional.of(docente));
         when(designacionRepository.findAll())
-                .thenReturn(List.of(designacionDe(docente, EstadoDesignacion.FINALIZADO, false)));
+                .thenReturn(List.of(designacionDe(otro, EstadoDesignacion.FINALIZADO, false)));
         when(concursoDocenteRepository.findAll()).thenReturn(List.of(postulacionDe(docente, true, null)));
 
         assertDoesNotThrow(() -> service.validarEliminacion(1L));

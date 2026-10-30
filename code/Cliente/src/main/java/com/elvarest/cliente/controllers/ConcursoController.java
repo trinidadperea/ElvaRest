@@ -7,7 +7,6 @@ import com.elvarest.cliente.dto.ConcursoDocenteDTO;
 import com.elvarest.cliente.dto.DesignacionDTO;
 import com.elvarest.cliente.dto.DocenteDTO;
 import com.elvarest.cliente.dto.TipoCertificadoDTO;
-import com.elvarest.cliente.dto.enums.CaracterDesignacion;
 import com.elvarest.cliente.dto.enums.EstadoConcurso;
 import com.elvarest.cliente.dto.enums.EstadoDesignacion;
 import com.elvarest.cliente.dto.enums.EstadoPostulacion;
@@ -908,125 +907,6 @@ public class ConcursoController extends BaseController<ConcursoDTO, Long> {
     }
 
     // ------------------------------------------------------------------
-    // Rutas legacy (se mantienen para no romper enlaces existentes)
-    // ------------------------------------------------------------------
-
-    @GetMapping("/{concursoId}/ganador")
-    public String mostrarFormularioGanador(@PathVariable Long concursoId, Model model,
-                                           RedirectAttributes attributes) {
-        try {
-            ConcursoDTO concurso = obtenerConcurso(concursoId);
-            validarFinalizado(concurso);
-            List<ConcursoDocenteDTO> postulantes = postulantesDelConcurso(concursoId);
-            if (postulantes.isEmpty()) {
-                throw new IllegalArgumentException("El concurso no tiene postulantes para seleccionar como ganador.");
-            }
-            model.addAttribute("concurso", concurso);
-            model.addAttribute("postulantes", postulantes);
-            return "concursos/ganador";
-        } catch (RuntimeException e) {
-            attributes.addFlashAttribute("msgError", e.getMessage());
-            return "redirect:/concursos/list";
-        }
-    }
-
-    @PostMapping("/{concursoId}/ganador")
-    public String seleccionarGanador(@PathVariable Long concursoId,
-                                     @RequestParam Long postulacionId,
-                                     RedirectAttributes attributes) {
-        try {
-            validarFinalizado(obtenerConcurso(concursoId));
-            List<ConcursoDocenteDTO> postulantes = postulantesDelConcurso(concursoId);
-            ConcursoDocenteDTO seleccionado = postulantes.stream()
-                    .filter(postulacion -> Objects.equals(postulacion.getId(), postulacionId))
-                    .findFirst()
-                    .orElseThrow(() -> new IllegalArgumentException("El docente seleccionado no está postulado a este concurso."));
-            for (ConcursoDocenteDTO postulacion : postulantes) {
-                postulacion.setGanador(Objects.equals(postulacion.getId(), seleccionado.getId()));
-                concursoDocenteService.modificar(postulacion.getId(), postulacion);
-            }
-            attributes.addFlashAttribute("msgExito", "Se actualizó el docente ganador del concurso.");
-        } catch (RuntimeException e) {
-            attributes.addFlashAttribute("msgError", e.getMessage());
-        }
-        return "redirect:/concursos/list";
-    }
-
-    @GetMapping("/{concursoId}/agregar-cargo")
-    public String mostrarFormularioCargo(@PathVariable Long concursoId, Model model,
-                                         RedirectAttributes attributes) {
-        try {
-            ConcursoDTO concurso = obtenerConcurso(concursoId);
-            validarFinalizado(concurso);
-            ConcursoDocenteDTO ganador = ganadorDelConcurso(concursoId);
-            if (ganador == null) {
-                throw new IllegalArgumentException("Debe seleccionar el docente ganador antes de agregar el cargo.");
-            }
-            LocalDate hoy = LocalDate.now();
-            DesignacionDTO designacion = new DesignacionDTO();
-            designacion.setDocente(ganador.getDocente());
-            designacion.setFechaInicioEfectiva(hoy);
-            designacion.setFechaFinDefinitiva(hoy.plusYears(1));
-            designacion.setOrigenVacancia(origenVacanciaDelConcurso(concurso));
-            designacion.setMotivoVacancia(concurso.getMotivoVacancia());
-            // El docente reemplazado tambien se guarda en la designacion para que se vea en el detalle del docente.
-            designacion.setProfesorReemplazante(concurso.getProfesorReemplazante());
-            model.addAttribute("item", designacion);
-            model.addAttribute("concurso", concurso);
-            model.addAttribute("tipoDesignaciones", CaracterDesignacion.values());
-            model.addAttribute("estadosDesignacion", EstadoDesignacion.values());
-            return "concursos/agregar-cargo";
-        } catch (RuntimeException e) {
-            attributes.addFlashAttribute("msgError", e.getMessage());
-            return "redirect:/concursos/list";
-        }
-    }
-
-    @PostMapping("/{concursoId}/agregar-cargo")
-    public String agregarCargo(@PathVariable Long concursoId,
-                               @ModelAttribute("item") DesignacionDTO designacion,
-                               RedirectAttributes attributes) {
-        try {
-            ConcursoDTO concurso = obtenerConcurso(concursoId);
-            validarFinalizado(concurso);
-            ConcursoDocenteDTO ganador = ganadorDelConcurso(concursoId);
-            if (ganador == null) {
-                throw new IllegalArgumentException("Debe seleccionar el docente ganador antes de agregar el cargo.");
-            }
-            if (concurso.getCargo() == null) {
-                throw new IllegalArgumentException("El concurso no tiene un cargo asociado.");
-            }
-            if (designacion.getFechaInicioEfectiva() == null || designacion.getFechaFinDefinitiva() == null
-                    || designacion.getCaracterDesignacion() == null) {
-                throw new IllegalArgumentException("Complete las fechas y el tipo de cargo.");
-            }
-            designacion.setDocente(ganador.getDocente());
-            designacion.setEstadoDesignacion(
-                    designacion.getEstadoDesignacion() == null ? EstadoDesignacion.PENDIENTE : designacion.getEstadoDesignacion());
-            designacion.setOrigenVacancia(origenVacanciaDelConcurso(concurso));
-            designacion.setMotivoVacancia(concurso.getMotivoVacancia());
-            // El docente reemplazado tambien se guarda en la designacion para que se vea en el detalle del docente.
-            designacion.setProfesorReemplazante(concurso.getProfesorReemplazante());
-            designacion.setConcursoId(concursoId);
-            DesignacionDTO nuevaDesignacion = designacionService.alta(designacion);
-
-            CargoDTO cargo = cargoService.obtener(concurso.getCargo().getId());
-            if (cargo == null) {
-                throw new IllegalArgumentException("No se encontró el cargo asociado al concurso.");
-            }
-            if (cargo.getDesignaciones() == null) {
-                cargo.setDesignaciones(new ArrayList<>());
-            }
-            cargo.getDesignaciones().add(nuevaDesignacion);
-            cargoService.modificar(cargo.getId(), cargo);
-            attributes.addFlashAttribute("msgExito", "El cargo fue agregado al docente ganador.");
-        } catch (RuntimeException e) {
-            attributes.addFlashAttribute("msgError", e.getMessage());
-        }
-        return "redirect:/concursos/list";
-    }
-
-    // ------------------------------------------------------------------
     // Helpers del flujo
     // ------------------------------------------------------------------
 
@@ -1088,12 +968,6 @@ public class ConcursoController extends BaseController<ConcursoDTO, Long> {
         EstadoPostulacion estado = estadoEfectivo(postulacion);
         if (estado == EstadoPostulacion.CANCELADO_INEFECTIVO || estado == EstadoPostulacion.DESIGNACION_DEFINITIVA) {
             throw new IllegalArgumentException("Solo se pueden modificar horas de postulaciones pendientes de certificados o de posesión.");
-        }
-    }
-
-    private void validarFinalizado(ConcursoDTO concurso) {
-        if (concurso.getEstadoConcurso() != EstadoConcurso.FINALIZADO) {
-            throw new IllegalArgumentException("Esta acción solo está disponible para concursos finalizados.");
         }
     }
 
@@ -1327,12 +1201,5 @@ public class ConcursoController extends BaseController<ConcursoDTO, Long> {
 
     private List<ConcursoDocenteDTO> postulantesDelConcurso(Long concursoId) {
         return flujoService.postulantesDelConcurso(concursoId);
-    }
-
-    private ConcursoDocenteDTO ganadorDelConcurso(Long concursoId) {
-        return postulantesDelConcurso(concursoId).stream()
-                .filter(ConcursoDocenteDTO::isGanador)
-                .findFirst()
-                .orElse(null);
     }
 }

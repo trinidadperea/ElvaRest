@@ -11,6 +11,7 @@
  * - Cierre automático de mensajes flash y estado de carga en formularios.
  * - Campos obligatorios condicionales
  *   ([data-required-when="#selector" data-required-value="VALOR"]).
+ * - Fecha mínima de un campo según otro ([data-min-from="#selector"]).
  */
 (function () {
   'use strict';
@@ -357,6 +358,29 @@
     const expected = field.dataset.requiredValue;
     const sync = function () {
       field.required = expected === undefined ? source.value !== '' : source.value === expected;
+    };
+    source.addEventListener('change', sync);
+    source.addEventListener('input', sync);
+    sync();
+  });
+
+  // ------------------------------------------------------------------
+  // 8. Fecha mínima de un campo según otro (data-min-from)
+  // ------------------------------------------------------------------
+  // El campo con [data-min-from="#selector"] no admite fechas anteriores al
+  // valor del control indicado: se usa para que la fecha de fin no quede antes
+  // de la de inicio. La regla definitiva la sigue validando el Servidor.
+  document.querySelectorAll('[data-min-from]').forEach(function (field) {
+    const source = document.querySelector(field.dataset.minFrom);
+    if (!source) {
+      return;
+    }
+    const sync = function () {
+      if (source.value) {
+        field.min = source.value;
+      } else {
+        field.removeAttribute('min');
+      }
     };
     source.addEventListener('change', sync);
     source.addEventListener('input', sync);

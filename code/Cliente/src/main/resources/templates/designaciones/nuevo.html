@@ -26,8 +26,10 @@
     </div>
     <div class="mb-3">
       <label for="fechaFinDefinitiva">Fecha de fin definitiva</label>
-      <input class="form-control" id="fechaFinDefinitiva" type="date" th:field="*{fechaFinDefinitiva}">
-      <div class="form-text">Complete este campo solo si la designación ya finalizó.</div>
+      <input class="form-control" id="fechaFinDefinitiva" type="date" th:field="*{fechaFinDefinitiva}"
+             data-min-from="#fechaInicioEfectiva">
+      <div class="form-text">Opcional. Si la fecha ya se alcanzó, la designación queda Finalizada al guardar; si es
+        futura, sigue Activa hasta esa fecha.</div>
     </div>
     <div class="mb-3">
       <label for="motivoVacancia">Motivo de la vacancia *</label>
@@ -59,12 +61,10 @@
       </select>
     </div>
     <div class="mb-3">
-      <label for="estadoDesignacion">Estado *</label>
-      <select class="form-select" id="estadoDesignacion" th:field="*{estadoDesignacion}" required>
-        <option value="">Seleccione un estado</option>
-        <option th:each="value : ${T(com.elvarest.cliente.dto.enums.EstadoDesignacion).values()}"
-                th:value="${value}" th:text="${value}"></option>
-      </select>
+      <label>Estado</label>
+      <div class="form-control-plaintext fw-semibold">Se calcula al guardar</div>
+      <div class="form-text">Queda <strong>Activa</strong> sin fecha de fin o con fecha futura, y <strong>Finalizada</strong>
+        si la fecha de fin ya se alcanzó.</div>
     </div>
 
     <div class="mt-4 pt-2 border-top d-flex justify-content-end gap-2">

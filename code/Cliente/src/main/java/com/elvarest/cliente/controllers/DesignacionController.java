@@ -1,6 +1,7 @@
 package com.elvarest.cliente.controllers;
 
 import com.elvarest.cliente.dto.DesignacionDTO;
+import com.elvarest.cliente.dto.enums.EstadoDesignacion;
 import com.elvarest.cliente.dto.enums.MotivoVacancia;
 import com.elvarest.cliente.exceptions.ErrorServiceException;
 import com.elvarest.cliente.services.DesignacionService;
@@ -87,8 +88,9 @@ public class DesignacionController extends BaseController<DesignacionDTO, Long> 
     }
 
     /**
-     * Al modificar una designación se conservan sus alertas y licencias asociadas: el
-     * formulario solo edita los datos propios y el backend reemplaza la entidad completa.
+     * Al modificar una designación se conservan sus alertas, licencias y estado: el formulario ya no
+     * elige el estado (lo deriva el Servidor de la fecha de fin), así que se mantiene el actual salvo
+     * que se confirme la toma de posesión de una designación pendiente.
      */
     @Override
     @PostMapping("/actualizar")
@@ -119,6 +121,9 @@ public class DesignacionController extends BaseController<DesignacionDTO, Long> 
                     entidad.setAlertas(original.getAlertas());
                     entidad.setLicencias(original.getLicencias());
                     entidad.setEliminado(original.getEliminado());
+                    entidad.setEstadoDesignacion("true".equalsIgnoreCase(request.getParameter("confirmarPosesion"))
+                            ? EstadoDesignacion.ACTIVO
+                            : original.getEstadoDesignacion());
                 }
             }
             if (entidad.getId() == null) {

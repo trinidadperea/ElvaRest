@@ -217,3 +217,35 @@ SET @sql = IF(
     'UPDATE docente SET tipo = ''DOCENTE'' WHERE tipo IS NULL OR tipo = ''''',
     'DO 0');
 PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
+
+
+-- ---------------------------------------------------------------------
+-- 12. certificado.presentado / fecha_emision / requiere_vencimiento:
+--     atributos del modelo anterior (certificado por docente). Hoy el
+--     certificado pertenece a una postulación (§3) y se renueva cargando
+--     uno nuevo. Las columnas quedaron NOT NULL sin default y bloquean
+--     toda carga con «Field 'presentado' doesn't have a default value»;
+--     ddl-auto no las retira. Se eliminan las que existan en un solo ALTER.
+-- ---------------------------------------------------------------------
+SET @drops = (
+    SELECT GROUP_CONCAT(CONCAT('DROP COLUMN ', COLUMN_NAME) SEPARATOR ', ')
+    FROM information_schema.COLUMNS
+    WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'certificado'
+      AND COLUMN_NAME IN ('presentado', 'fecha_emision', 'requiere_vencimiento'));
+SET @sql = IF(@drops IS NULL, 'DO 0', CONCAT('ALTER TABLE certificado ', @drops));
+PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
+
+
+-- ---------------------------------------------------------------------
+-- 13. tipo_certificado.meses_vigencia: atributo retirado del modelo (la
+--     vigencia ahora se define por certificado y su fecha de vencimiento,
+--     no por tipo). También quedó NOT NULL sin default e impide insertar
+--     tipos de certificado.
+-- ---------------------------------------------------------------------
+SET @sql = IF(
+    (SELECT COUNT(*) FROM information_schema.COLUMNS
+     WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'tipo_certificado'
+       AND COLUMN_NAME = 'meses_vigencia') > 0,
+    'ALTER TABLE tipo_certificado DROP COLUMN meses_vigencia',
+    'DO 0');
+PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
