@@ -2,6 +2,7 @@ package com.elvarest.servidor.services;
 
 import com.elvarest.servidor.entities.Cargo;
 import com.elvarest.servidor.entities.Concurso;
+import com.elvarest.servidor.entities.enums.CaracterDesignacion;
 import com.elvarest.servidor.entities.enums.EstadoConcurso;
 import com.elvarest.servidor.exceptions.ErrorServiceException;
 import com.elvarest.servidor.repositories.CargoRepository;
@@ -14,18 +15,21 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.when;
 
 /**
  * Regla: un cargo no puede tener dos concursos abiertos a la vez, entendiendo "abierto" por el
  * estado (PUBLICADO o EN_PROCESO) y no por las fechas.
- * - En el alta se controla siempre (salvo que el nuevo concurso nazca FINALIZADO).
+ * - En el alta se controla siempre (todo concurso nace PUBLICADO).
  * - En la modificación solo cuando cambia el cargo, para no bloquear la edición de registros
  *   históricos ni el cierre de un concurso que quedó duplicado con anterioridad.
  */
@@ -34,6 +38,7 @@ class ConcursoServiceCargoAbiertoTest {
 
     private static final String MENSAJE_CARGO_ABIERTO =
             "El cargo ya tiene un concurso abierto: ciérrelo antes de abrir otro.";
+    private static final int CARGA_HORARIA_DEL_CARGO = 10;
 
     @Mock
     private ConcursoRepository concursoRepository;
@@ -52,13 +57,24 @@ class ConcursoServiceCargoAbiertoTest {
     void setUp() {
         service = new ConcursoService(concursoRepository, designacionRepository, concursoDocenteRepository,
                 alertaService, cargoRepository);
+        Cargo cargo = new Cargo();
+        cargo.setId(1L);
+        cargo.setCargaHoraria(CARGA_HORARIA_DEL_CARGO);
+        // El alta lee el cargo guardado para validar las horas y respaldarlas cuando no vienen.
+        lenient().when(cargoRepository.findById(any())).thenReturn(Optional.of(cargo));
     }
 
+    /** Concurso con los datos que el alta exige: descripción, cargo, fecha, carácter y horas. */
     private Concurso concurso(Long id, Long cargoId, EstadoConcurso estado, boolean eliminado) {
         Concurso concurso = new Concurso();
         concurso.setId(id);
+        concurso.setDescripcion("Matemática 2026");
         concurso.setEstadoConcurso(estado);
         concurso.setEliminado(eliminado);
+        concurso.setFechaApertura(LocalDate.now());
+        concurso.setFechaCierre(LocalDate.now().plusDays(10));
+        concurso.setCaracterDesignacion(CaracterDesignacion.SUPLENTE);
+        concurso.setHorasTotales(CARGA_HORARIA_DEL_CARGO);
         if (cargoId != null) {
             Cargo cargo = new Cargo();
             cargo.setId(cargoId);
@@ -114,17 +130,23 @@ class ConcursoServiceCargoAbiertoTest {
     }
 
     @Test
-    void altaSinCargoPermite() {
+    void altaSinCargoSeRechaza() {
+        // El cargo es la unidad del concurso: sin cargo no hay a quién asignar horas.
         Concurso nuevo = concurso(null, null, EstadoConcurso.PUBLICADO, false);
 
-        assertDoesNotThrow(() -> service.alta(nuevo));
+        ErrorServiceException ex = assertThrows(ErrorServiceException.class, () -> service.alta(nuevo));
+        assertEquals("Seleccione el cargo vacante del concurso.", ex.getMessage());
     }
 
     @Test
-    void altaQueNaceFinalizadaNoValidaDuplicado() {
+    void altaNacePublicadaYControlaElDuplicado() {
+        // Todo concurso nace PUBLICADO: el estado que envíe el pedido no puede saltear la regla.
+        when(concursoRepository.findAll()).thenReturn(List.of(concurso(2L, 1L, EstadoConcurso.EN_PROCESO, false)));
         Concurso nuevo = concurso(null, 1L, EstadoConcurso.FINALIZADO, false);
 
-        assertDoesNotThrow(() -> service.alta(nuevo));
+        ErrorServiceException ex = assertThrows(ErrorServiceException.class, () -> service.alta(nuevo));
+        assertEquals(MENSAJE_CARGO_ABIERTO, ex.getMessage());
+        assertEquals(EstadoConcurso.PUBLICADO, nuevo.getEstadoConcurso());
     }
 
     // ------------------------------------------------------------------

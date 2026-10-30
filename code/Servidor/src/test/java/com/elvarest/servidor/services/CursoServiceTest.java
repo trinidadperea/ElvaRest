@@ -118,4 +118,14 @@ class CursoServiceTest {
 
         assertDoesNotThrow(() -> service.validarEliminacion(1L));
     }
+
+    @Test
+    void bajaLogicaAplicaLaReglaEnElServicio() {
+        // La regla tiene que estar enganchada en preBaja: si no, el DELETE la saltea.
+        when(cursoRepository.findById(1L)).thenReturn(Optional.of(curso));
+        when(materiaRepository.findAll()).thenReturn(List.of(materiaDe(curso, false)));
+
+        ErrorServiceException ex = assertThrows(ErrorServiceException.class, () -> service.bajaLogica(1L));
+        assertEquals(MENSAJE_REGLA_6, ex.getMessage());
+    }
 }

@@ -1,7 +1,7 @@
 # Informe de Reglas de Negocio — ElvaRest
 
 **Alcance**: Concursos, Cargos, Designaciones, Docentes y flujo completo de cobertura de cargos
-**Fuentes**: código vigente verificado (`ConcursoController`, `FlujoConcursoService`, `DesignacionController`, `CargoController`, `DocenteController` del Cliente; entidades/enums del Servidor; validación de bajas: `preDelete` + `validarEliminacion` del Servidor; validación de postulaciones y designaciones: `ConcursoDocenteService` y `DesignacionService` del Servidor) + registro de decisiones tomadas durante el desarrollo.
+**Fuentes**: código vigente verificado (`ConcursoController`, `FlujoConcursoService`, `DesignacionController`, `CargoController`, `DocenteController` del Cliente; entidades/enums del Servidor; validación de bajas: `preBaja` + `validarEliminacion` del Servidor; validación de postulaciones y designaciones: `ConcursoDocenteService` y `DesignacionService` del Servidor) + registro de decisiones tomadas durante el desarrollo.
 
 ---
 
@@ -38,11 +38,12 @@
 
 **3.1 Alta / edición**
 - Descripción obligatoria. Alta directa (**Concursos → "Nuevo concurso"**, con cargo **seleccionable**) exige: cargo vacante, fecha y hora del concurso, carácter de designación y el **motivo de la vacancia** (lista `MotivoVacancia`).
+- **Validaciones de alta en el Servidor**: `ConcursoService.alta`/`preAlta` exigen descripción, cargo, fecha del concurso y carácter de designación, y **todo concurso nace `PUBLICADO`** (el estado que traiga el pedido se ignora), así que un `POST /concursos` directo no puede crear un concurso incompleto. El **motivo de la vacancia** se sigue validando y componiendo en el Cliente (`aplicarMotivoVacancia`), porque el texto compuesto es el que se persiste en `origenVacancia`.
 - **Motivo + detalle**: el desplegable define el motivo y el campo **Detalle del motivo** lo enriquece; el detalle es **opcional** para los motivos de la lista y **obligatorio** al elegir «Otro». Se guarda compuesto (`Renuncia – por traslado`) o, con «Otro», solo el texto escrito. El campo de detalle queda **siempre visible** y `app.js` solo alterna su obligatoriedad (`data-required-when`). El detalle **no repite** el motivo: la composición recorta la etiqueta si llega incluida y, al editar, el formulario muestra solo el detalle (`Renuncia del titular` → `del titular`).
 - **Profesor reemplazante**: campo **opcional** de texto libre (hasta 150 caracteres) con el nombre del docente reemplazado; se puede editar en cualquier momento y es independiente del estado del concurso.
 - El **PDF del concurso** (`ReporteService`) incluye el origen de la vacancia y el profesor reemplazante (con «-» cuando está vacío).
-- `fechaCierre` se deriva de la fecha/hora del concurso; `fechaApertura` = hoy si no se indica.
-- Horas totales: las indicadas, o la carga horaria del cargo como respaldo; si no hay ninguna → error ("indique las horas totales o complete la carga horaria del cargo").
+- `fechaCierre` se deriva de la fecha/hora del concurso; `fechaApertura` = hoy si no se indica (el Servidor la completa en el alta).
+- Horas totales: las indicadas, o la carga horaria del cargo como respaldo; si no hay ninguna → error ("indique las horas totales o complete la carga horaria del cargo"). El **Servidor las persiste** con el concurso: no se derivan al leer, así que un cambio posterior en la carga del cargo no reescribe la historia de los concursos ya creados.
 - En edición se preservan estado, apertura y cierre actuales si el formulario no los envía.
 - **Alta con cargo fijado por contexto**: desde Cargo → Ver → "Abrir concurso para este cargo" el formulario llega con el cargo preseleccionado y **no editable** (el POST lo conserva).
 - **Un solo concurso abierto por cargo**: un cargo no puede tener dos concursos **abiertos** a la vez. "Abierto" se define por el **estado** (`PUBLICADO` o `EN_PROCESO`), **no por las fechas**. El cargo ocupado se excluye del desplegable del alta y del alta con cargo fijado (que se oculta en Cargo → Ver); el **Servidor** aplica la misma regla en el alta y en todo cambio de cargo (`ConcursoService.preAlta`/`preModificacion`), así que una petición directa al REST también se rechaza ("El cargo ya tiene un concurso abierto: ciérrelo antes de abrir otro."). En la **edición** se valida solo cuando cambia el cargo: conservar el cargo actual y **cerrar** (`FINALIZADO`) no se bloquean, para poder corregir o cerrar registros históricos duplicados. Los concursos finalizados o eliminados no cuentan como abiertos.
@@ -72,18 +73,20 @@
 - La designación **hereda el carácter del concurso**, su **motivo de la vacancia**, su **profesor reemplazante** y el **origen de la vacancia** capturado en él (los concursos anteriores al campo usan el respaldo `"Concurso: <descripción>"`); estado = **ACTIVO**; la fecha de fin cargada en el formulario se persiste directamente como `fechaFinDefinitiva`; guarda además el **vínculo directo** con el concurso (`concursoId`).
 - **Validación de vigencia**: se rechaza si el cargo ya tiene una designación ACTIVA/PENDIENTE del mismo docente ("El docente ya posee una designación vigente para este cargo."). Se valida también en el Servidor (ver §4).
 - La designación se crea y se agrega al cargo; la postulación queda `ganador=true` → `DESIGNACION_DEFINITIVA`.
+- **Una sola operación en el Servidor** (`POST /concursos-docentes/{id}/posesion` → `ConcursoDocenteService.confirmarPosesion`, transaccional): valida (concurso abierto, postulación pendiente de posesión, carácter definido, fechas), crea la designación con las reglas de §4, la vincula al cargo, avanza la postulación y cierra el concurso si quedó completo. El Cliente solo envía fechas y muestra el resultado: una llamada directa a la API no puede dejar la designación creada sin la postulación actualizada (ni al revés).
 
 **3.6 Declarar inefectivo** (solo `DESIGNADO_PENDIENTE_POSESION`)
 - → `CANCELADO_INEFECTIVO` con observación (default: "No se presentó a la toma de posesión") y **liberación de horas**.
 
 **3.7 Cierre del concurso**
-- Manual: prohibido cerrar si hay docentes **pendientes de validación de certificados**; al cerrar con horas libres avisa que puede abrirse un rellamado.
-- **Automático**: al confirmar una posesión, si **todas las postulaciones vigentes quedaron con designación definitiva y no quedan horas disponibles**, el concurso pasa solo a FINALIZADO.
+- Manual: prohibido cerrar si hay docentes **pendientes de validación de certificados**; al cerrar con horas libres avisa que puede abrirse un rellamado. La regla vive en el Servidor (`ConcursoService.preModificacion`): toda escritura que deje el concurso en `FINALIZADO` desde un estado abierto pasa por ahí, así que también rechaza una llamada directa a la API (no es un cierre nuevo el que ya venía cerrado).
+- **Automático**: al confirmar una posesión, si **todas las postulaciones vigentes quedaron con designación definitiva y no quedan horas disponibles**, el concurso pasa solo a FINALIZADO (`ReglasConcurso.esListoParaCierre`, evaluado en el Servidor dentro de la misma operación de §3.5).
 
 **3.8 Rellamado** (solo desde concurso **cerrado** con horas remanentes > 0)
 - Crea un nuevo concurso PUBLICADO que: hereda **cargo, carácter, motivo/origen de la vacancia y profesor reemplazante del origen** (sin selector), recibe las **horas remanentes** como totales, marca `esRellamado=true` y `concursoOrigenId`. Si el origen solo tiene el texto heredado, el motivo se deduce con `MotivoVacancia.desdeTexto`.
 - Las horas remanentes se **transferen**: se persisten como `horasTransferidas` en el origen y este queda con 0 horas disponibles, incluso tras reiniciar el Cliente.
 - Descripción por defecto: "Rellamado – <origen>".
+- **Todo el rellamado se resuelve en el Servidor** (`ConcursoService.alta` cuando llega `concursoOrigenId`, transaccional): verifica origen existente y cerrado, calcula las horas remanentes, hereda cargo/carácter/motivo/reemplazante/horas y asienta la transferencia en el origen. El Cliente solo envía fecha y descripción; las reglas no dependen de que el formulario las repita.
 
 **3.9 Flujos legacy eliminados**
 - **Agregar cargo** y **Ganador** se retiraron del Cliente (vistas y endpoints): eran pantallas **sin entrada en la interfaz** que creaban designaciones al margen de la postulación. La única vía de creación desde un concurso es la toma de posesión (§3.5), que además es la que marca al ganador (`ganador = true`).
@@ -93,7 +96,7 @@
 - Totales: DTO persistido → carga horaria del cargo (respaldo).
 - Asignadas: suma de horas de postulaciones **vigentes** (excluye canceladas y sin horas).
 - Disponibles: **total − asignadas − transferidas a un rellamado**, nunca menor a 0.
-- Listo para cierre: sin canceladas pendientes, todas definitivas y disponibles ≤ 0.
+- Listo para cierre: todas las vigentes definitivas y disponibles ≤ 0 (misma regla en el Cliente y en el Servidor: `FlujoConcursoService` / `ReglasConcurso.esListoParaCierre`).
 
 ## 4. Reglas de Designaciones
 
@@ -130,16 +133,37 @@
 
 ## 7. Reglas de eliminación de entidades
 
-La baja lógica de **Concursos, Docentes, Cargos, Cursos y Materias** se valida en el **Servidor antes de ejecutarse**: una petición directa al endpoint DELETE también se rechaza (HTTP 400 con el mensaje de la regla) y el registro rechazado no se modifica ni pierde sus relaciones. El botón de eliminar permanece visible; el Cliente muestra el mensaje del Servidor como alerta en la lista, sin mensaje de éxito.
+Toda baja es **lógica** (`eliminado = true`): ningún registro se borra físicamente, así que las claves foráneas no se rompen. Lo que se protege es el **huérfano lógico**: que un dato desaparezca y deje a otro sin contexto. La regla se valida en el **Servidor, dentro del servicio** (hook `preBaja` de `BaseService`), no en el controlador: una petición directa al endpoint DELETE también se rechaza (HTTP 400 con el mensaje de la regla, sin «Error de Sistemas») y el registro rechazado no se modifica ni pierde sus relaciones. El botón de eliminar permanece visible; el Cliente muestra el mensaje del Servidor como alerta en la lista, sin mensaje de éxito.
 
-- **Concurso EN_PROCESO**: se rechaza si tiene pendientes — una postulación vigente sin ganador (pendiente de certificados) o una designación **PENDIENTE** vinculada al concurso (estado residual, §4; vínculo por `concursoId` o texto “Concurso: <desc>” en históricas).
-- **Concurso FINALIZADO**: se rechaza si tiene designaciones **ACTIVO** vinculadas (efectivas que continúan activas).
-- **Docente**: se rechaza si tiene **cualquier designación** asociada (no eliminada) en cualquier concurso, **sin importar su estado** (`ACTIVO`, `PENDIENTE` o `FINALIZADO`); además, si tiene postulaciones vigentes sin ganador.
-- **Cargo**: se rechaza si tiene designaciones **ACTIVO** (criterio de “activa” de §5: no eliminadas y estado ACTIVO, sobre todas las designaciones del cargo).
-- **Curso**: se rechaza si está asociado a una **materia** (no eliminada) o a un **cargo** (a través de la materia del cargo).
-- **Materia**: se rechaza si está asociada a un **cargo**.
-- Mensajes: “No se puede eliminar el concurso porque tiene designaciones pendientes de certificados o de toma de posesión.” / “…porque tiene designaciones efectivas que continúan activas.”; “No se puede eliminar el docente porque tiene designaciones asociadas.” / “…porque tiene designaciones pendientes de certificados o de toma de posesión.”; “No se puede eliminar el cargo porque tiene designaciones activas asociadas.”; “No se puede eliminar el curso porque está asociado a una materia.” / “…a un cargo.”; “No se puede eliminar la materia porque está asociada a un cargo.”
-- La condición de "pendiente" usa el estado persistido: cuenta como pendiente toda postulación vigente **sin ganador y no cancelada** (`estadoPostulacion != CANCELADO_INEFECTIVO`); las postulaciones canceladas (rechazadas o declaradas inefectivas) **ya no bloquean** la eliminación. Los registros antiguos **sin estado** se tratan de forma conservadora (ver §9).
+| Entidad | Se rechaza la baja si… |
+| --- | --- |
+| **Concurso** | tiene **postulaciones** no eliminadas que no estén declaradas inefectivas (`CANCELADO_INEFECTIVO`), o tiene **cualquier designación** vinculada (activa, pendiente, finalizada o histórica sin estado). No depende del estado del concurso. |
+| **Designación** | su estado **no es `PENDIENTE`**: las `ACTIVO` se finalizan cargándoles la fecha de fin y las `FINALIZADO` (y las históricas sin estado) son historial. |
+| **Cargo** | tiene **concursos** no eliminados, o **designaciones** en cualquier estado (no eliminadas). |
+| **Docente** | tiene **cualquier designación** asociada (no eliminada) en cualquier concurso, **sin importar su estado**; o está **asociado a un concurso** con alguna postulación no eliminada ni declarada inefectiva (`CANCELADO_INEFECTIVO`), **haya ganado o no**. |
+| **Tipo de certificado** | hay **certificados** cargados (no eliminados) de ese tipo en cualquier concurso. |
+| **Curso** | está asociado a una **materia** (no eliminada) o a un **cargo** (a través de la materia del cargo). |
+| **Materia** | está asociada a un **cargo**. |
+| **Postulación (toma de horas)** | siempre: no se eliminan, se **cancelan declarándolas inefectivas** (conserva el historial y libera las horas). |
+| **Certificado** | siempre: no se eliminan, se **reemplazan cargando uno nuevo** del mismo tipo (el anterior queda en el historial, §10). |
+
+Mensajes (el Cliente los muestra tal cual):
+
+- «No se puede eliminar el concurso porque tiene postulaciones asociadas.» / «…porque tiene designaciones asociadas.»
+- «No se puede eliminar una designación activa: cárguele la fecha de fin definitiva para finalizarla.» / «No se puede eliminar una designación finalizada: forma parte del historial.» / «No se puede eliminar una designación histórica: forma parte del historial.»
+- «No se puede eliminar el cargo porque tiene concursos asociados.» / «…porque tiene designaciones asociadas.»
+- «No se puede eliminar el docente porque tiene designaciones asociadas.» / «…porque tiene postulaciones en concursos.»
+- «No se puede eliminar el tipo de certificado porque hay certificados cargados de este tipo en concursos.»
+- «No se puede eliminar el curso porque está asociado a una materia.» / «…a un cargo.» · «No se puede eliminar la materia porque está asociada a un cargo.»
+- «Las postulaciones no se eliminan: se cancelan declarándolas inefectivas.» · «Los certificados no se eliminan: para reemplazarlo, cargue uno nuevo (el anterior queda en el historial).»
+
+Consecuencias prácticas:
+
+- Un concurso con **todas** sus postulaciones declaradas inefectivas y **sin** designaciones vinculadas **sí** se puede eliminar (limpieza de concursos que quedaron sin docentes).
+- Un concurso `FINALIZADO` cuya única designación quedó `FINALIZADO` **no** se puede eliminar: el historial de la designación apunta al concurso (`concursoId`). Tampoco se puede eliminar antes esa designación, porque es historial.
+- El **cargo** queda bloqueado mientras exista cualquier concurso o designación que lo referencie, incluso finalizados.
+- El **docente** queda bloqueado por cualquier designación (incluso finalizada) y por cualquier postulación en un concurso, **también las ganadoras**. Solo se libera si sus únicas postulaciones fueron **declaradas inefectivas**; el docente inactivo sigue el mismo criterio (la baja lógica no es «dar de baja» al docente: para eso se usa Activo/Inactivo).
+- La asociación del **docente** con el concurso se mide sobre el estado persistido de la postulación: las declaradas inefectivas (`CANCELADO_INEFECTIVO`) no bloquean, y los registros antiguos **sin estado** se tratan de forma conservadora (bloquean, ver §9).
 
 ## 8. Reglas transversales de UI / integridad
 
@@ -170,6 +194,8 @@ La baja lógica de **Concursos, Docentes, Cargos, Cursos y Materias** se valida 
 - Las **alertas de concurso** (§10) necesitan `fechaCierre` y un estado `EN_PROCESO` o `PUBLICADO` con cierre vencido; un concurso `PUBLICADO` sin fecha de cierre no se alerta. La alerta de **horas sin cubrir** necesita `horasTotales` o, en su defecto, la carga horaria del cargo: sin ninguno de los dos no se puede calcular el remanente y no se alerta.
 - Una alerta automática **leída no se reabre mientras la prioridad no cambie**: si la causa se resuelve y luego reaparece con la misma gravedad, queda leída (no se borra). Tampoco se reabre por el paso de los días, aunque el mensaje diga «hace N días» o «faltan N días».
 - Las alertas automáticas creadas antes de este esquema podían tener **dos registros por causa** (MEDIA y ALTA). Al evaluarse la causa se consolidan en una sola: se conserva la de mayor gravedad y la otra se marca leída.
+- **Transición `PUBLICADO → EN_PROCESO` (deuda)**: la persiste el Cliente desde un GET (`ConcursoController.aplicarTransicionEstado`, al abrir el listado o el detalle) y, si la escritura falla, se ignora el error. Las alertas ya lo compensan (calculan el estado efectivo), pero el PDF de reportes imprime el estado **persistido** y un GET que escribe no es idempotente para una API. Criterio propuesto: mover la transición al Servidor —derivarla al leer o persistirla en la tarea diaria del `AlertasScheduler`— y dejar el GET del Cliente sin escrituras. Mientras tanto, los cambios de estado que sí son de negocio (cierre, cierre automático) ya están en el Servidor (§3.7).
+- **Validaciones de alta de concurso**: resueltas en el Servidor (`ConcursoService.alta`/`preAlta`): descripción, cargo, fecha y carácter obligatorios, `fechaApertura` por defecto, horas totales con la carga del cargo como respaldo **persistidas** y `PUBLICADO` como estado inicial (el carácter se hereda en los rellamados, así que no se exige en ese formulario). El **motivo de la vacancia** queda como validación del Cliente, que envía el texto ya compuesto. Los concursos viejos sin `horasTotales` siguen resolviendo sus horas por la carga del cargo (§3.10), porque no se reescriben al leerlos.
 
 ## 10. Alertas automáticas
 
@@ -180,7 +206,7 @@ Todas usan la entidad `Alerta` (mensaje, fecha de emisión, prioridad, leída, b
 - **Concurso en proceso sin cerrar**: se cuentan los días **transcurridos desde `fechaCierre`**. 3 días o más → MEDIA; 7 o más → ALTA. Se consideran los `EN_PROCESO` y también los `PUBLICADO` con cierre vencido (estado efectivo), porque la transición la persiste el Cliente al abrir el listado. El vínculo se guarda en `alerta.concurso_id` (id plano) y `alerta.tipo` distingue las dos alertas de concurso.
 - **Concurso cerrado con horas sin cubrir**: si el concurso queda `FINALIZADO` con horas que no tienen designación ni se transfirieron a un rellamado, se crea una alerta **MEDIA** («El concurso … quedó cerrado con N horas sin cubrir»). Se resuelve sola al transferir las horas al rellamado, al cubrirlas, o si el concurso se elimina o se reabre. Un mismo concurso puede tener esta alerta y la de «sigue en proceso», porque se distinguen por `tipo` (`CONCURSO_SIN_CERRAR` / `CONCURSO_HORAS_SIN_CUBRIR`).
 - **Una alerta por causa**: cada certificado, designación o concurso tiene una sola alerta automática. Cuando cambia el umbral se actualizan la prioridad y el mensaje, no se crea otra: al escalar (MEDIA → ALTA) la alerta vuelve a pendiente aunque estuviera leída, y si estaba dada de baja se reactiva; al bajar (ALTA → MEDIA) se actualiza sin reabrir. La baja manual se respeta mientras no haya escalado.
-- **Auto-resolución (no se borra nada)**: en cada corrida primero se **finalizan las designaciones vencidas** (§4) y se marcan **leídas** las alertas automáticas cuya causa desapareció (certificado renovado o dado de baja, designación finalizada, concurso cerrado o eliminado, horas que se cubren o se transfieren) y después se generan las que faltan. Los cambios de prioridad no resuelven la alerta: la actualizan. Las manuales y las dadas de baja nunca se tocan.
+- **Auto-resolución (no se borra nada)**: en cada corrida primero se **finalizan las designaciones vencidas** (§4) y se marcan **leídas** las alertas automáticas cuya causa desapareció (certificado reemplazado, designación finalizada o eliminada, concurso cerrado o eliminado, horas que se cubren o se transfieren) y después se generan las que faltan. Los cambios de prioridad no resuelven la alerta: la actualizan. Las manuales y las dadas de baja nunca se tocan.
 - **Fecha de resolución**: `alerta.fecha_resolucion` la registra el Servidor cuando la alerta pasa a leída (manual o automática), la conserva al editar una alerta resuelta y la limpia si vuelve a pendiente. El detalle muestra «Esta alerta fue resuelta el DD/MM/AAAA»; las leídas anteriores a esta columna no tienen fecha y muestran el aviso sin fecha.
-- **Resolución inmediata**: las alertas de certificado se reevalúan al cargar el certificado (el nuevo, por si ya vence dentro del umbral) y al renovarlo (el anterior queda en el historial y su alerta se resuelve en el mismo alta); las de designación se reevalúan al crear o modificar la designación, y las de concurso (ambas) al modificar el concurso, lo que incluye el **cierre manual y el automático** (este último al completar todas las horas con designación definitiva) y la **transferencia de horas al rellamado**. Al **dar de baja** la causa (certificado, designación o concurso) sus alertas también se resuelven en el acto: se **marcan leídas, no se eliminan**, para conservar el historial y la fecha de resolución (eliminarlas sigue siendo una acción manual desde el listado de Alertas). Así la causa resuelta marca la alerta como leída en el acto y no hay que esperar a la corrida diaria. La depuración de la corrida sigue cubriendo los datos anteriores a estos cambios.
+- **Resolución inmediata**: las alertas de certificado se reevalúan al cargar el certificado (el nuevo, por si ya vence dentro del umbral) y al renovarlo (el anterior queda en el historial y su alerta se resuelve en el mismo alta); las de designación se reevalúan al crear o modificar la designación, y las de concurso (ambas) al modificar el concurso, lo que incluye el **cierre manual y el automático** (este último al completar todas las horas con designación definitiva) y la **transferencia de horas al rellamado**. Al **dar de baja** la causa (designación `PENDIENTE` residual o concurso sin actividad, §7) o **reemplazar** el certificado (que no se elimina), sus alertas también se resuelven en el acto: se **marcan leídas, no se eliminan**, para conservar el historial y la fecha de resolución (eliminarlas sigue siendo una acción manual desde el listado de Alertas). Así la causa resuelta marca la alerta como leída en el acto y no hay que esperar a la corrida diaria. La depuración de la corrida sigue cubriendo los datos anteriores a estos cambios.
 - La primera corrida genera las alertas de todo lo que ya está en rango; a partir de ahí se mantienen solas.

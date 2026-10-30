@@ -5,7 +5,6 @@ import com.elvarest.servidor.entities.Concurso;
 import com.elvarest.servidor.entities.ConcursoDocente;
 import com.elvarest.servidor.entities.Designacion;
 import com.elvarest.servidor.entities.enums.EstadoConcurso;
-import com.elvarest.servidor.entities.enums.EstadoDesignacion;
 import com.elvarest.servidor.entities.enums.EstadoPostulacion;
 import com.elvarest.servidor.exceptions.ErrorServiceException;
 import com.elvarest.servidor.repositories.CargoRepository;
@@ -17,6 +16,7 @@ import com.elvarest.servidor.repositories.DesignacionRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
 import java.util.Objects;
 import java.util.Optional;
 
@@ -69,30 +69,124 @@ public class ConcursoService extends BaseService<Concurso, Long> {
     }
 
     /**
-     * Regla: un cargo no puede tener dos concursos abiertos a la vez. "Abierto" se define por el
-     * estado (PUBLICADO o EN_PROCESO), no por las fechas. En el alta se controla siempre y en la
-     * modificación solo cuando cambia el cargo, para no bloquear la edición de registros
-     * históricos ni el cierre de un concurso que quedó duplicado con anterioridad.
+     * Validaciones de alta. El concurso es la única fuente de la configuración: sin descripción,
+     * cargo, fecha y horas no hay con qué abrirlo, y sin carácter la designación posterior no se
+     * puede emitir. En un rellamado el cargo, el carácter y las horas se heredan del origen.
+     *
+     * Además se aplica la regla del cargo: un cargo no puede tener dos concursos abiertos a la vez
+     * ("abierto" se define por el estado PUBLICADO o EN_PROCESO, no por las fechas). En la
+     * modificación se controla solo cuando cambia el cargo, para no bloquear la edición de
+     * registros históricos ni el cierre de un concurso que quedó duplicado con anterioridad.
      */
     @Override
     protected void preAlta(Concurso concurso) throws ErrorServiceException {
-        if (concurso.getEstadoConcurso() != EstadoConcurso.FINALIZADO) {
-            validarCargoSinConcursoAbierto(cargoIdDe(concurso), null);
+        boolean rellamado = concurso.getConcursoOrigenId() != null;
+        concurso.setEsRellamado(rellamado);
+        if (concurso.getDescripcion() == null || concurso.getDescripcion().isBlank()) {
+            throw new ErrorServiceException("La descripción del concurso es obligatoria.");
         }
+        if (concurso.getCargo() == null) {
+            throw new ErrorServiceException("Seleccione el cargo vacante del concurso.");
+        }
+        if (concurso.getFechaCierre() == null) {
+            throw new ErrorServiceException("Indique la fecha y hora del concurso.");
+        }
+        // El carácter de la designación se hereda en un rellamado: solo se exige al abrir el concurso.
+        if (!rellamado && concurso.getCaracterDesignacion() == null) {
+            throw new ErrorServiceException("Seleccione la designación (carácter de designación) del concurso.");
+        }
+        if (concurso.getFechaApertura() == null) {
+            concurso.setFechaApertura(LocalDate.now());
+        }
+        completarHorasTotales(concurso);
+        validarCargoSinConcursoAbierto(cargoIdDe(concurso), null);
+    }
+
+    /**
+     * Las horas totales se persisten con el concurso: si el formulario no las envía, se toma la carga
+     * horaria del cargo como respaldo. Antes se derivaban en cada lectura, así que un cambio en la
+     * carga horaria del cargo reescribía la historia de los concursos ya creados.
+     */
+    private void completarHorasTotales(Concurso concurso) throws ErrorServiceException {
+        if (concurso.getHorasTotales() != null && concurso.getHorasTotales() > 0) {
+            return;
+        }
+        Long cargoId = cargoIdDe(concurso);
+        int cargaHoraria = cargoId == null ? 0
+                : cargoRepository.findById(cargoId).map(Cargo::getCargaHoraria).orElse(0);
+        if (cargaHoraria <= 0) {
+            throw new ErrorServiceException("El concurso no tiene horas totales: indique las horas totales "
+                    + "o complete la carga horaria del cargo.");
+        }
+        concurso.setHorasTotales(cargaHoraria);
     }
 
     @Override
     protected void preModificacion(Concurso concurso) throws ErrorServiceException {
-        Long cargoAnterior = concurso.getId() == null ? null
-                : repository.findById(concurso.getId())
-                        .filter(actual -> actual.getCargo() != null)
-                        .map(actual -> actual.getCargo().getId())
-                        .orElse(null);
+        Optional<Concurso> guardado = concurso.getId() == null
+                ? Optional.<Concurso>empty()
+                : repository.findById(concurso.getId());
+        Long cargoAnterior = guardado.filter(actual -> actual.getCargo() != null)
+                .map(actual -> actual.getCargo().getId())
+                .orElse(null);
         Long cargoNuevo = cargoIdDe(concurso);
         if (concurso.getEstadoConcurso() != EstadoConcurso.FINALIZADO
                 && cargoNuevo != null && !Objects.equals(cargoNuevo, cargoAnterior)) {
             validarCargoSinConcursoAbierto(cargoNuevo, concurso.getId());
         }
+        validarCierreSinPendientes(concurso, guardado);
+    }
+
+    /**
+     * Alta de concurso. El estado inicial lo fija el servicio: todo concurso nace PUBLICADO y el
+     * formulario no lo elige. Si viene de un concurso origen (rellamado), además hereda cargo,
+     * carácter, motivo y horas remanentes, y deja la transferencia asentada en el origen dentro de
+     * la misma transacción: el Cliente ya no calcula ni escribe nada de esto.
+     */
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public Concurso alta(Concurso concurso) throws ErrorServiceException {
+        concurso.setEstadoConcurso(EstadoConcurso.PUBLICADO);
+        if (concurso.getConcursoOrigenId() == null) {
+            return super.alta(concurso);
+        }
+        Concurso origen = prepararRellamado(concurso);
+        Concurso guardado = super.alta(concurso);
+        // Las horas remanentes quedan transferidas: el origen se queda sin horas disponibles.
+        origen.setHorasTransferidas(concurso.getHorasTotales());
+        repository.save(origen);
+        return guardado;
+    }
+
+    /**
+     * Un rellamado solo puede nacer de un concurso cerrado con horas remanentes. Se ejecuta antes
+     * de {@code validar}/{@code preAlta} para que las validaciones vean el cargo heredado.
+     */
+    private Concurso prepararRellamado(Concurso rellamado) throws ErrorServiceException {
+        Concurso origen = repository.findById(rellamado.getConcursoOrigenId())
+                .filter(encontrado -> !Boolean.TRUE.equals(encontrado.getEliminado()))
+                .orElseThrow(() -> new ErrorServiceException("El concurso origen del rellamado no existe."));
+        if (origen.getEstadoConcurso() != EstadoConcurso.FINALIZADO) {
+            throw new ErrorServiceException("El concurso origen debe estar cerrado para generar un rellamado.");
+        }
+        Integer remanentes = ReglasConcurso.horasDisponibles(origen, postulacionesDe(origen.getId()));
+        if (remanentes == null || remanentes <= 0) {
+            throw new ErrorServiceException("El concurso origen no tiene horas remanentes para transferir.");
+        }
+        rellamado.setCargo(origen.getCargo());
+        rellamado.setCaracterDesignacion(origen.getCaracterDesignacion());
+        rellamado.setOrigenVacancia(origen.getOrigenVacancia());
+        rellamado.setMotivoVacancia(origen.getMotivoVacancia());
+        rellamado.setProfesorReemplazante(origen.getProfesorReemplazante());
+        rellamado.setEsRellamado(true);
+        rellamado.setHorasTotales(remanentes);
+        if (rellamado.getDescripcion() == null || rellamado.getDescripcion().isBlank()) {
+            rellamado.setDescripcion("Rellamado – " + ReglasConcurso.descripcion(origen));
+        }
+        if (rellamado.getFechaApertura() == null) {
+            rellamado.setFechaApertura(LocalDate.now());
+        }
+        return origen;
     }
 
     /**
@@ -141,11 +235,34 @@ public class ConcursoService extends BaseService<Concurso, Long> {
     }
 
     /**
-     * Reglas de eliminación de concursos:
-     * - EN_PROCESO: no se elimina si tiene designaciones pendientes de certificados o de toma de
-     *   posesión (postulaciones vigentes sin designación definitiva —incluidas las no canceladas—
-     *   o designaciones en estado PENDIENTE). Los registros sin estado se tratan de forma conservadora.
-     * - FINALIZADO: no se elimina si tiene designaciones efectivas que continúan activas (estado ACTIVO).
+     * Regla de cierre: un concurso no se cierra mientras queden docentes pendientes de validar
+     * certificados. La validación vive en el servicio, así que también aplica a una llamada directa
+     * a la API y al cierre automático del flujo.
+     */
+    private void validarCierreSinPendientes(Concurso concurso, Optional<Concurso> guardado)
+            throws ErrorServiceException {
+        if (concurso.getEstadoConcurso() != EstadoConcurso.FINALIZADO) {
+            return;
+        }
+        if (guardado.isEmpty() || guardado.get().getEstadoConcurso() == EstadoConcurso.FINALIZADO) {
+            return; // ya estaba cerrado: no es un cierre nuevo
+        }
+        long pendientes = postulacionesDe(concurso.getId()).stream()
+                .filter(postulacion -> ReglasConcurso.estadoEfectivo(postulacion)
+                        == EstadoPostulacion.PENDIENTE_CERTIFICADOS)
+                .count();
+        if (pendientes > 0) {
+            throw new ErrorServiceException("No se puede cerrar el concurso: hay " + pendientes
+                    + " docente(s) pendientes de validación de certificados.");
+        }
+    }
+
+    /**
+     * Reglas de eliminación de concursos: un concurso con actividad no se elimina.
+     * - Postulaciones: bloquea cualquier toma de horas no eliminada ni cancelada. Las declaradas
+     *   inefectivas no cuentan, así un concurso sin docentes vigentes se puede limpiar.
+     * - Designaciones: bloquea cualquier designación vinculada, sin importar su estado, porque el
+     *   historial de la designación apunta al concurso (concursoId).
      */
     public void validarEliminacion(Long id) throws ErrorServiceException {
         Optional<Concurso> encontrado = repository.findById(id);
@@ -153,50 +270,41 @@ public class ConcursoService extends BaseService<Concurso, Long> {
             return;
         }
         Concurso concurso = encontrado.get();
-        if (concurso.getEstadoConcurso() == EstadoConcurso.EN_PROCESO) {
-            if (tienePendientes(concurso)) {
-                throw new ErrorServiceException("No se puede eliminar el concurso porque tiene designaciones "
-                        + "pendientes de certificados o de toma de posesión.");
-            }
-        } else if (concurso.getEstadoConcurso() == EstadoConcurso.FINALIZADO) {
-            if (tieneDesignacionesEfectivasActivas(concurso)) {
-                throw new ErrorServiceException("No se puede eliminar el concurso porque tiene designaciones "
-                        + "efectivas que continúan activas.");
-            }
+        if (tienePostulacionesVigentes(concurso)) {
+            throw new ErrorServiceException("No se puede eliminar el concurso porque tiene postulaciones asociadas.");
+        }
+        if (tieneDesignacionesVinculadas(concurso)) {
+            throw new ErrorServiceException("No se puede eliminar el concurso porque tiene designaciones asociadas.");
         }
     }
 
-    private boolean tienePendientes(Concurso concurso) {
-        boolean postulacionVigente = concursoDocenteRepository.findAll().stream()
+    /** La regla se aplica en el servicio: cualquier vía de baja queda validada, no solo el DELETE. */
+    @Override
+    protected void preBaja(Long id) throws ErrorServiceException {
+        validarEliminacion(id);
+    }
+
+    private boolean tienePostulacionesVigentes(Concurso concurso) {
+        return postulacionesDe(concurso.getId()).stream()
+                .anyMatch(postulacion -> ReglasConcurso.estadoEfectivo(postulacion)
+                        != EstadoPostulacion.CANCELADO_INEFECTIVO);
+    }
+
+    /** Postulaciones (tomas de horas) no eliminadas del concurso. */
+    private List<ConcursoDocente> postulacionesDe(Long concursoId) {
+        if (concursoId == null) {
+            return List.of();
+        }
+        return concursoDocenteRepository.findAll().stream()
                 .filter(postulacion -> !Boolean.TRUE.equals(postulacion.getEliminado()))
                 .filter(postulacion -> postulacion.getConcurso() != null
-                        && Objects.equals(postulacion.getConcurso().getId(), concurso.getId()))
-                .anyMatch(this::esPendiente);
-        if (postulacionVigente) {
-            return true;
-        }
-        return designacionRepository.findAll().stream()
-                .filter(designacion -> !Boolean.TRUE.equals(designacion.getEliminado()))
-                .filter(designacion -> designacion.getEstadoDesignacion() == EstadoDesignacion.PENDIENTE)
-                .anyMatch(designacion -> vinculadaAlConcurso(designacion, concurso));
+                        && Objects.equals(postulacion.getConcurso().getId(), concursoId))
+                .toList();
     }
 
-    /**
-     * Una postulación cuenta como pendiente si no obtuvo designación definitiva y no fue cancelada.
-     * Los registros sin estado de postulación (anteriores a la persistencia del campo) se tratan de
-     * forma conservadora, como pendientes.
-     */
-    private boolean esPendiente(ConcursoDocente postulacion) {
-        if (postulacion.isGanador()) {
-            return false;
-        }
-        return postulacion.getEstadoPostulacion() != EstadoPostulacion.CANCELADO_INEFECTIVO;
-    }
-
-    private boolean tieneDesignacionesEfectivasActivas(Concurso concurso) {
+    private boolean tieneDesignacionesVinculadas(Concurso concurso) {
         return designacionRepository.findAll().stream()
                 .filter(designacion -> !Boolean.TRUE.equals(designacion.getEliminado()))
-                .filter(designacion -> designacion.getEstadoDesignacion() == EstadoDesignacion.ACTIVO)
                 .anyMatch(designacion -> vinculadaAlConcurso(designacion, concurso));
     }
 

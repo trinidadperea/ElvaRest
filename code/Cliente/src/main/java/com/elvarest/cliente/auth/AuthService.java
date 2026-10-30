@@ -1,5 +1,7 @@
 package com.elvarest.cliente.auth;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.*;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -15,6 +17,8 @@ import java.util.Map;
 
 @Service
 public class AuthService {
+
+    private static final Logger log = LoggerFactory.getLogger(AuthService.class);
 
     private final RestTemplate restTemplate = new RestTemplate();
     private String token; // JWT almacenado tras el login
@@ -98,7 +102,8 @@ public class AuthService {
             return true;
 
         } catch (Exception e) {
-            System.out.println("Error de login o al obtener perfil: " + e.getMessage());
+            // Un login fallido es un resultado esperado: se registra el motivo sin la traza.
+            log.warn("Error de login o al obtener perfil: {}", e.getMessage());
             this.token = null;
         }
         return false;

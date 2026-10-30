@@ -27,8 +27,9 @@ import static org.mockito.Mockito.when;
  * Reglas de eliminación de docentes:
  * - Cualquier designación asociada bloquea la baja, sin importar su estado (activa, pendiente o
  *   finalizada): se conserva el historial.
- * - Las postulaciones vigentes sin designación definitiva también la bloquean (las canceladas no).
- *   Los registros sin estado de postulación se tratan de forma conservadora (bloquean).
+ * - Estar asociado a un concurso también la bloquea: cualquier postulación no eliminada ni
+ *   declarada inefectiva, haya ganado o no. Los registros sin estado se tratan de forma
+ *   conservadora (bloquean).
  */
 @ExtendWith(MockitoExtension.class)
 class DocenteServiceTest {
@@ -36,7 +37,7 @@ class DocenteServiceTest {
     private static final String MENSAJE_DESIGNACIONES =
             "No se puede eliminar el docente porque tiene designaciones asociadas.";
     private static final String MENSAJE_POSTULACIONES =
-            "No se puede eliminar el docente porque tiene designaciones pendientes de certificados o de toma de posesión.";
+            "No se puede eliminar el docente porque tiene postulaciones en concursos.";
 
     @Mock
     private DocenteRepository docenteRepository;
@@ -136,6 +137,18 @@ class DocenteServiceTest {
     }
 
     @Test
+    void docenteConPostulacionGanadoraRechazaEliminacion() {
+        // Ganar no libera al docente: la postulación queda como su historial en el concurso.
+        when(docenteRepository.findById(1L)).thenReturn(Optional.of(docente));
+        when(designacionRepository.findAll()).thenReturn(List.of());
+        when(concursoDocenteRepository.findAll())
+                .thenReturn(List.of(postulacionDe(docente, true, EstadoPostulacion.DESIGNACION_DEFINITIVA)));
+
+        ErrorServiceException ex = assertThrows(ErrorServiceException.class, () -> service.validarEliminacion(1L));
+        assertEquals(MENSAJE_POSTULACIONES, ex.getMessage());
+    }
+
+    @Test
     void docenteConPostulacionCanceladaPermiteEliminacion() {
         when(docenteRepository.findById(1L)).thenReturn(Optional.of(docente));
         when(designacionRepository.findAll()).thenReturn(List.of());
@@ -153,13 +166,14 @@ class DocenteServiceTest {
     }
 
     @Test
-    void docenteConDesignacionFinalizadaDeOtroDocenteYPostulacionGanadoraPermiteEliminacion() {
+    void relacionesDeOtroDocenteNoBloqueanEliminacion() {
         Docente otro = new Docente();
         otro.setId(99L);
         when(docenteRepository.findById(1L)).thenReturn(Optional.of(docente));
         when(designacionRepository.findAll())
                 .thenReturn(List.of(designacionDe(otro, EstadoDesignacion.FINALIZADO, false)));
-        when(concursoDocenteRepository.findAll()).thenReturn(List.of(postulacionDe(docente, true, null)));
+        when(concursoDocenteRepository.findAll())
+                .thenReturn(List.of(postulacionDe(otro, true, EstadoPostulacion.PENDIENTE_CERTIFICADOS)));
 
         assertDoesNotThrow(() -> service.validarEliminacion(1L));
     }
@@ -198,5 +212,16 @@ class DocenteServiceTest {
         when(docenteRepository.findById(1L)).thenReturn(Optional.of(docente));
 
         assertDoesNotThrow(() -> service.validarEliminacion(1L));
+    }
+
+    @Test
+    void bajaLogicaPropagaElMensajeDeLaRegla() {
+        // La regla se aplica en el servicio: el mensaje llega al usuario en lugar de "Error de Sistemas".
+        when(docenteRepository.findById(1L)).thenReturn(Optional.of(docente));
+        when(designacionRepository.findAll())
+                .thenReturn(List.of(designacionDe(docente, EstadoDesignacion.FINALIZADO, false)));
+
+        ErrorServiceException ex = assertThrows(ErrorServiceException.class, () -> service.bajaLogica(1L));
+        assertEquals(MENSAJE_DESIGNACIONES, ex.getMessage());
     }
 }

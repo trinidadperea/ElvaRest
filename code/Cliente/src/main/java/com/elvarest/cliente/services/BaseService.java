@@ -92,7 +92,7 @@ public abstract class BaseService<T, ID> {
      * El servidor rechaza la operación (reglas de negocio, validaciones o errores de base de datos):
      * se propaga su mensaje para que el controlador lo muestre al usuario en lugar de un error genérico.
      */
-    private RuntimeException errorDelServidor(HttpClientErrorException e) {
+    protected RuntimeException errorDelServidor(HttpClientErrorException e) {
         String mensaje = mensajeDeError(new String(e.getResponseBodyAsByteArray(), StandardCharsets.UTF_8));
         if (mensaje != null && !mensaje.isBlank()) {
             return new ErrorServiceException(mensaje);

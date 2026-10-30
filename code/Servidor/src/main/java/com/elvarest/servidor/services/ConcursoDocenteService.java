@@ -11,14 +11,17 @@ import com.elvarest.servidor.entities.enums.EstadoDesignacion;
 import com.elvarest.servidor.entities.enums.EstadoPostulacion;
 import com.elvarest.servidor.entities.enums.TipoCargo;
 import com.elvarest.servidor.exceptions.ErrorServiceException;
+import com.elvarest.servidor.repositories.CargoRepository;
 import com.elvarest.servidor.repositories.CertificadoRepository;
 import com.elvarest.servidor.repositories.ConcursoDocenteRepository;
 import com.elvarest.servidor.repositories.ConcursoRepository;
 import com.elvarest.servidor.repositories.DocenteRepository;
 import com.elvarest.servidor.repositories.TipoCertificadoRepository;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -48,13 +51,19 @@ public class ConcursoDocenteService
     private final DocenteRepository docenteRepository;
     private final CertificadoRepository certificadoRepository;
     private final TipoCertificadoRepository tipoCertificadoRepository;
+    private final DesignacionService designacionService;
+    private final ConcursoService concursoService;
+    private final CargoRepository cargoRepository;
 
     public ConcursoDocenteService(
             ConcursoDocenteRepository concursoDocenteRepository,
             ConcursoRepository concursoRepository,
             DocenteRepository docenteRepository,
             CertificadoRepository certificadoRepository,
-            TipoCertificadoRepository tipoCertificadoRepository) {
+            TipoCertificadoRepository tipoCertificadoRepository,
+            DesignacionService designacionService,
+            ConcursoService concursoService,
+            CargoRepository cargoRepository) {
 
         super(concursoDocenteRepository);
         this.concursoDocenteRepository = concursoDocenteRepository;
@@ -62,6 +71,9 @@ public class ConcursoDocenteService
         this.docenteRepository = docenteRepository;
         this.certificadoRepository = certificadoRepository;
         this.tipoCertificadoRepository = tipoCertificadoRepository;
+        this.designacionService = designacionService;
+        this.concursoService = concursoService;
+        this.cargoRepository = cargoRepository;
     }
 
     public List<ConcursoDocente> obtenerOrdenMerito(Long concursoId) {
@@ -194,6 +206,19 @@ public class ConcursoDocenteService
         }
     }
 
+    /**
+     * Las postulaciones no se eliminan: se cancelan declarándolas inefectivas, que conserva el
+     * historial de la toma de horas y libera las horas del concurso.
+     */
+    @Override
+    protected void preBaja(Long id) throws ErrorServiceException {
+        Optional<ConcursoDocente> guardada = concursoDocenteRepository.findById(id);
+        if (guardada.isEmpty() || Boolean.TRUE.equals(guardada.get().getEliminado())) {
+            return; // BaseService responde "no encontrada".
+        }
+        throw new ErrorServiceException("Las postulaciones no se eliminan: se cancelan declarándolas inefectivas.");
+    }
+
     /** §3.3: solo con el concurso abierto, en postulaciones pendientes, y sin superar las horas disponibles. */
     private void validarModificacionHoras(Concurso concurso, ConcursoDocente actual,
                                           EstadoPostulacion estadoActual, Integer horasNuevas)
@@ -300,6 +325,98 @@ public class ConcursoDocenteService
                 .filter(designacion -> !Boolean.TRUE.equals(designacion.getEliminado()))
                 .filter(designacion -> designacion.getEstadoDesignacion() == EstadoDesignacion.ACTIVO)
                 .toList();
+    }
+
+    // ------------------------------------------------------------------
+    // §3.7 Paso 3: confirmación de toma de posesión
+    // ------------------------------------------------------------------
+
+    /**
+     * Confirma la toma de posesión como una sola operación: crea la designación (con las reglas de
+     * §4 y de fechas de {@link DesignacionService}), la vincula al cargo, avanza la postulación a
+     * designación definitiva y cierra el concurso si quedó completo. Al vivir en el servicio,
+     * cualquier llamada a la API obtiene el mismo resultado y no puede quedar a mitad de camino.
+     */
+    @Transactional(rollbackFor = Exception.class)
+    public Designacion confirmarPosesion(Long concursoId, Long postulacionId, Designacion datos)
+            throws ErrorServiceException {
+        if (datos == null) {
+            throw new ErrorServiceException("Complete los datos de la designación.");
+        }
+        ConcursoDocente postulacion = concursoDocenteRepository.findById(postulacionId)
+                .filter(encontrada -> !Boolean.TRUE.equals(encontrada.getEliminado()))
+                .orElseThrow(() -> new ErrorServiceException("No se encontró la postulación."));
+        Concurso concurso = concursoRepository.findById(concursoId)
+                .filter(encontrado -> !Boolean.TRUE.equals(encontrado.getEliminado()))
+                .orElseThrow(() -> new ErrorServiceException("No se encontró el concurso."));
+        if (postulacion.getConcurso() == null || !Objects.equals(postulacion.getConcurso().getId(), concursoId)) {
+            throw new ErrorServiceException("La postulación no pertenece a este concurso.");
+        }
+        validarAbierto(concurso, "no se puede confirmar la toma de posesión");
+        if (ReglasConcurso.estadoEfectivo(postulacion) != EstadoPostulacion.DESIGNADO_PENDIENTE_POSESION) {
+            throw new ErrorServiceException("La postulación no está pendiente de toma de posesión.");
+        }
+        if (concurso.getCaracterDesignacion() == null) {
+            throw new ErrorServiceException("El concurso no tiene un carácter de designación definido. "
+                    + "Complete el carácter del concurso antes de confirmar la toma de posesión.");
+        }
+        if (datos.getFechaInicioEfectiva() == null || datos.getFechaFinDefinitiva() == null) {
+            throw new ErrorServiceException("Complete las fechas de inicio efectiva y de fin definitiva.");
+        }
+        completarDesdeElConcurso(datos, concurso, postulacion);
+
+        Designacion designacion = designacionService.alta(datos);
+        vincularAlCargo(concurso.getCargo(), designacion);
+
+        postulacion.setGanador(true);
+        postulacion.setEstadoPostulacion(EstadoPostulacion.DESIGNACION_DEFINITIVA);
+        concursoDocenteRepository.save(postulacion);
+
+        if (ReglasConcurso.esListoParaCierre(concurso, postulacionesDe(concursoId))) {
+            concurso.setEstadoConcurso(EstadoConcurso.FINALIZADO);
+            concursoService.modificar(concurso.getId(), concurso);
+        }
+        return designacion;
+    }
+
+    /** La designación hereda del concurso lo que no se carga en el formulario de posesión. */
+    private void completarDesdeElConcurso(Designacion designacion, Concurso concurso, ConcursoDocente postulacion) {
+        designacion.setId(null);
+        designacion.setDocente(postulacion.getDocente());
+        designacion.setCaracterDesignacion(concurso.getCaracterDesignacion());
+        designacion.setEstadoDesignacion(EstadoDesignacion.ACTIVO);
+        designacion.setOrigenVacancia(origenVacanciaDe(concurso));
+        designacion.setMotivoVacancia(concurso.getMotivoVacancia());
+        designacion.setProfesorReemplazante(concurso.getProfesorReemplazante());
+        designacion.setConcursoId(concurso.getId());
+        designacion.setAlertas(new ArrayList<>());
+        designacion.setLicencias(new ArrayList<>());
+    }
+
+    /**
+     * Origen de vacancia heredado; los concursos anteriores al campo guardan el respaldo
+     * "Concurso: &lt;descripción&gt;", que es el mismo criterio del resto del flujo.
+     */
+    private String origenVacanciaDe(Concurso concurso) {
+        return concurso.getOrigenVacancia() != null && !concurso.getOrigenVacancia().isBlank()
+                ? concurso.getOrigenVacancia()
+                : "Concurso: " + ReglasConcurso.descripcion(concurso);
+    }
+
+    /** El vínculo designación -> cargo es unidireccional y sin cascade: se guarda la colección del cargo. */
+    private void vincularAlCargo(Cargo cargo, Designacion designacion) {
+        if (cargo == null || cargo.getId() == null) {
+            return;
+        }
+        Cargo guardado = cargoRepository.findById(cargo.getId()).orElse(null);
+        if (guardado == null) {
+            return;
+        }
+        if (guardado.getDesignaciones() == null) {
+            guardado.setDesignaciones(new ArrayList<>());
+        }
+        guardado.getDesignaciones().add(designacion);
+        cargoRepository.save(guardado);
     }
 
     private boolean esDelDocente(Docente docente, Long docenteId) {

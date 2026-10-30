@@ -16,14 +16,17 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import java.util.List;
 import java.util.Optional;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 /**
  * Renovación de certificados: el anterior del mismo tipo pasa al historial y su alerta de
  * vencimiento se resuelve en el momento, sin esperar la depuración diaria (§10).
+ * Los certificados cargados no se eliminan: se reemplazan cargando uno nuevo.
  */
 @ExtendWith(MockitoExtension.class)
 class CertificadoServiceTest {
@@ -79,7 +82,7 @@ class CertificadoServiceTest {
     }
 
     @Test
-    void alDarDeBajaElCertificadoResuelveSuAlertaEnElActo() throws ErrorServiceException {
+    void unCertificadoCargadoNoSeElimina() throws ErrorServiceException {
         ConcursoDocente postulacion = new ConcursoDocente();
         postulacion.setId(10L);
         TipoCertificado tipo = new TipoCertificado();
@@ -88,9 +91,10 @@ class CertificadoServiceTest {
 
         when(certificadoRepository.findById(3L)).thenReturn(Optional.of(certificado));
 
-        assertTrue(service.bajaLogica(3L));
-
-        assertTrue(certificado.getEliminado(), "La baja es lógica: el certificado se conserva.");
-        verify(alertaService).evaluarVencimiento(certificado);
+        ErrorServiceException ex = assertThrows(ErrorServiceException.class, () -> service.bajaLogica(3L));
+        assertEquals("Los certificados no se eliminan: para reemplazarlo, cargue uno nuevo "
+                + "(el anterior queda en el historial).", ex.getMessage());
+        assertFalse(certificado.getEliminado());
+        verify(alertaService, never()).evaluarVencimiento(certificado);
     }
 }

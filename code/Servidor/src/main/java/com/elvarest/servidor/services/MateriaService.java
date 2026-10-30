@@ -33,4 +33,10 @@ public class MateriaService extends BaseService<Materia, Long> {
             throw new ErrorServiceException("No se puede eliminar la materia porque está asociada a un cargo.");
         }
     }
+
+    /** La regla se aplica en el servicio: cualquier vía de baja queda validada, no solo el DELETE. */
+    @Override
+    protected void preBaja(Long id) throws ErrorServiceException {
+        validarEliminacion(id);
+    }
 }

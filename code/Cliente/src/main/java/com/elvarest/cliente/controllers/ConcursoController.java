@@ -16,7 +16,6 @@ import com.elvarest.cliente.services.CargoService;
 import com.elvarest.cliente.services.CertificadoService;
 import com.elvarest.cliente.services.ConcursoDocenteService;
 import com.elvarest.cliente.services.ConcursoService;
-import com.elvarest.cliente.services.DesignacionService;
 import com.elvarest.cliente.services.DocenteService;
 import com.elvarest.cliente.services.FlujoConcursoService;
 import com.elvarest.cliente.services.TipoCertificadoService;
@@ -56,7 +55,6 @@ public class ConcursoController extends BaseController<ConcursoDTO, Long> {
     private final ConcursoDocenteService concursoDocenteService;
     private final DocenteService docenteService;
     private final CargoService cargoService;
-    private final DesignacionService designacionService;
     private final FlujoConcursoService flujoService;
     private final CertificadoService certificadoService;
     private final TipoCertificadoService tipoCertificadoService;
@@ -67,7 +65,6 @@ public class ConcursoController extends BaseController<ConcursoDTO, Long> {
 
     public ConcursoController(ConcursoService service, ConcursoDocenteService concursoDocenteService,
                               DocenteService docenteService, CargoService cargoService,
-                              DesignacionService designacionService,
                               FlujoConcursoService flujoService,
                               CertificadoService certificadoService,
                               TipoCertificadoService tipoCertificadoService,
@@ -76,7 +73,6 @@ public class ConcursoController extends BaseController<ConcursoDTO, Long> {
         this.concursoDocenteService = concursoDocenteService;
         this.docenteService = docenteService;
         this.cargoService = cargoService;
-        this.designacionService = designacionService;
         this.flujoService = flujoService;
         this.certificadoService = certificadoService;
         this.tipoCertificadoService = tipoCertificadoService;
@@ -310,8 +306,9 @@ public class ConcursoController extends BaseController<ConcursoDTO, Long> {
     }
 
     /**
-     * Reemplaza el guardado genérico para normalizar los campos del flujo:
-     * fecha del concurso, horas totales (cargo como respaldo) y datos de rellamado.
+     * Reemplaza el guardado genérico para normalizar lo propio del formulario: la fecha del concurso
+     * (se persiste en fechaCierre) y el motivo de la vacancia. Las reglas del alta —estado inicial,
+     * datos obligatorios y horas— las aplica el Servidor.
      */
     @Override
     @PostMapping("/actualizar")
@@ -336,64 +333,12 @@ public class ConcursoController extends BaseController<ConcursoDTO, Long> {
                 entidad.setFechaCierre(entidad.getFechaConcurso().toLocalDate());
             }
             if (entidad.getId() == null) {
-                // Regla de estado: todo concurso nuevo nace PUBLICADO; el estado no se selecciona manualmente.
-                entidad.setEstadoConcurso(EstadoConcurso.PUBLICADO);
-                if (entidad.getDescripcion() == null || entidad.getDescripcion().isBlank()) {
-                    throw new IllegalArgumentException("La descripción del concurso es obligatoria.");
-                }
-                if (entidad.getConcursoOrigenId() != null) {
-                    // Alta como rellamado: hereda cargo y horas remanentes del concurso origen
-                    ConcursoDTO origen = obtenerConcurso(entidad.getConcursoOrigenId());
-                    if (!esCerrado(origen)) {
-                        throw new IllegalArgumentException("El concurso origen debe estar cerrado para generar un rellamado.");
-                    }
-                    List<ConcursoDocenteDTO> postulantesOrigen = postulantesDelConcurso(origen.getId());
-                    Integer remanentes = horasDisponiblesDe(origen, postulantesOrigen);
-                    if (remanentes == null || remanentes <= 0) {
-                        throw new IllegalArgumentException("El concurso origen no tiene horas remanentes para transferir.");
-                    }
-                    entidad.setCargo(origen.getCargo());
-                    if (cargoTieneConcursoAbierto(entidad.getCargo() != null ? entidad.getCargo().getId() : null, null)) {
-                        throw new IllegalArgumentException(CARGO_CONCURSO_ABIERTO);
-                    }
-                    entidad.setCaracterDesignacion(origen.getCaracterDesignacion());
-                    // El rellamado cubre la misma vacancia: hereda el origen capturado en el concurso original.
-                    entidad.setOrigenVacancia(origen.getOrigenVacancia());
-                    entidad.setMotivoVacancia(origen.getMotivoVacancia() != null
-                            ? origen.getMotivoVacancia()
-                            : MotivoVacancia.desdeTexto(origen.getOrigenVacancia()));
-                    entidad.setProfesorReemplazante(origen.getProfesorReemplazante());
-                    entidad.setEsRellamado(true);
-                    entidad.setHorasTotales(remanentes);
-                    // Las horas remanentes quedan transferidas al rellamado: el origen queda sin disponibles.
-                    origen.setHorasTransferidas(remanentes);
-                    service.modificar(origen.getId(), origen);
-                } else {
-                    // Alta directa: el cargo, la fecha del concurso y la designación son obligatorios.
-                    if (entidad.getCargo() == null) {
-                        throw new IllegalArgumentException("Seleccione el cargo vacante del concurso.");
-                    }
-                    if (entidad.getFechaConcurso() == null) {
-                        throw new IllegalArgumentException("Indique la fecha y hora del concurso.");
-                    }
-                    if (entidad.getCaracterDesignacion() == null) {
-                        throw new IllegalArgumentException("Seleccione la designación (carácter de designación) del concurso.");
-                    }
+                // El estado inicial (PUBLICADO), la descripción, el cargo, la fecha, el carácter y las
+                // horas (con la carga horaria del cargo como respaldo) los resuelve el Servidor
+                // (ConcursoService.alta/preAlta): acá solo queda lo propio del formulario.
+                if (entidad.getConcursoOrigenId() == null) {
                     aplicarMotivoVacancia(entidad);
-                    if (cargoTieneConcursoAbierto(entidad.getCargo().getId(), null)) {
-                        throw new IllegalArgumentException(CARGO_CONCURSO_ABIERTO);
-                    }
                     entidad.setEsRellamado(false);
-                }
-                if (entidad.getFechaApertura() == null) {
-                    entidad.setFechaApertura(LocalDate.now());
-                }
-                if ((entidad.getHorasTotales() == null || entidad.getHorasTotales() <= 0)
-                        && entidad.getCargo() != null && entidad.getCargo().getCargaHoraria() > 0) {
-                    entidad.setHorasTotales(entidad.getCargo().getCargaHoraria());
-                }
-                if (entidad.getHorasTotales() == null || entidad.getHorasTotales() <= 0) {
-                    throw new IllegalArgumentException("El concurso no tiene horas totales: indique las horas totales o complete la carga horaria del cargo.");
                 }
                 service.alta(entidad);
             } else {
@@ -685,47 +630,12 @@ public class ConcursoController extends BaseController<ConcursoDTO, Long> {
                                     RedirectAttributes attributes) {
         try {
             ConcursoDTO concurso = obtenerConcurso(concursoId);
-            ConcursoDocenteDTO postulacion = obtenerPostulacion(concursoId, postulacionId);
             validarAbierto(concurso, "no se puede confirmar la toma de posesión");
-            if (estadoEfectivo(postulacion) != EstadoPostulacion.DESIGNADO_PENDIENTE_POSESION) {
-                throw new IllegalArgumentException("La postulación no está pendiente de toma de posesión.");
-            }
-            if (designacion.getFechaInicioEfectiva() == null || designacion.getFechaFinDefinitiva() == null) {
-                throw new IllegalArgumentException("Complete las fechas de inicio efectiva y de fin definitiva.");
-            }
-            if (concurso.getCaracterDesignacion() == null) {
-                throw new IllegalArgumentException("El concurso no tiene un carácter de designación definido. Complete el carácter del concurso antes de confirmar la toma de posesión.");
-            }
-            designacion.setDocente(postulacion.getDocente());
-            designacion.setCaracterDesignacion(concurso.getCaracterDesignacion());
-            designacion.setEstadoDesignacion(EstadoDesignacion.ACTIVO);
-            designacion.setOrigenVacancia(origenVacanciaDelConcurso(concurso));
-            designacion.setMotivoVacancia(concurso.getMotivoVacancia());
-            // El docente reemplazado tambien se guarda en la designacion para que se vea en el detalle del docente.
-            designacion.setProfesorReemplazante(concurso.getProfesorReemplazante());
-            designacion.setConcursoId(concursoId);
-
-            CargoDTO cargo = concurso.getCargo() != null ? cargoService.obtener(concurso.getCargo().getId()) : null;
-            validarDesignacionVigente(cargo, designacion.getDocente());
-
-            DesignacionDTO nuevaDesignacion = designacionService.alta(designacion);
-
-            if (cargo != null && nuevaDesignacion != null) {
-                if (cargo.getDesignaciones() == null) {
-                    cargo.setDesignaciones(new ArrayList<>());
-                }
-                cargo.getDesignaciones().add(nuevaDesignacion);
-                cargoService.modificar(cargo.getId(), cargo);
-            }
-
-            postulacion.setGanador(true);
-            postulacion.setEstadoPostulacion(EstadoPostulacion.DESIGNACION_DEFINITIVA);
-            concursoDocenteService.modificar(postulacion.getId(), postulacion);
-
-            List<ConcursoDocenteDTO> postulantes = postulantesDelConcurso(concursoId);
-            if (esListoParaCierre(concurso, postulantes)) {
-                concurso.setEstadoConcurso(EstadoConcurso.FINALIZADO);
-                service.modificar(concurso.getId(), concurso);
+            // La designación, el vínculo con el cargo, el avance de la postulación y el cierre
+            // automático los resuelve el Servidor en una sola operación.
+            concursoDocenteService.confirmarPosesion(concursoId, postulacionId, designacion);
+            ConcursoDTO actualizado = service.obtener(concursoId);
+            if (actualizado != null && esCerrado(actualizado)) {
                 attributes.addFlashAttribute("msgExito", "Toma de posesión confirmada. El concurso se cerró automáticamente: todas sus horas quedaron con designación definitiva.");
             } else {
                 attributes.addFlashAttribute("msgExito", "Toma de posesión confirmada: la designación quedó activa (designación definitiva).");
@@ -792,16 +702,10 @@ public class ConcursoController extends BaseController<ConcursoDTO, Long> {
             if (esCerrado(concurso)) {
                 throw new IllegalArgumentException("El concurso ya está cerrado.");
             }
-            List<ConcursoDocenteDTO> postulantes = postulantesDelConcurso(concursoId);
-            long pendientesValidacion = postulantes.stream()
-                    .filter(postulacion -> estadoEfectivo(postulacion) == EstadoPostulacion.PENDIENTE_CERTIFICADOS)
-                    .count();
-            if (pendientesValidacion > 0) {
-                throw new IllegalArgumentException("No se puede cerrar el concurso: hay " + pendientesValidacion
-                        + " docente(s) pendientes de validación de certificados.");
-            }
+            // La regla de pendientes de certificados la valida el Servidor al cerrar.
             concurso.setEstadoConcurso(EstadoConcurso.FINALIZADO);
             service.modificar(concurso.getId(), concurso);
+            List<ConcursoDocenteDTO> postulantes = postulantesDelConcurso(concursoId);
             Integer disponibles = horasDisponiblesDe(concurso, postulantes);
             if (disponibles != null && disponibles > 0) {
                 attributes.addFlashAttribute("msgInfo", "El concurso quedó cerrado con " + disponibles
@@ -855,50 +759,21 @@ public class ConcursoController extends BaseController<ConcursoDTO, Long> {
                                  RedirectAttributes attributes) {
         Long nuevoId = null;
         try {
-            ConcursoDTO origen = obtenerConcurso(concursoId);
-            if (!esCerrado(origen)) {
-                throw new IllegalArgumentException("Cierre primero el concurso para generar el rellamado con las horas remanentes.");
-            }
-            Integer disponibles = horasDisponiblesDe(origen, postulantesDelConcurso(concursoId));
-            if (disponibles == null || disponibles <= 0) {
-                throw new IllegalArgumentException("No hay horas remanentes para un rellamado.");
-            }
-            if (cargoTieneConcursoAbierto(origen.getCargo() != null ? origen.getCargo().getId() : null, concursoId)) {
-                throw new IllegalArgumentException(CARGO_CONCURSO_ABIERTO);
-            }
-            if (rellamado.getDescripcion() == null || rellamado.getDescripcion().isBlank()) {
-                rellamado.setDescripcion("Rellamado – " + origen.getDescripcion());
-            }
             if (rellamado.getFechaConcurso() == null) {
                 throw new IllegalArgumentException("Indique la fecha y hora del concurso.");
             }
-            if (rellamado.getFechaApertura() == null) {
-                rellamado.setFechaApertura(LocalDate.now());
-            }
             rellamado.setId(null);
-            rellamado.setCargo(origen.getCargo());
-            // El carácter no se selecciona en el formulario: el rellamado siempre conserva el del concurso origen.
-            rellamado.setCaracterDesignacion(origen.getCaracterDesignacion());
-            rellamado.setHorasTotales(disponibles);
-            rellamado.setEstadoConcurso(EstadoConcurso.PUBLICADO);
             rellamado.setEsRellamado(true);
-            rellamado.setConcursoOrigenId(origen.getId());
-            // El rellamado cubre la misma vacancia: hereda el origen capturado en el concurso original.
-            rellamado.setOrigenVacancia(origen.getOrigenVacancia());
-            rellamado.setMotivoVacancia(origen.getMotivoVacancia() != null
-                    ? origen.getMotivoVacancia()
-                    : MotivoVacancia.desdeTexto(origen.getOrigenVacancia()));
-            rellamado.setProfesorReemplazante(origen.getProfesorReemplazante());
-            if (rellamado.getFechaConcurso() != null) {
-                rellamado.setFechaCierre(rellamado.getFechaConcurso().toLocalDate());
-            }
+            rellamado.setConcursoOrigenId(concursoId);
+            rellamado.setFechaCierre(rellamado.getFechaConcurso().toLocalDate());
+            // El estado, el origen cerrado, las horas remanentes, la herencia y la transferencia los
+            // resuelve el Servidor.
             ConcursoDTO creado = service.alta(rellamado);
             nuevoId = creado != null ? creado.getId() : null;
-            // Las horas remanentes quedan transferidas: el origen cierra definitivamente sin disponibles.
-            origen.setHorasTransferidas(disponibles);
-            service.modificar(origen.getId(), origen);
-            attributes.addFlashAttribute("msgExito", "Se creó el concurso de rellamado con " + disponibles
-                    + " h. El concurso original quedó cerrado definitivamente.");
+            Integer horas = creado != null ? horasTotalesDe(creado) : null;
+            attributes.addFlashAttribute("msgExito", "Se creó el concurso de rellamado"
+                    + (horas != null ? " con " + horas + " h" : " con las horas remanentes")
+                    + ". El concurso original quedó cerrado definitivamente.");
         } catch (RuntimeException e) {
             attributes.addFlashAttribute("msgError", e.getMessage());
             return "redirect:/concursos/" + concursoId;
@@ -909,18 +784,6 @@ public class ConcursoController extends BaseController<ConcursoDTO, Long> {
     // ------------------------------------------------------------------
     // Helpers del flujo
     // ------------------------------------------------------------------
-
-    /**
-     * Origen de vacancia que hereda una designación creada desde el concurso: el capturado en el
-     * concurso o, para concursos anteriores al campo, el formato histórico "Concurso: <descripción>".
-     */
-    private String origenVacanciaDelConcurso(ConcursoDTO concurso) {
-        String origen = concurso.getOrigenVacancia();
-        if (origen != null && !origen.isBlank()) {
-            return origen;
-        }
-        return "Concurso: " + concurso.getDescripcion();
-    }
 
     /**
      * Valida el motivo elegido y arma el texto que se persiste en origenVacancia: la etiqueta
@@ -968,21 +831,6 @@ public class ConcursoController extends BaseController<ConcursoDTO, Long> {
         EstadoPostulacion estado = estadoEfectivo(postulacion);
         if (estado == EstadoPostulacion.CANCELADO_INEFECTIVO || estado == EstadoPostulacion.DESIGNACION_DEFINITIVA) {
             throw new IllegalArgumentException("Solo se pueden modificar horas de postulaciones pendientes de certificados o de posesión.");
-        }
-    }
-
-    /** Un docente solo puede tener una designación vigente (activa o pendiente) por cargo. */
-    private void validarDesignacionVigente(CargoDTO cargo, DocenteDTO docente) {
-        if (cargo == null || cargo.getDesignaciones() == null || docente == null) {
-            return;
-        }
-        boolean vigente = cargo.getDesignaciones().stream()
-                .anyMatch(designacion -> designacion.getDocente() != null
-                        && Objects.equals(designacion.getDocente().getId(), docente.getId())
-                        && (designacion.getEstadoDesignacion() == EstadoDesignacion.ACTIVO
-                        || designacion.getEstadoDesignacion() == EstadoDesignacion.PENDIENTE));
-        if (vigente) {
-            throw new IllegalArgumentException("El docente ya posee una designación vigente para este cargo.");
         }
     }
 

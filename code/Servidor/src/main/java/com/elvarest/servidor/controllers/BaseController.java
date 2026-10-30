@@ -3,6 +3,8 @@ package com.elvarest.servidor.controllers;
 import com.elvarest.servidor.entities.BaseEntity;
 import com.elvarest.servidor.exceptions.ErrorServiceException;
 import com.elvarest.servidor.services.BaseService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -12,6 +14,8 @@ import java.util.Map;
 import java.util.Optional;
 
 public abstract class BaseController<T extends BaseEntity<ID>, ID> {
+
+    private static final Logger log = LoggerFactory.getLogger(BaseController.class);
 
     protected final BaseService<T, ID> service;
 
@@ -63,16 +67,13 @@ public abstract class BaseController<T extends BaseEntity<ID>, ID> {
             return ResponseEntity.status(HttpStatus.CREATED).body(guardado);
 
         } catch (ErrorServiceException e) {
-            System.out.println("----- ERROR DE SERVICIO (API) -----");
-            e.printStackTrace();
-            System.out.println("-----------------------------------");
+            // Rechazo esperado (regla de negocio o validación): el mensaje vuelve al Cliente tal cual.
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                     .body(new ErrorResponse(e.getMessage()));
 
         } catch (Exception e) {
-            System.out.println("----- ERROR INTERNO (API) -----");
-            e.printStackTrace(); //Despues lo sacamos - no deberiamos dejar la traza (vulnerable)!
-            System.out.println("-------------------------------");
+            // La traza queda en el log del Servidor, nunca en la respuesta ni en la salida estándar.
+            log.error("Error interno al crear la entidad", e);
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                     .body(new ErrorResponse("Error al crear la entidad"));
         }
@@ -103,11 +104,9 @@ public abstract class BaseController<T extends BaseEntity<ID>, ID> {
     @DeleteMapping("/{id}")
     public ResponseEntity<?> delete(@PathVariable ID id) {
         try {
-            preDelete(id);
             boolean eliminado = service.bajaLogica(id);
 
             if (eliminado) {
-                postDelete(id);
                 return ResponseEntity.status(HttpStatus.OK)
                         .body(new SuccessResponse("Entidad eliminada correctamente"));
             } else {
@@ -134,12 +133,6 @@ public abstract class BaseController<T extends BaseEntity<ID>, ID> {
     }
 
     protected void postUpdate(T entidad) throws ErrorServiceException {
-    }
-
-    protected void preDelete(ID id) throws ErrorServiceException {
-    }
-
-    protected void postDelete(ID id) throws ErrorServiceException {
     }
 
 

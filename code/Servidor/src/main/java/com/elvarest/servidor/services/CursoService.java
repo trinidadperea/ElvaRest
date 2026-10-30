@@ -48,4 +48,10 @@ public class CursoService extends BaseService<Curso, Long> {
             throw new ErrorServiceException("No se puede eliminar el curso porque está asociado a un cargo.");
         }
     }
+
+    /** La regla se aplica en el servicio: cualquier vía de baja queda validada, no solo el DELETE. */
+    @Override
+    protected void preBaja(Long id) throws ErrorServiceException {
+        validarEliminacion(id);
+    }
 }
