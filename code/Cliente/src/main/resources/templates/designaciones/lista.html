@@ -12,11 +12,6 @@
       <input class="form-control" type="search" data-filter-input="#tablaDesignaciones"
              placeholder="Buscar por docente, origen o carácter…" aria-label="Buscar designaciones">
     </div>
-    <div class="toolbar-filters">
-      <a class="btn btn-primary" th:href="@{/designaciones/nuevo}">
-        <i class="bi bi-plus-lg me-1"></i>Nueva designación
-      </a>
-    </div>
   </div>
 
   <div class="table-responsive" th:if="${!items.isEmpty()}">
@@ -72,10 +67,7 @@
   <div class="empty-state" th:if="${items.isEmpty()}">
     <i class="bi bi-clipboard-check"></i>
     <p class="empty-title">Sin designaciones registradas</p>
-    <p>Las designaciones se generan al confirmar tomas de posesión en los concursos, o pueden registrarse manualmente.</p>
-    <a class="btn btn-primary mt-3" th:href="@{/designaciones/nuevo}">
-      <i class="bi bi-plus-lg me-1"></i>Nueva designación
-    </a>
+    <p>Las designaciones se generan al confirmar la toma de posesión en un concurso.</p>
   </div>
 
   <div class="empty-state d-none" data-filter-empty="tablaDesignaciones" th:if="${!items.isEmpty()}">

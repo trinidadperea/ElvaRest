@@ -26,7 +26,8 @@
     </div>
     <div class="mb-3">
       <label for="fechaFinDefinitiva">Fecha de fin definitiva</label>
-      <input class="form-control" id="fechaFinDefinitiva" type="date" th:field="*{fechaFinDefinitiva}">
+      <input class="form-control" id="fechaFinDefinitiva" type="date" th:field="*{fechaFinDefinitiva}"
+             data-min-from="#fechaInicioEfectiva">
       <div class="form-text">Opcional. Si la fecha ya se alcanzó, la designación queda Finalizada al guardar; si es
         futura, sigue Activa hasta esa fecha.</div>
     </div>
