@@ -19,17 +19,17 @@
             <label>Cargo vacante</label>
             <div class="form-control-plaintext fw-semibold"
                  th:text="${item.cargo != null ? item.cargo.descripcion + (item.cargo.cargaHoraria > 0 ? ' (' + item.cargo.cargaHoraria + ' h)' : '') : '—'}"></div>
-            <input type="hidden" id="cargoFijadoId" name="cargo.id" th:value="${item.cargo != null ? item.cargo.id : ''}"
+            <input type="hidden" id="cargoFijadoId" name="cargo.uuid" th:value="${item.cargo != null ? item.cargo.uuid : ''}"
                    th:attr="data-tipo=${item.cargo != null ? item.cargo.tipoCargo : ''},data-horas=${item.cargo != null ? item.cargo.cargaHoraria : ''}">
             <input type="hidden" th:field="*{cargoFijado}">
             <div class="form-text">El concurso se crea para este cargo; no puede cambiarse desde este formulario.</div>
         </div>
         <div class="mb-3" th:unless="${item.cargoFijado}">
             <label for="cargoId">Cargo vacante</label>
-            <select id="cargoId" class="form-select" name="cargo.id" required>
+            <select id="cargoId" class="form-select" name="cargo.uuid" required>
                 <option value="">Seleccione un cargo</option>
-                <option th:each="cargo : ${cargos}" th:value="${cargo.id}" th:attr="data-tipo=${cargo.tipoCargo},data-horas=${cargo.cargaHoraria}"
-                        th:selected="${item.cargo != null and item.cargo.id == cargo.id}"
+                <option th:each="cargo : ${cargos}" th:value="${cargo.uuid}" th:attr="data-tipo=${cargo.tipoCargo},data-horas=${cargo.cargaHoraria}"
+                        th:selected="${item.cargo != null and item.cargo.uuid == cargo.uuid}"
                         th:text="${cargo.descripcion + ' (' + cargo.cargaHoraria + ' h)'}"></option>
             </select>
             <div class="form-text">Si no indica horas totales, se toma la carga horaria del cargo.</div>
@@ -89,7 +89,7 @@
         <div class="d-flex gap-2 mt-3">
             <!-- Cancelar vuelve al cargo de origen cuando el concurso se abre desde "Cargo → Ver" -->
             <a th:if="${item.cargoFijado and item.cargo != null}" class="btn btn-secondary"
-               th:href="@{/cargos/{id}(id=${item.cargo.id})}">Cancelar</a>
+               th:href="@{/cargos/{uuid}(uuid=${item.cargo.uuid})}">Cancelar</a>
             <a th:unless="${item.cargoFijado and item.cargo != null}" class="btn btn-secondary"
                th:href="@{/concursos/list}">Cancelar</a>
             <button class="btn btn-primary"><i class="bi bi-check-lg me-1"></i>Guardar concurso</button>

@@ -102,7 +102,7 @@
               <tr th:each="resumen : ${concursosEnCurso}">
                 <td>
                   <a class="fw-semibold text-decoration-none"
-                     th:href="@{/concursos/{id}(id=${resumen.concurso.id})}"
+                     th:href="@{/concursos/{uuid}(uuid=${resumen.concurso.uuid})}"
                      th:text="${resumen.concurso.descripcion}">Concurso</a>
                   <span class="badge text-bg-info ms-1" th:if="${resumen.rellamado}">Rellamado</span>
                   <span class="badge text-bg-success ms-1" th:if="${resumen.listoParaCierre}">Listo para cerrar</span>
@@ -137,7 +137,7 @@
                 </td>
                 <td>
                   <div class="table-actions">
-                    <a class="btn btn-sm btn-outline-primary" th:href="@{/concursos/{id}(id=${resumen.concurso.id})}">
+                    <a class="btn btn-sm btn-outline-primary" th:href="@{/concursos/{uuid}(uuid=${resumen.concurso.uuid})}">
                       <i class="bi bi-sliders"></i>Gestionar
                     </a>
                   </div>
@@ -173,7 +173,7 @@
                 <i th:class="${alerta.prioridad == T(com.elvarest.cliente.dto.enums.PrioridadAlerta).ALTA ? 'bi bi-exclamation-triangle-fill' : 'bi bi-info-circle-fill'}"></i>
               </span>
               <div class="mini-item-body">
-                <a class="mini-item-title" th:href="@{/alertas/{id}(id=${alerta.id})}"
+                <a class="mini-item-title" th:href="@{/alertas/{uuid}(uuid=${alerta.uuid})}"
                    th:text="${#strings.abbreviate(alerta.mensaje, 72)}"></a>
                 <div class="mini-item-meta">
                   <span class="badge rounded-pill"
@@ -200,7 +200,7 @@
             <a class="quick-action" th:href="@{/concursos/nuevo}">
               <i class="bi bi-plus-circle"></i>Nuevo concurso
             </a>
-            <a class="quick-action" th:href="@{/docentes/nuevo}">
+            <a class="quick-action" th:href="@{/docentes/nuevo}" sec:authorize="hasRole('ADMIN')">
               <i class="bi bi-person-plus"></i>Nuevo docente
             </a>
             <a class="quick-action" th:href="@{/alertas/nuevo}" sec:authorize="hasRole('ADMIN')">
@@ -246,7 +246,7 @@
 
               <div class="mini-item-body">
                 <a class="mini-item-title"
-                   th:href="@{/concursos/{id}(id=${resumen.concurso.id})}"
+                   th:href="@{/concursos/{uuid}(uuid=${resumen.concurso.uuid})}"
                    th:text="${resumen.concurso.descripcion}"></a>
 
                 <div class="mini-item-meta">
@@ -265,7 +265,7 @@
               </div>
 
               <a class="btn btn-sm btn-outline-primary align-self-center"
-                 th:href="@{/concursos/{id}(id=${resumen.concurso.id})}">
+                 th:href="@{/concursos/{uuid}(uuid=${resumen.concurso.uuid})}">
                 Gestionar
               </a>
 
@@ -320,13 +320,13 @@
 
               <a class="btn btn-sm btn-primary align-self-center"
                  th:if="${pendiente.estado == T(com.elvarest.cliente.dto.enums.EstadoPostulacion).PENDIENTE_CERTIFICADOS}"
-                 th:href="@{/concursos/{cid}/postulaciones/{pid}/certificados(cid=${pendiente.concurso.id}, pid=${pendiente.postulacion.id})}">
+                 th:href="@{/concursos/{concursoUuid}/postulaciones/{postulacionUuid}/certificados(concursoUuid=${pendiente.concurso.uuid}, postulacionUuid=${pendiente.postulacion.uuid})}">
                 <i class="bi bi-patch-check me-1"></i>Validar
               </a>
 
               <a class="btn btn-sm btn-success align-self-center"
                  th:if="${pendiente.estado == T(com.elvarest.cliente.dto.enums.EstadoPostulacion).DESIGNADO_PENDIENTE_POSESION}"
-                 th:href="@{/concursos/{cid}/postulaciones/{pid}/posesion(cid=${pendiente.concurso.id}, pid=${pendiente.postulacion.id})}">
+                 th:href="@{/concursos/{concursoUuid}/postulaciones/{postulacionUuid}/posesion(concursoUuid=${pendiente.concurso.uuid}, postulacionUuid=${pendiente.postulacion.uuid})}">
                 <i class="bi bi-person-check me-1"></i>Confirmar
               </a>
 
@@ -371,9 +371,9 @@
                 </span>
 
                   <span class="status-badge"
-                        th:if="${estadosRecientes[postulacion.id] != null}"
-                        th:classappend="${estadosRecientes[postulacion.id].badgeClass}"
-                        th:text="${estadosRecientes[postulacion.id].etiqueta}"></span>
+                        th:if="${estadosRecientes[postulacion.uuid] != null}"
+                        th:classappend="${estadosRecientes[postulacion.uuid].badgeClass}"
+                        th:text="${estadosRecientes[postulacion.uuid].etiqueta}"></span>
                 </div>
               </div>
 

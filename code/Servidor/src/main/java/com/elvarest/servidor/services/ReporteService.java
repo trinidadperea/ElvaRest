@@ -15,10 +15,14 @@ import com.lowagie.text.*;
 import com.lowagie.text.pdf.PdfPCell;
 import com.lowagie.text.pdf.PdfPTable;
 import com.lowagie.text.pdf.PdfWriter;
+import org.apache.poi.ss.usermodel.Row;
+import org.apache.poi.ss.usermodel.Sheet;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.springframework.stereotype.Service;
 
 import java.awt.Color;
 import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
@@ -46,14 +50,14 @@ public class ReporteService extends BaseService<Reporte, Long> {
      * Genera el PDF de un concurso: datos generales, resumen de horas (§3.10 de las reglas de negocio)
      * y todas sus postulaciones —incluidas las canceladas— en orden de registro.
      */
-    public byte[] generarReporteConcurso(Long concursoId) throws ErrorServiceException {
+    public byte[] generarReporteConcurso(String concursoUuid) throws ErrorServiceException {
 
-        Concurso concurso = concursoRepository.findById(concursoId)
+        Concurso concurso = concursoRepository.findByUuid(concursoUuid)
                 .filter(c -> !Boolean.TRUE.equals(c.getEliminado()))
                 .orElseThrow(() -> new ErrorServiceException("Concurso no encontrado"));
 
         List<ConcursoDocente> postulaciones = concursoDocenteRepository
-                .findByConcursoIdOrderByIdAsc(concursoId).stream()
+                .findByConcursoIdOrderByIdAsc(concurso.getId()).stream()
                 .filter(postulacion -> !Boolean.TRUE.equals(postulacion.getEliminado()))
                 .toList();
 
@@ -75,6 +79,110 @@ public class ReporteService extends BaseService<Reporte, Long> {
         } catch (DocumentException e) {
             throw new ErrorServiceException("Error al generar el reporte PDF");
         }
+    }
+
+    /**
+     * Genera el Excel de un concurso con el mismo contenido del PDF: una hoja con los datos y el
+     * resumen de horas, y otra con las postulaciones. Solo lo consume el ADMIN (ver SecurityConfig).
+     */
+    public byte[] generarReporteConcursoExcel(String concursoUuid) throws ErrorServiceException {
+
+        Concurso concurso = concursoRepository.findByUuid(concursoUuid)
+                .filter(c -> !Boolean.TRUE.equals(c.getEliminado()))
+                .orElseThrow(() -> new ErrorServiceException("Concurso no encontrado"));
+
+        List<ConcursoDocente> postulaciones = concursoDocenteRepository
+                .findByConcursoIdOrderByIdAsc(concurso.getId()).stream()
+                .filter(postulacion -> !Boolean.TRUE.equals(postulacion.getEliminado()))
+                .toList();
+
+        try (XSSFWorkbook libro = new XSSFWorkbook();
+             ByteArrayOutputStream outputStream = new ByteArrayOutputStream()) {
+            agregarHojaDatosConcurso(libro, concurso, postulaciones);
+            agregarHojaPostulaciones(libro, postulaciones);
+            libro.write(outputStream);
+            return outputStream.toByteArray();
+        } catch (IOException e) {
+            throw new ErrorServiceException("Error al generar el reporte Excel");
+        }
+    }
+
+    /** Hoja "Datos del concurso": los mismos datos y resumen de horas que el PDF. */
+    private void agregarHojaDatosConcurso(XSSFWorkbook libro, Concurso concurso,
+                                          List<ConcursoDocente> postulaciones) {
+        Sheet hoja = libro.createSheet("Datos del concurso");
+        int fila = 0;
+        fila = agregarDato(hoja, fila, "Concurso", concurso.getDescripcion());
+        fila = agregarDato(hoja, fila, "Estado", texto(concurso.getEstadoConcurso()));
+
+        Cargo cargo = concurso.getCargo();
+        if (cargo != null) {
+            fila = agregarDato(hoja, fila, "Cargo", cargo.getDescripcion());
+            Materia materia = cargo.getMateria();
+            if (materia != null) {
+                fila = agregarDato(hoja, fila, "Materia", materia.getNombre());
+                if (materia.getCurso() != null) {
+                    fila = agregarDato(hoja, fila, "Curso", materia.getCurso().getAnio() + "° año");
+                }
+            }
+        }
+
+        fila = agregarDato(hoja, fila, "Carácter de designación", texto(concurso.getCaracterDesignacion()));
+        fila = agregarDato(hoja, fila, "Origen de la vacancia", concurso.getOrigenVacancia());
+        fila = agregarDato(hoja, fila, "Profesor reemplazante", concurso.getProfesorReemplazante());
+        fila = agregarDato(hoja, fila, "Fecha de apertura", fecha(concurso.getFechaApertura()));
+        fila = agregarDato(hoja, fila, "Fecha del concurso", fecha(concurso.getFechaCierre()));
+
+        if (Boolean.TRUE.equals(concurso.getEsRellamado())) {
+            String origen = concurso.getConcursoOrigenId() == null ? null
+                    : concursoRepository.findById(concurso.getConcursoOrigenId())
+                    .map(Concurso::getDescripcion)
+                    .orElse(null);
+            fila = agregarDato(hoja, fila, "Rellamado de", origen);
+        }
+
+        Integer totales = ReglasConcurso.horasTotales(concurso);
+        int asignadas = ReglasConcurso.horasAsignadas(postulaciones);
+        int transferidas = concurso.getHorasTransferidas() != null ? concurso.getHorasTransferidas() : 0;
+        Integer disponibles = ReglasConcurso.horasDisponibles(concurso, postulaciones);
+        fila = agregarDato(hoja, fila, "Horas totales", totales == null ? null : String.valueOf(totales));
+        fila = agregarDato(hoja, fila, "Horas asignadas", String.valueOf(asignadas));
+        fila = agregarDato(hoja, fila, "Horas transferidas a rellamado", String.valueOf(transferidas));
+        fila = agregarDato(hoja, fila, "Horas disponibles", disponibles == null ? null : String.valueOf(disponibles));
+    }
+
+    /** Hoja "Postulaciones": mismas columnas que la tabla del PDF, incluidas las canceladas. */
+    private void agregarHojaPostulaciones(XSSFWorkbook libro, List<ConcursoDocente> postulaciones) {
+        Sheet hoja = libro.createSheet("Postulaciones");
+        Row encabezado = hoja.createRow(0);
+        String[] columnas = {"N°", "Docente", "Documento", "Horas", "Estado", "Designado", "Observación"};
+        for (int i = 0; i < columnas.length; i++) {
+            encabezado.createCell(i).setCellValue(columnas[i]);
+        }
+
+        int fila = 1;
+        int numero = 1;
+        for (ConcursoDocente postulacion : postulaciones) {
+            Docente docente = postulacion.getDocente();
+            EstadoPostulacion estado = ReglasConcurso.estadoEfectivo(postulacion);
+
+            Row row = hoja.createRow(fila++);
+            row.createCell(0).setCellValue(numero++);
+            row.createCell(1).setCellValue(docente == null ? "-" : docente.getApellido() + ", " + docente.getNombre());
+            row.createCell(2).setCellValue(docente == null ? "-" : docente.getNumeroDocumento());
+            row.createCell(3).setCellValue(postulacion.getHorasElegidas() == null ? "-"
+                    : String.valueOf(postulacion.getHorasElegidas()));
+            row.createCell(4).setCellValue(ReglasConcurso.etiqueta(estado));
+            row.createCell(5).setCellValue(estado == EstadoPostulacion.DESIGNACION_DEFINITIVA ? "Sí" : "No");
+            row.createCell(6).setCellValue(postulacion.getObservacion());
+        }
+    }
+
+    private int agregarDato(Sheet hoja, int fila, String etiqueta, String valor) {
+        Row row = hoja.createRow(fila);
+        row.createCell(0).setCellValue(etiqueta);
+        row.createCell(1).setCellValue(valorOGuion(valor));
+        return fila + 1;
     }
 
     private void agregarTitulo(Document documento) throws DocumentException {

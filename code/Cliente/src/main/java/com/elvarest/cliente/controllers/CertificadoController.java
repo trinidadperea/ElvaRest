@@ -23,7 +23,7 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
  */
 @Controller
 @RequestMapping("/certificados")
-public class CertificadoController extends BaseController<CertificadoDTO, Long> {
+public class CertificadoController extends BaseController<CertificadoDTO> {
 
     private final CertificadoService certificadoService;
     private final ConcursoDocenteService concursoDocenteService;
@@ -42,7 +42,7 @@ public class CertificadoController extends BaseController<CertificadoDTO, Long> 
 
     /**
      * Conserva el contexto de origen al abrir el detalle de un certificado:
-     * - ?origen=alerta&alerta={id}: se vuelve al detalle de esa alerta («Volver»);
+     * - ?origen=alerta&alerta={uuid}: se vuelve al detalle de esa alerta («Volver»);
      * - ?origen=docente: se vuelve a la ficha del docente («Volver al docente»).
      * Sin el parámetro, el detalle mantiene el retorno al listado de certificados (accesos desde
      * el listado o desde un concurso).
@@ -55,59 +55,50 @@ public class CertificadoController extends BaseController<CertificadoDTO, Long> 
         if ("docente".equals(request.getParameter("origen"))) {
             ConcursoDocenteDTO postulacion = found.getConcursoDocente();
             if (postulacion != null && postulacion.getDocente() != null) {
-                model.addAttribute("docenteOrigenId", postulacion.getDocente().getId());
+                model.addAttribute("docenteOrigenUuid", postulacion.getDocente().getId());
             }
             return;
         }
         if ("alerta".equals(request.getParameter("origen"))) {
-            Long alertaId = parsearId(request.getParameter("alerta"));
-            if (alertaId != null) {
-                model.addAttribute("alertaOrigenId", alertaId);
+            String alertaUuid = request.getParameter("alerta");
+            if (alertaUuid != null && !alertaUuid.isBlank()) {
+                model.addAttribute("alertaOrigenUuid", alertaUuid);
             }
-        }
-    }
-
-    /** Id numérico del parámetro de contexto; un valor inválido simplemente no habilita el retorno. */
-    private Long parsearId(String valor) {
-        try {
-            return valor != null ? Long.valueOf(valor) : null;
-        } catch (NumberFormatException e) {
-            return null;
         }
     }
 
     /**
      * Pantalla de carga / renovación para una postulación.
-     * - ?certificado={id}: renueva ese certificado; el tipo se hereda del original y queda fijo.
-     * - ?tipo={id}: compatibilidad con enlaces anteriores; sólo preselecciona el tipo (editable).
+     * - ?certificado={uuid}: renueva ese certificado; el tipo se hereda del original y queda fijo.
+     * - ?tipo={uuid}: compatibilidad con enlaces anteriores; sólo preselecciona el tipo (editable).
      * Sin parámetros (ficha del docente) el tipo se elige del catálogo.
      */
-    @GetMapping("/nuevo/postulacion/{postulacionId}")
-    public String nuevoParaPostulacion(@PathVariable Long postulacionId,
-                                       @RequestParam(value = "tipo", required = false) Long tipoId,
-                                       @RequestParam(value = "certificado", required = false) Long certificadoId,
+    @GetMapping("/nuevo/postulacion/{postulacionUuid}")
+    public String nuevoParaPostulacion(@PathVariable String postulacionUuid,
+                                       @RequestParam(value = "tipo", required = false) String tipoUuid,
+                                       @RequestParam(value = "certificado", required = false) String certificadoUuid,
                                        Model model) {
-        ConcursoDocenteDTO postulacion = concursoDocenteService.obtener(postulacionId);
+        ConcursoDocenteDTO postulacion = concursoDocenteService.obtener(postulacionUuid);
         if (postulacion == null) {
-            throw new IllegalArgumentException("No se encontró la postulación: " + postulacionId);
+            throw new IllegalArgumentException("No se encontró la postulación: " + postulacionUuid);
         }
-        CertificadoDTO original = certificadoOriginal(certificadoId, postulacionId);
+        CertificadoDTO original = certificadoOriginal(certificadoUuid, postulacionUuid);
         CertificadoDTO certificado = new CertificadoDTO();
         certificado.setConcursoDocente(postulacion);
         if (original != null) {
             certificado.setTipoCertificado(original.getTipoCertificado());
         } else {
             TipoCertificadoDTO tipo = new TipoCertificadoDTO();
-            tipo.setId(tipoId);
+            tipo.setId(tipoUuid);
             certificado.setTipoCertificado(tipo);
         }
 
         model.addAttribute("item", certificado);
         model.addAttribute("postulacion", postulacion);
-        model.addAttribute("certificados", certificadoService.listarPorPostulacion(postulacionId));
+        model.addAttribute("certificados", certificadoService.listarPorPostulacion(postulacionUuid));
         model.addAttribute("tiposCertificado", tipoCertificadoService.listarActivos());
         model.addAttribute("tipoFijo", original != null ? original.getTipoCertificado() : null);
-        model.addAttribute("certificadoOrigenId", original != null ? original.getId() : null);
+        model.addAttribute("certificadoOrigenUuid", original != null ? original.getId() : null);
         return viewCreate;
     }
 
@@ -117,20 +108,20 @@ public class CertificadoController extends BaseController<CertificadoDTO, Long> 
      * En una renovación el tipo lo aporta el certificado original: el valor del formulario
      * no se usa, así que no puede cambiarse desde el navegador.
      */
-    @PostMapping("/postulacion/{postulacionId}")
-    public String guardarParaPostulacion(@PathVariable Long postulacionId,
+    @PostMapping("/postulacion/{postulacionUuid}")
+    public String guardarParaPostulacion(@PathVariable String postulacionUuid,
                                          @ModelAttribute("item") CertificadoDTO certificado,
                                          @RequestParam(value = "origen", required = false) String origen,
-                                         @RequestParam(value = "certificadoOrigen", required = false) Long certificadoOrigenId,
+                                         @RequestParam(value = "certificadoOrigenUuid", required = false) String certificadoOrigenUuid,
                                          RedirectAttributes attributes) {
-        ConcursoDocenteDTO postulacion = concursoDocenteService.obtener(postulacionId);
-        CertificadoDTO original = certificadoOriginal(certificadoOrigenId, postulacionId);
+        ConcursoDocenteDTO postulacion = concursoDocenteService.obtener(postulacionUuid);
+        CertificadoDTO original = certificadoOriginal(certificadoOrigenUuid, postulacionUuid);
         if (original != null) {
             certificado.setTipoCertificado(original.getTipoCertificado());
         }
         try {
             ConcursoDocenteDTO referencia = new ConcursoDocenteDTO();
-            referencia.setId(postulacionId);
+            referencia.setId(postulacionUuid);
             certificado.setConcursoDocente(referencia);
             certificadoService.alta(certificado);
             attributes.addFlashAttribute("msgExito", "Certificado registrado correctamente.");
@@ -139,12 +130,12 @@ public class CertificadoController extends BaseController<CertificadoDTO, Long> 
             if (!"concurso".equals(origen)) {
                 // Un error de validación vuelve al formulario conservando el modo renovación.
                 String renovacion = original != null ? "?certificado=" + original.getId() : "";
-                return "redirect:/certificados/nuevo/postulacion/" + postulacionId + renovacion;
+                return "redirect:/certificados/nuevo/postulacion/" + postulacionUuid + renovacion;
             }
         }
         if ("concurso".equals(origen) && postulacion != null && postulacion.getConcurso() != null) {
             return "redirect:/concursos/" + postulacion.getConcurso().getId()
-                    + "/postulaciones/" + postulacionId + "/certificados";
+                    + "/postulaciones/" + postulacionUuid + "/certificados";
         }
         return postulacion != null && postulacion.getDocente() != null
                 ? "redirect:/docentes/" + postulacion.getDocente().getId()
@@ -155,14 +146,14 @@ public class CertificadoController extends BaseController<CertificadoDTO, Long> 
      * Certificado que se renueva: sólo si existe, pertenece a la postulación y tiene tipo.
      * Un id inválido o ajeno se ignora y el formulario queda en modo de carga normal.
      */
-    private CertificadoDTO certificadoOriginal(Long certificadoId, Long postulacionId) {
-        if (certificadoId == null) {
+    private CertificadoDTO certificadoOriginal(String certificadoUuid, String postulacionUuid) {
+        if (certificadoUuid == null) {
             return null;
         }
         try {
-            CertificadoDTO original = certificadoService.obtener(certificadoId);
+            CertificadoDTO original = certificadoService.obtener(certificadoUuid);
             if (original == null || original.getConcursoDocente() == null
-                    || !postulacionId.equals(original.getConcursoDocente().getId())) {
+                    || !postulacionUuid.equals(original.getConcursoDocente().getId())) {
                 return null;
             }
             return original.getTipoCertificado() != null ? original : null;
@@ -180,8 +171,8 @@ public class CertificadoController extends BaseController<CertificadoDTO, Long> 
 
     /** Los certificados no se editan (se renuevan cargando uno nuevo): se muestra el detalle. */
     @Override
-    @GetMapping({"/modificar/{id}", "/{id}/editar"})
-    public String editar(@PathVariable Long id, Model model, RedirectAttributes attributes) {
-        return "redirect:/certificados/" + id;
+    @GetMapping({"/modificar/{uuid}", "/{uuid}/editar"})
+    public String editar(@PathVariable String uuid, Model model, RedirectAttributes attributes) {
+        return "redirect:/certificados/" + uuid;
     }
 }

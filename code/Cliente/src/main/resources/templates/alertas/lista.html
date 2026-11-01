@@ -47,7 +47,7 @@
     <div class="alerts-list" id="listaAlertas">
         <article class="school-alert-card" data-filter-item
                  th:each="item : ${items}"
-                 th:attr="data-filter-tags=${(item.leida ? 'leida' : 'sin-leer') + ' ' + (item.prioridad?.name() == 'ALTA' ? 'alta' : 'media')}, data-sort-id=${item.id}"
+                 th:attr="data-filter-tags=${(item.leida ? 'leida' : 'sin-leer') + ' ' + (item.prioridad?.name() == 'ALTA' ? 'alta' : 'media')}, data-sort-id=${item.uuid}"
                  th:data-sort-date="${item.fechaEmision != null ? #temporals.format(item.fechaEmision, 'yyyy-MM-dd') : ''}"
                  th:classappend="${item.prioridad == T(com.elvarest.cliente.dto.enums.PrioridadAlerta).ALTA ? ' school-alert-high' : ' school-alert-medium'}">
             <div class="school-alert-icon" aria-hidden="true">
@@ -69,14 +69,14 @@
                 </div>
                 <p class="school-alert-message" th:text="${item.mensaje}"></p>
                 <div class="school-alert-actions">
-                    <a class="btn btn-sm btn-outline-primary" th:href="@{/alertas/{id}(id=${item.id})}">
+                    <a class="btn btn-sm btn-outline-primary" th:href="@{/alertas/{uuid}(uuid=${item.uuid})}">
                         <i class="bi bi-eye me-1"></i>Ver aviso
                     </a>
-                    <a class="btn btn-sm btn-outline-secondary" th:href="@{/alertas/{id}/editar(id=${item.id})}"
+                    <a class="btn btn-sm btn-outline-secondary" th:href="@{/alertas/{uuid}/editar(uuid=${item.uuid})}"
                        sec:authorize="hasRole('ADMIN')">
                         <i class="bi bi-pencil me-1"></i>Editar
                     </a>
-                    <a class="btn btn-sm btn-outline-danger" th:href="@{/alertas/baja/{id}(id=${item.id})}"
+                    <a class="btn btn-sm btn-outline-danger" th:href="@{/alertas/baja/{uuid}(uuid=${item.uuid})}"
                        sec:authorize="hasRole('ADMIN')"
                        th:attr="data-confirm='¿Eliminar esta alerta? Se dará de baja del listado.'">
                         <i class="bi bi-trash me-1"></i>Eliminar

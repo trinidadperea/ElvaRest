@@ -1,5 +1,6 @@
 <!doctype html>
 <html lang="es" xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
       th:replace="~{base :: layout('Licencias', ~{::#encabezado}, ~{::#contenido}, '')}">
 <section id="encabezado">
   <h3 data-subtitle="Licencias registradas en el sistema">Licencias</h3>
@@ -13,7 +14,7 @@
              placeholder="Buscar por tipo o fecha…" aria-label="Buscar licencias">
     </div>
     <div class="toolbar-filters">
-      <a class="btn btn-primary" th:href="@{/licencias/nuevo}">
+      <a class="btn btn-primary" sec:authorize="hasRole('ADMIN')" th:href="@{/licencias/nuevo}">
         <i class="bi bi-plus-lg me-1"></i>Nueva licencia
       </a>
     </div>
@@ -34,7 +35,7 @@
       <tbody>
       <tr th:each="item : ${items}">
         <td>
-          <a class="fw-semibold text-decoration-none" th:href="@{/licencias/{id}(id=${item.id})}"
+          <a class="fw-semibold text-decoration-none" th:href="@{/licencias/{uuid}(uuid=${item.uuid})}"
              th:text="${item.tipo != null and !item.tipo.isBlank() ? item.tipo : 'Sin tipo'}"></a>
         </td>
         <td th:text="${item.fechaInicio != null ? #temporals.format(item.fechaInicio, 'dd/MM/yyyy') : '—'}"></td>
@@ -53,13 +54,13 @@
         </td>
         <td>
           <div class="table-actions">
-            <a class="btn btn-sm btn-outline-primary" th:href="@{/licencias/{id}(id=${item.id})}">
+            <a class="btn btn-sm btn-outline-primary" th:href="@{/licencias/{uuid}(uuid=${item.uuid})}">
               <i class="bi bi-eye"></i>Ver
             </a>
-            <a class="btn btn-sm btn-outline-secondary" th:href="@{/licencias/{id}/editar(id=${item.id})}">
+            <a class="btn btn-sm btn-outline-secondary" sec:authorize="hasRole('ADMIN')" th:href="@{/licencias/{uuid}/editar(uuid=${item.uuid})}">
               <i class="bi bi-pencil"></i>Editar
             </a>
-            <a class="btn btn-sm btn-outline-danger" th:href="@{/licencias/baja/{id}(id=${item.id})}"
+            <a class="btn btn-sm btn-outline-danger" sec:authorize="hasRole('ADMIN')" th:href="@{/licencias/baja/{uuid}(uuid=${item.uuid})}"
                th:attr="data-confirm='¿Dar de baja la licencia ' + ${item.tipo != null ? item.tipo : ''} + '?'">
               <i class="bi bi-trash"></i>Eliminar
             </a>
@@ -74,7 +75,7 @@
     <i class="bi bi-calendar-x"></i>
     <p class="empty-title">Sin licencias registradas</p>
     <p>Registre una licencia para llevar el control de ausencias del personal.</p>
-    <a class="btn btn-primary mt-3" th:href="@{/licencias/nuevo}">
+    <a class="btn btn-primary mt-3" sec:authorize="hasRole('ADMIN')" th:href="@{/licencias/nuevo}">
       <i class="bi bi-plus-lg me-1"></i>Nueva licencia
     </a>
   </div>

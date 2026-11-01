@@ -4,7 +4,7 @@ import com.elvarest.cliente.dto.MateriaDTO;
 import org.springframework.stereotype.Service;
 
 @Service
-public class MateriaService extends BaseService<MateriaDTO, Long> {
+public class MateriaService extends BaseService<MateriaDTO> {
 
     private static final String API_URL = "http://localhost:8080/materias";
 

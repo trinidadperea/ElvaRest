@@ -12,26 +12,16 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.context.request.RequestContextHolder;
-import org.springframework.web.context.request.ServletRequestAttributes;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
-
 /**
- * Gestión de usuarios del ADMIN. A diferencia del CRUD genérico, los ids de base nunca se
- * exponen en las URLs: cada usuario recibe un UUID público guardado en la sesión y acá se
- * traduce al id real para llamar a la API. También resuelve el cambio de contraseña propia.
+ * Gestión de usuarios del ADMIN. La API ya expone el UUID real de cada usuario como
+ * identificador público: las URLs usan ese uuid directamente, sin mapas de sesión.
+ * También resuelve el cambio de contraseña propia.
  */
 @Controller
 @RequestMapping("/usuarios")
-public class UsuarioController extends BaseController<UsuarioDTO, Long> {
-
-    /** Mapa en sesión: uuid público → id real de la base. */
-    private static final String SESSION_UUIDS = "usuariosUuidMap";
+public class UsuarioController extends BaseController<UsuarioDTO> {
 
     private final UsuarioService usuarioService;
 
@@ -41,46 +31,14 @@ public class UsuarioController extends BaseController<UsuarioDTO, Long> {
         initController(new UsuarioDTO(), "Lista de usuarios", "Editar usuario", "usuarios/");
     }
 
-    // --- Listado con UUID públicos --------------------------------------------
-
-    @GetMapping("/list")
-    public String listar(Model model) {
-        String vista = super.listar(model);
-        @SuppressWarnings("unchecked")
-        List<UsuarioDTO> items = (List<UsuarioDTO>) model.getAttribute("items");
-        if (items == null || items.isEmpty()) {
-            return vista;
-        }
-
-        Map<String, Long> uuidMap = uuidMap(sesionActual());
-        Map<Long, String> uuidLinks = new HashMap<>();
-        for (UsuarioDTO usuario : items) {
-            if (usuario.getId() == null) {
-                continue;
-            }
-            String uuid = uuidExistente(uuidMap, usuario.getId());
-            if (uuid == null) {
-                uuid = UUID.randomUUID().toString();
-                uuidMap.put(uuid, usuario.getId());
-            }
-            uuidLinks.put(usuario.getId(), uuid);
-        }
-        model.addAttribute("uuidLinks", uuidLinks);
-        return vista;
-    }
-
     // --- Detalle / edición / baja con UUID ------------------------------------
 
     @GetMapping("/ver/{uuid}")
     public String verUsuario(@PathVariable String uuid, Model model, RedirectAttributes attributes) {
-        Long id = resolverId(uuid, attributes);
-        if (id == null) {
-            return redirectList;
-        }
         try {
-            UsuarioDTO encontrado = usuarioService.obtener(id);
+            UsuarioDTO encontrado = usuarioService.obtener(uuid);
             if (encontrado == null) {
-                throw new IllegalArgumentException("No encontrado: " + id);
+                throw new IllegalArgumentException("No encontrado: " + uuid);
             }
             model.addAttribute("item", encontrado);
             model.addAttribute("isDisabled", true);
@@ -98,14 +56,10 @@ public class UsuarioController extends BaseController<UsuarioDTO, Long> {
 
     @GetMapping("/editar/{uuid}")
     public String editarUsuario(@PathVariable String uuid, Model model, RedirectAttributes attributes) {
-        Long id = resolverId(uuid, attributes);
-        if (id == null) {
-            return redirectList;
-        }
         try {
-            UsuarioDTO encontrado = usuarioService.obtener(id);
+            UsuarioDTO encontrado = usuarioService.obtener(uuid);
             if (encontrado == null) {
-                throw new IllegalArgumentException("No encontrado: " + id);
+                throw new IllegalArgumentException("No encontrado: " + uuid);
             }
             model.addAttribute("item", encontrado);
             model.addAttribute("isDisabled", false);
@@ -123,12 +77,8 @@ public class UsuarioController extends BaseController<UsuarioDTO, Long> {
 
     @PostMapping("/baja/{uuid}")
     public String darDeBaja(@PathVariable String uuid, RedirectAttributes attributes) {
-        Long id = resolverId(uuid, attributes);
-        if (id == null) {
-            return redirectList;
-        }
         try {
-            usuarioService.bajaLogica(id);
+            usuarioService.bajaLogica(uuid);
             attributes.addFlashAttribute("msgExito", "El usuario fue dado de baja correctamente.");
         } catch (ErrorServiceException e) {
             attributes.addFlashAttribute("msgError", e.getMessage());
@@ -141,12 +91,8 @@ public class UsuarioController extends BaseController<UsuarioDTO, Long> {
     /** Restablece la contraseña: vuelve a ser el nombreUsuario y se exige cambiarla (acción de ADMIN). */
     @PostMapping("/{uuid}/restablecer-contrasena")
     public String restablecerContrasena(@PathVariable String uuid, RedirectAttributes attributes) {
-        Long id = resolverId(uuid, attributes);
-        if (id == null) {
-            return redirectList;
-        }
         try {
-            usuarioService.restablecerContraseña(id);
+            usuarioService.restablecerContraseña(uuid);
             attributes.addFlashAttribute("msgExito",
                     "La contraseña fue restablecida: volvió a ser el nombre de usuario y se exigirá cambiarla en el próximo inicio.");
         } catch (ErrorServiceException e) {
@@ -197,57 +143,20 @@ public class UsuarioController extends BaseController<UsuarioDTO, Long> {
      * debe moverse por los UUID públicos generados en el listado.
      */
     @Override
-    public String consultar(Long id, Model model, RedirectAttributes attributes) {
+    public String consultar(String uuid, Model model, RedirectAttributes attributes) {
         attributes.addFlashAttribute("msgError", "Enlace no válido o expirado.");
         return redirectList;
     }
 
     @Override
-    public String editar(Long id, Model model, RedirectAttributes attributes) {
+    public String editar(String uuid, Model model, RedirectAttributes attributes) {
         attributes.addFlashAttribute("msgError", "Enlace no válido o expirado.");
         return redirectList;
     }
 
     @Override
-    public String eliminar(Long id, RedirectAttributes attributes) {
+    public String eliminar(String uuid, RedirectAttributes attributes) {
         attributes.addFlashAttribute("msgError", "Enlace no válido o expirado.");
         return redirectList;
-    }
-
-    // --- Helpers ---------------------------------------------------------------
-
-    private Long resolverId(String uuid, RedirectAttributes attributes) {
-        Long id = uuidMap(sesionActual()).get(uuid);
-        if (id == null) {
-            attributes.addFlashAttribute("msgError", "Enlace no válido o expirado.");
-        }
-        return id;
-    }
-
-    private String uuidExistente(Map<String, Long> uuidMap, Long id) {
-        for (Map.Entry<String, Long> entrada : uuidMap.entrySet()) {
-            if (id.equals(entrada.getValue())) {
-                return entrada.getKey();
-            }
-        }
-        return null;
-    }
-
-    private Map<String, Long> uuidMap(HttpSession session) {
-        @SuppressWarnings("unchecked")
-        Map<String, Long> mapa = (Map<String, Long>) session.getAttribute(SESSION_UUIDS);
-        if (mapa == null) {
-            mapa = new HashMap<>();
-            session.setAttribute(SESSION_UUIDS, mapa);
-        }
-        return mapa;
-    }
-
-    private HttpSession sesionActual() {
-        ServletRequestAttributes atributos = (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
-        if (atributos == null) {
-            throw new IllegalStateException("No hay solicitud activa");
-        }
-        return atributos.getRequest().getSession();
     }
 }

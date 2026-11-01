@@ -1,4 +1,4 @@
-<aside class="app-sidebar" data-bs-theme="light" th:fragment="sidebar" xmlns:sec="http://www.w3.org/1999/xhtml">
+<aside class="app-sidebar" data-bs-theme="light" th:fragment="sidebar" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
     <div class="sidebar-brand">
         <a th:href="@{/}" class="brand-link">
             <img th:src="@{/adminlte/img/AdminLTELogo.png}" alt="Gestión de Concursos Docentes" class="brand-image opacity-75 shadow">
@@ -94,6 +94,14 @@
                        th:classappend="${#strings.startsWith(currentPath, '/tipos-certificado') ? 'active' : ''}">
                         <i class="nav-icon bi bi-file-earmark-medical"></i>
                         <p>Tipos de certificado</p>
+                    </a>
+                </li>
+
+                <li class="nav-item" sec:authorize="hasRole('ADMIN')">
+                    <a th:href="@{/auditoria}" class="nav-link"
+                       th:classappend="${#strings.startsWith(currentPath, '/auditoria') ? 'active' : ''}">
+                        <i class="nav-icon bi bi-clock-history"></i>
+                        <p>Historial de cambios</p>
                     </a>
                 </li>
 

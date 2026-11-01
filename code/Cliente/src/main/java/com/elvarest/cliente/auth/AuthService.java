@@ -5,6 +5,7 @@ import com.elvarest.cliente.dto.enums.Rol;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.*;
+import org.springframework.security.authentication.AnonymousAuthenticationToken;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -14,6 +15,8 @@ import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.beans.factory.annotation.Value;
 
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -22,6 +25,9 @@ import java.util.Map;
 public class AuthService {
 
     private static final Logger log = LoggerFactory.getLogger(AuthService.class);
+
+    /** Header con el que se informa al Servidor el usuario real de la sesión (la API se llama con una cuenta de servicio). */
+    public static final String HEADER_ACTOR = "X-Usuario-Actor";
 
     private final RestTemplate restTemplate = new RestTemplate();
     private String token; // JWT almacenado tras el login
@@ -129,7 +135,21 @@ public class AuthService {
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
         headers.setBasicAuth(apiUser, apiPassword);
+        agregarActor(headers);
         return headers;
+    }
+
+    /**
+     * Informa al Servidor quién es el usuario real que inició sesión en el Cliente, para que el historial
+     * de cambios lo registre a él y no a la cuenta de servicio. No se agrega sin sesión (login) ni anónimo.
+     */
+    private void agregarActor(HttpHeaders headers) {
+        Authentication actual = SecurityContextHolder.getContext().getAuthentication();
+        if (actual == null || !actual.isAuthenticated() || actual instanceof AnonymousAuthenticationToken
+                || actual.getName() == null || actual.getName().isBlank()) {
+            return;
+        }
+        headers.set(HEADER_ACTOR, URLEncoder.encode(actual.getName(), StandardCharsets.UTF_8));
     }
 
     // --- Autenticación de los usuarios del frontend contra la API ---

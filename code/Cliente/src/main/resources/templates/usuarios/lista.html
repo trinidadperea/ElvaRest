@@ -1,6 +1,6 @@
 <!doctype html>
 <html lang="es" xmlns:th="http://www.thymeleaf.org"
-      xmlns:sec="http://www.w3.org/1999/xhtml"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
       th:replace="~{base :: layout('Usuarios', ~{::#encabezado}, ~{::#contenido}, '')}">
 <section id="encabezado">
   <h3 data-subtitle="Cuentas con acceso al sistema">Usuarios</h3>
@@ -34,7 +34,7 @@
       <tbody>
       <tr th:each="item : ${items}">
         <td>
-          <a class="fw-semibold text-decoration-none" th:href="@{/usuarios/ver/{uuid}(uuid=${uuidLinks[item.id]})}"
+          <a class="fw-semibold text-decoration-none" th:href="@{/usuarios/ver/{uuid}(uuid=${item.uuid})}"
              th:text="${item.apellido + ', ' + item.nombre}"></a>
         </td>
         <td th:text="${item.nombreUsuario != null and !item.nombreUsuario.isBlank() ? item.nombreUsuario : '—'}"></td>
@@ -47,14 +47,14 @@
         </td>
         <td>
           <div class="table-actions">
-            <a class="btn btn-sm btn-outline-primary" th:href="@{/usuarios/ver/{uuid}(uuid=${uuidLinks[item.id]})}">
+            <a class="btn btn-sm btn-outline-primary" th:href="@{/usuarios/ver/{uuid}(uuid=${item.uuid})}">
               <i class="bi bi-eye"></i>Ver
             </a>
-            <a class="btn btn-sm btn-outline-secondary" th:href="@{/usuarios/editar/{uuid}(uuid=${uuidLinks[item.id]})}">
+            <a class="btn btn-sm btn-outline-secondary" th:href="@{/usuarios/editar/{uuid}(uuid=${item.uuid})}">
               <i class="bi bi-pencil"></i>Editar
             </a>
             <form sec:authorize="hasRole('ADMIN')" method="post"
-                  th:action="@{/usuarios/{uuid}/restablecer-contrasena(uuid=${uuidLinks[item.id]})}"
+                  th:action="@{/usuarios/{uuid}/restablecer-contrasena(uuid=${item.uuid})}"
                   class="inline-action-form"
                   th:attr="data-confirm='¿Restablecer la contraseña de ' + ${item.apellido + ', ' + item.nombre} + '? Volverá a ser su nombre de usuario.'">
               <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
@@ -62,7 +62,7 @@
                 <i class="bi bi-key"></i>Restablecer
               </button>
             </form>
-            <form method="post" th:action="@{/usuarios/baja/{uuid}(uuid=${uuidLinks[item.id]})}"
+            <form method="post" th:action="@{/usuarios/baja/{uuid}(uuid=${item.uuid})}"
                   class="inline-action-form"
                   th:attr="data-confirm='¿Dar de baja al usuario ' + ${item.apellido + ', ' + item.nombre} + '?'">
               <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">

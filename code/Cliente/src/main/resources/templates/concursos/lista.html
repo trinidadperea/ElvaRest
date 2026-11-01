@@ -78,14 +78,14 @@
       </thead>
       <tbody>
       <tr th:each="item : ${items}" data-filter-item
-          th:attr="data-filter-date=${fechasConcursos[item.id]}, data-sort-date=${aperturasConcursos[item.id]}, data-sort-id=${item.id}, data-filter-tags=${item.estadoConcurso}">
+          th:attr="data-filter-date=${fechasConcursos[item.uuid]}, data-sort-date=${aperturasConcursos[item.uuid]}, data-sort-id=${item.uuid}, data-filter-tags=${item.estadoConcurso}">
         <td>
-          <a class="fw-semibold text-decoration-none" th:href="@{/concursos/{id}(id=${item.id})}"
+          <a class="fw-semibold text-decoration-none" th:href="@{/concursos/{uuid}(uuid=${item.uuid})}"
              th:text="${item.descripcion}"></a>
         </td>
         <td>
           <th:block th:if="${item.cargo != null}">
-            <a class="fw-semibold text-decoration-none" th:href="@{/cargos/{id}(id=${item.cargo.id})}"
+            <a class="fw-semibold text-decoration-none" th:href="@{/cargos/{uuid}(uuid=${item.cargo.uuid})}"
                th:text="${item.cargo.descripcion}"></a>
             <span class="d-block text-secondary small" th:if="${item.cargo.materia != null}"
                   th:text="${item.cargo.materia.nombre + (item.cargo.materia.curso != null ? ' · ' + item.cargo.materia.curso.anio + '° Año' : '')}"></span>
@@ -108,25 +108,25 @@
                 th:text="${item.fechaConcurso != null ? #temporals.format(item.fechaConcurso, 'dd/MM/yyyy HH:mm') : (item.fechaCierre != null ? #temporals.format(item.fechaCierre, 'dd/MM/yyyy') : '—')}"></span>
         </td>
         <td>
-          <span th:if="${horasTotalesMap[item.id] != null}">
-            <span th:text="${(horasDisponiblesMap[item.id] != null ? horasDisponiblesMap[item.id] : '—') + ' / ' + horasTotalesMap[item.id] + ' h'}"></span>
+          <span th:if="${horasTotalesMap[item.uuid] != null}">
+            <span th:text="${(horasDisponiblesMap[item.uuid] != null ? horasDisponiblesMap[item.uuid] : '—') + ' / ' + horasTotalesMap[item.uuid] + ' h'}"></span>
             <span class="text-secondary">libres/totales</span>
           </span>
-          <span class="text-secondary" th:if="${horasTotalesMap[item.id] == null}">Sin configurar</span>
+          <span class="text-secondary" th:if="${horasTotalesMap[item.uuid] == null}">Sin configurar</span>
         </td>
         <td>
           <span class="badge rounded-pill text-bg-light text-primary"
-                th:text="${(cantidadPostulantes[item.id] != null ? cantidadPostulantes[item.id] : 0)} + ' docente(s)'"></span>
+                th:text="${(cantidadPostulantes[item.uuid] != null ? cantidadPostulantes[item.uuid] : 0)} + ' docente(s)'"></span>
         </td>
         <td>
           <div class="table-actions">
-            <a class="btn btn-sm btn-outline-primary" th:href="@{/concursos/{id}(id=${item.id})}">
+            <a class="btn btn-sm btn-outline-primary" th:href="@{/concursos/{uuid}(uuid=${item.uuid})}">
               <i class="bi bi-eye"></i>Ver
             </a>
-            <a class="btn btn-sm btn-outline-secondary" th:href="@{/concursos/{id}/editar(id=${item.id})}">
+            <a class="btn btn-sm btn-outline-secondary" th:href="@{/concursos/{uuid}/editar(uuid=${item.uuid})}">
               <i class="bi bi-pencil"></i>Editar
             </a>
-            <a class="btn btn-sm btn-outline-danger" th:href="@{/concursos/baja/{id}(id=${item.id})}"
+            <a class="btn btn-sm btn-outline-danger" th:href="@{/concursos/baja/{uuid}(uuid=${item.uuid})}"
                th:attr="data-confirm='¿Eliminar el concurso «' + ${item.descripcion} + '»? Se dará de baja y no aparecerá más en el listado.'">
               <i class="bi bi-trash"></i>Eliminar
             </a>

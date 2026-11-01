@@ -52,16 +52,16 @@ class AlertaSeguridadTest {
     void unUsuarioNoAdminNoPuedeAbrirLasPantallasDeAltaEdicionNiBaja() throws Exception {
         mvc.perform(get("/alertas/nuevo")).andExpect(status().isForbidden());
         mvc.perform(get("/alertas/alta")).andExpect(status().isForbidden());
-        mvc.perform(get("/alertas/1/editar")).andExpect(status().isForbidden());
-        mvc.perform(get("/alertas/modificar/1")).andExpect(status().isForbidden());
-        mvc.perform(get("/alertas/baja/1")).andExpect(status().isForbidden());
+        mvc.perform(get("/alertas/alert-1/editar")).andExpect(status().isForbidden());
+        mvc.perform(get("/alertas/modificar/alert-1")).andExpect(status().isForbidden());
+        mvc.perform(get("/alertas/baja/alert-1")).andExpect(status().isForbidden());
     }
 
     @Test
     @WithMockUser(roles = "USER")
     void unUsuarioNoAdminNoPuedeGuardarNiMarcarComoLeida() throws Exception {
         mvc.perform(post("/alertas/actualizar").with(csrf())).andExpect(status().isForbidden());
-        mvc.perform(post("/alertas/1/marcar-leida").with(csrf())).andExpect(status().isForbidden());
+        mvc.perform(post("/alertas/alert-1/marcar-leida").with(csrf())).andExpect(status().isForbidden());
 
         verify(alertaService, never()).modificar(any(), any());
     }
@@ -70,13 +70,13 @@ class AlertaSeguridadTest {
     @WithMockUser(roles = "ADMIN")
     void elAdminPuedeMarcarComoLeida() throws Exception {
         AlertaDTO alerta = new AlertaDTO();
-        alerta.setId(1L);
-        when(alertaService.obtener(1L)).thenReturn(alerta);
+        alerta.setId("alert-1");
+        when(alertaService.obtener("alert-1")).thenReturn(alerta);
 
-        mvc.perform(post("/alertas/1/marcar-leida").with(csrf()))
+        mvc.perform(post("/alertas/alert-1/marcar-leida").with(csrf()))
                 .andExpect(status().is3xxRedirection())
-                .andExpect(redirectedUrl("/alertas/1"));
+                .andExpect(redirectedUrl("/alertas/alert-1"));
 
-        verify(alertaService).modificar(eq(1L), any());
+        verify(alertaService).modificar(eq("alert-1"), any());
     }
 }

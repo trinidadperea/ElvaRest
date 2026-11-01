@@ -49,18 +49,18 @@ class RenderCargaCertificadoTest {
                 application.buildExchange(request, new MockHttpServletResponse()), request.getLocale());
 
         CertificadoDTO item = new CertificadoDTO();
-        item.setTipoCertificado(tipo(3L));
-        context.setVariable("postulacionId", 12L);
+        item.setTipoCertificado(tipo("tipo-3"));
+        context.setVariable("postulacionUuid", "post-12");
         context.setVariable("item", item);
-        context.setVariable("tiposCertificado", List.of(tipo(3L)));
-        context.setVariable("tipoFijo", renovacion ? tipo(3L) : null);
-        context.setVariable("certificadoOrigenId", renovacion ? 55L : null);
+        context.setVariable("tiposCertificado", List.of(tipo("tipo-3")));
+        context.setVariable("tipoFijo", renovacion ? tipo("tipo-3") : null);
+        context.setVariable("certificadoOrigenUuid", renovacion ? "cert-55" : null);
         return context;
     }
 
-    private TipoCertificadoDTO tipo(Long id) {
+    private TipoCertificadoDTO tipo(String id) {
         TipoCertificadoDTO tipo = mock(TipoCertificadoDTO.class);
-        when(tipo.getId()).thenReturn(id);
+        when(tipo.getUuid()).thenReturn(id);
         when(tipo.getNombre()).thenReturn("Apto psicofísico");
         when(tipo.isPermiteProvisorio()).thenReturn(true);
         return tipo;
@@ -68,21 +68,21 @@ class RenderCargaCertificadoTest {
 
     private CertificadoDTO certificado() {
         DocenteDTO docente = mock(DocenteDTO.class);
-        when(docente.getId()).thenReturn(8L);
+        when(docente.getUuid()).thenReturn("doc-8");
         when(docente.getApellido()).thenReturn("Pérez");
         when(docente.getNombre()).thenReturn("Ana");
         ConcursoDTO concurso = mock(ConcursoDTO.class);
-        when(concurso.getId()).thenReturn(4L);
+        when(concurso.getUuid()).thenReturn("conc-4");
         when(concurso.getDescripcion()).thenReturn("Concurso de prueba");
         ConcursoDocenteDTO postulacion = mock(ConcursoDocenteDTO.class);
-        when(postulacion.getId()).thenReturn(12L);
+        when(postulacion.getUuid()).thenReturn("post-12");
         when(postulacion.getDocente()).thenReturn(docente);
         when(postulacion.getConcurso()).thenReturn(concurso);
 
         CertificadoDTO certificado = new CertificadoDTO();
-        certificado.setId(55L);
+        certificado.setId("cert-55");
         certificado.setConcursoDocente(postulacion);
-        certificado.setTipoCertificado(tipo(3L));
+        certificado.setTipoCertificado(tipo("tipo-3"));
         certificado.setFechaCarga(LocalDate.of(2026, 1, 5));
         certificado.setActual(true);
         return certificado;
@@ -95,8 +95,8 @@ class RenderCargaCertificadoTest {
         assertTrue(html.contains("form-control-plaintext"));
         assertTrue(html.contains("Apto psicofísico"));
         assertTrue(html.contains("data-permite-provisorio=\"true\""));
-        assertTrue(html.contains("name=\"tipoCertificado.id\" value=\"3\""));
-        assertTrue(html.contains("name=\"certificadoOrigen\" value=\"55\""));
+        assertTrue(html.contains("name=\"tipoCertificado.uuid\" value=\"tipo-3\""));
+        assertTrue(html.contains("name=\"certificadoOrigenUuid\" value=\"cert-55\""));
         assertFalse(html.contains("<select"));
     }
 
@@ -105,7 +105,7 @@ class RenderCargaCertificadoTest {
         String html = engine().process("prueba-carga-select", context(false));
 
         assertTrue(html.contains("<select"));
-        assertTrue(html.contains("name=\"tipoCertificado.id\""));
+        assertTrue(html.contains("name=\"tipoCertificado.uuid\""));
         assertFalse(html.contains("form-control-plaintext"));
     }
 
@@ -117,7 +117,7 @@ class RenderCargaCertificadoTest {
         String html = engine().process("certificados/detalle", Set.of("#contenido"), context);
 
         assertTrue(html.contains("card-title section-title mb-0\">Datos del certificado"));
-        assertTrue(html.contains("/certificados/nuevo/postulacion/12?certificado=55"));
+        assertTrue(html.contains("/certificados/nuevo/postulacion/post-12?certificado=cert-55"));
         assertFalse(html.contains("?tipo="));
     }
 

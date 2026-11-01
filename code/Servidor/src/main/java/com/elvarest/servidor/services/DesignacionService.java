@@ -6,6 +6,7 @@ import com.elvarest.servidor.entities.enums.EstadoDesignacion;
 import com.elvarest.servidor.exceptions.ErrorServiceException;
 import com.elvarest.servidor.repositories.ConcursoRepository;
 import com.elvarest.servidor.repositories.DesignacionRepository;
+import com.elvarest.servidor.repositories.DocenteRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -18,12 +19,14 @@ public class DesignacionService extends BaseService<Designacion, Long> {
 
     private final ConcursoRepository concursoRepository;
     private final AlertaService alertaService;
+    private final DocenteRepository docenteRepository;
 
     public DesignacionService(DesignacionRepository repository, ConcursoRepository concursoRepository,
-                              AlertaService alertaService) {
+                              AlertaService alertaService, DocenteRepository docenteRepository) {
         super(repository);
         this.concursoRepository = concursoRepository;
         this.alertaService = alertaService;
+        this.docenteRepository = docenteRepository;
     }
 
     /**
@@ -73,6 +76,9 @@ public class DesignacionService extends BaseService<Designacion, Long> {
      */
     @Override
     protected void preAlta(Designacion designacion) throws ErrorServiceException {
+        // El docente puede llegar por uuid (el id numérico no viaja en las respuestas).
+        designacion.setDocente(resolverReferencia(designacion.getDocente(), docenteRepository,
+                "No se encontró el docente."));
         if (designacion.getConcursoId() == null || designacion.getDocente() == null
                 || designacion.getDocente().getId() == null) {
             return;

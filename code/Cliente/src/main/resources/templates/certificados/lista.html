@@ -31,7 +31,7 @@
             <tr th:each="item : ${items}" th:with="postulacion=${item.concursoDocente}">
                 <td>
                     <a class="fw-semibold text-decoration-none" th:if="${postulacion != null and postulacion.docente != null}"
-                       th:href="@{/docentes/{id}(id=${postulacion.docente.id})}"
+                       th:href="@{/docentes/{uuid}(uuid=${postulacion.docente.uuid})}"
                        th:text="${postulacion.docente.apellido + ', ' + postulacion.docente.nombre}"></a>
                 </td>
                 <td th:text="${postulacion != null and postulacion.concurso != null ? postulacion.concurso.descripcion : '—'}"></td>
@@ -48,7 +48,7 @@
                 </td>
                 <td>
                     <div class="table-actions">
-                        <a class="btn btn-sm btn-outline-primary" th:href="@{/certificados/{id}(id=${item.id})}">
+                        <a class="btn btn-sm btn-outline-primary" th:href="@{/certificados/{uuid}(uuid=${item.uuid})}">
                             <i class="bi bi-eye"></i>Ver
                         </a>
                     </div>

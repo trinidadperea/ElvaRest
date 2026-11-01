@@ -8,7 +8,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 /** ABM de tipos de certificado-  Alta, edición y detalle usan el mismo formulario. */
 @Controller
 @RequestMapping("/tipos-certificado")
-public class TipoCertificadoController extends BaseController<TipoCertificadoDTO, Long> {
+public class TipoCertificadoController extends BaseController<TipoCertificadoDTO> {
 
     public TipoCertificadoController(TipoCertificadoService service) {
         super(service);

@@ -45,7 +45,8 @@ public class ConcursoDTO extends BaseDTO{
 
     /** Indica si el concurso fue generado como rellamado de otro. */
     private Boolean esRellamado;
-    private Long concursoOrigenId;
+    /** UUID del concurso origen del rellamado (nulo en los concursos directos). */
+    private String concursoOrigenUuid;
 
     /**
      * Solo UI: el concurso se está creando desde "Abrir concurso para este cargo",

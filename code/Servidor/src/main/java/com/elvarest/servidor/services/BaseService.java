@@ -8,6 +8,7 @@ import org.slf4j.LoggerFactory;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 
 public abstract class BaseService<T extends BaseEntity<ID>, ID> {
 
@@ -26,6 +27,8 @@ public abstract class BaseService<T extends BaseEntity<ID>, ID> {
             preAlta(entidad);
 
             entidad.setEliminado(false);
+            // El uuid público lo asigna el servidor: el que envíe el cliente se descarta.
+            entidad.setUuid(UUID.randomUUID().toString());
             T guardado = repository.save(entidad);
 
             postAlta(guardado);
@@ -46,6 +49,8 @@ public abstract class BaseService<T extends BaseEntity<ID>, ID> {
             validar(entidadNueva);
             preModificacion(entidadNueva);
             return repository.findById(id).map(entidad -> {
+                // El uuid público se conserva del registro guardado: no lo reescribe el formulario.
+                entidadNueva.setUuid(entidad.getUuid());
                 T actualizado = repository.save(entidadNueva);
                 return actualizado;
             });
@@ -108,6 +113,47 @@ public abstract class BaseService<T extends BaseEntity<ID>, ID> {
         } catch (Exception e) {
             throw new ErrorServiceException("Error de Sistemas");
         }
+    }
+
+    /**
+     * Resolución por identificador público: las URLs usan el uuid en lugar del id numérico,
+     * así no se pueden enumerar registros (IDOR).
+     */
+    public T getOnePorUuid(String uuid) throws ErrorServiceException {
+        try {
+            return repository.findByUuid(uuid)
+                    .filter(e -> !Boolean.TRUE.equals(e.getEliminado()))
+                    .orElseThrow(() -> new ErrorServiceException("Entidad no encontrada o eliminada"));
+        } catch (ErrorServiceException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new ErrorServiceException("Error de Sistemas");
+        }
+    }
+
+    /** Traduce un uuid público al id interno; vacío si no existe o está eliminado. */
+    public Optional<ID> idPorUuid(String uuid) throws ErrorServiceException {
+        try {
+            return repository.findByUuid(uuid)
+                    .filter(e -> !Boolean.TRUE.equals(e.getEliminado()))
+                    .map(T::getId);
+        } catch (Exception e) {
+            throw new ErrorServiceException("Error de Sistemas");
+        }
+    }
+
+    /**
+     * Resuelve una referencia anidada que llega por uuid en el body (el id numérico no viaja en
+     * las respuestas). Si ya trae id o no trae uuid, se devuelve tal cual para seguir el flujo actual.
+     */
+    protected <R extends BaseEntity<Long>> R resolverReferencia(R referencia, BaseRepository<R, Long> repo,
+                                                                String mensajeError) throws ErrorServiceException {
+        if (referencia == null || referencia.getId() != null || referencia.getUuid() == null) {
+            return referencia;
+        }
+        return repo.findByUuid(referencia.getUuid())
+                .filter(e -> !Boolean.TRUE.equals(e.getEliminado()))
+                .orElseThrow(() -> new ErrorServiceException(mensajeError));
     }
 
     //Metodos para ser redefinidos en las clases de servicio que heredan, con el objetivo

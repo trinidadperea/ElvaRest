@@ -9,7 +9,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.client.HttpClientErrorException;
 
 @Service
-public class ConcursoDocenteService extends BaseService<ConcursoDocenteDTO, Long> {
+public class ConcursoDocenteService extends BaseService<ConcursoDocenteDTO> {
 
     private static final String API_URL = "http://localhost:8080/concursos-docentes";
 
@@ -24,11 +24,11 @@ public class ConcursoDocenteService extends BaseService<ConcursoDocenteDTO, Long
      *
      * @return la designación creada por el Servidor
      */
-    public DesignacionDTO confirmarPosesion(Long concursoId, Long postulacionId, DesignacionDTO designacion) {
+    public DesignacionDTO confirmarPosesion(String concursoUuid, String postulacionUuid, DesignacionDTO designacion) {
         HttpEntity<DesignacionDTO> entity = new HttpEntity<>(designacion, authService.authHeaders());
         try {
             ResponseEntity<DesignacionDTO> response = restTemplate.exchange(
-                    API_URL + "/" + postulacionId + "/posesion?concursoId=" + concursoId,
+                    API_URL + "/" + postulacionUuid + "/posesion?concursoUuid=" + concursoUuid,
                     HttpMethod.POST,
                     entity,
                     DesignacionDTO.class

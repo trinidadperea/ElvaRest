@@ -72,7 +72,7 @@ class RenderDesignacionTest {
                 application.buildExchange(request, new MockHttpServletResponse()), request.getLocale());
 
         DesignacionDTO item = new DesignacionDTO();
-        item.setId(15L);
+        item.setId("des-15");
         item.setEstadoDesignacion(estado);
         item.setFechaInicioEfectiva(LocalDate.of(2026, 3, 1));
         item.setMotivoVacancia(MotivoVacancia.LICENCIA);

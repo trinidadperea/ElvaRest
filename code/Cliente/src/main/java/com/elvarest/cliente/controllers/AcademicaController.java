@@ -13,7 +13,7 @@ import java.util.Objects;
 
 @Controller
 @RequestMapping("/academica")
-public class AcademicaController extends BaseController<CursoDTO, Long> {
+public class AcademicaController extends BaseController<CursoDTO> {
 
     private final MateriaService materiaService;
 

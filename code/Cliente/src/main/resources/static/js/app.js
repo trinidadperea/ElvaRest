@@ -255,7 +255,15 @@
         if (dateA !== dateB) {
           return dateA < dateB ? -1 : 1;
         }
-        return Number(a.getAttribute('data-sort-id') || 0) - Number(b.getAttribute('data-sort-id') || 0);
+        // El id puede ser numérico o UUID: cuando no es numérico se compara como texto.
+        const idA = a.getAttribute('data-sort-id') || '';
+        const idB = b.getAttribute('data-sort-id') || '';
+        const numA = Number(idA);
+        const numB = Number(idB);
+        if (Number.isFinite(numA) && Number.isFinite(numB)) {
+          return numA - numB;
+        }
+        return idA < idB ? -1 : (idA > idB ? 1 : 0);
       });
       if (select.value !== 'antiguos') {
         rows.reverse();

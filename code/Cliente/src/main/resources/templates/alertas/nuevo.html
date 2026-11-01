@@ -1,5 +1,6 @@
 <!doctype html>
 <html lang="es" xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
       th:replace="~{base :: layout('Nueva alerta', ~{::#encabezado}, ~{::#contenido}, '')}">
 <section id="encabezado">
   <h3 data-subtitle="Registre un aviso para el seguimiento institucional">Nueva alerta</h3>
@@ -40,7 +41,7 @@
 
     <div class="mt-4 pt-2 border-top d-flex justify-content-end gap-2">
       <a class="btn btn-outline-secondary" th:href="@{/alertas}">Cancelar</a>
-      <button class="btn btn-primary" type="submit">
+      <button class="btn btn-primary" type="submit" sec:authorize="hasRole('ADMIN')">
         <i class="bi bi-check-lg me-1"></i>Guardar alerta
       </button>
     </div>

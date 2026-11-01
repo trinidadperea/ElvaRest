@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{base :: layout('Detalle de auditoría', ~{::#encabezado}, ~{::#contenido}, '')}">
+<section id="encabezado">
+    <h3 data-subtitle="Evento del historial de cambios (solo lectura)">Detalle del evento</h3>
+</section>
+<section id="contenido">
+    <div class="card" style="max-width: 900px;">
+        <div class="card-body">
+            <dl class="row mb-0">
+                <dt class="col-sm-4">Fecha y hora</dt>
+                <dd class="col-sm-8"
+                    th:text="${item.fechaHora != null ? #temporals.format(item.fechaHora, 'dd/MM/yyyy HH:mm:ss') : '—'}"></dd>
+
+                <dt class="col-sm-4">Usuario</dt>
+                <dd class="col-sm-8" th:text="${item.usuario != null and !item.usuario.isBlank() ? item.usuario : '—'}"></dd>
+
+                <dt class="col-sm-4">Acción</dt>
+                <dd class="col-sm-8">
+                    <span class="badge rounded-pill text-bg-success" th:if="${item.accion?.name() == 'ALTA'}">Alta</span>
+                    <span class="badge rounded-pill text-bg-warning" th:if="${item.accion?.name() == 'MODIFICACION'}">Modificación</span>
+                    <span class="badge rounded-pill text-bg-danger" th:if="${item.accion?.name() == 'BAJA'}">Baja</span>
+                    <span th:if="${item.accion == null}">—</span>
+                </dd>
+
+                <dt class="col-sm-4">Módulo afectado</dt>
+                <dd class="col-sm-8" th:text="${item.entidad != null and !item.entidad.isBlank() ? item.entidad : '—'}"></dd>
+
+                <div th:if="${item.detalle != null and !item.detalle.isBlank()}"
+                     th:text="${#strings.abbreviate(item.detalle, 200)}" th:title="${item.detalle}"></div>
+                <div class="text-secondary small" th:if="${item.detalle == null or item.detalle.isBlank()}">—</div>
+            </dl>
+        </div>
+    </div>
+
+    <div class="card mt-3" style="max-width: 900px;">
+        <div class="card-header fw-semibold">
+            <i class="bi bi-list-ul me-1"></i>Qué ocurrió
+        </div>
+        <div class="card-body">
+            <!-- Todo el contenido se muestra con th:text (escapado): el detalle nunca se interpreta como HTML. -->
+            <p class="text-secondary mb-0" th:if="${vista.sinDetalle}">
+                Este evento no registra detalle de campos.
+            </p>
+
+            <p class="mb-0" th:if="${vista.descripcion != null}" th:text="${vista.descripcion}"></p>
+
+            <div class="table-responsive" th:if="${!vista.filas.isEmpty()}">
+                <table class="table mb-0">
+                    <thead>
+                    <tr>
+                        <th>Campo</th>
+                        <th th:if="${vista.modoDiff}">Antes</th>
+                        <th th:text="${vista.modoDiff ? 'Después' : 'Valor'}">Valor</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr th:each="fila : ${vista.filas}">
+                        <td class="fw-semibold" th:text="${fila.campo}"></td>
+                        <td class="text-wrap" th:if="${vista.modoDiff}" th:text="${fila.antes != null ? fila.antes : '—'}"></td>
+                        <td class="text-wrap" th:text="${fila.valor}"></td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div th:if="${vista.crudo != null}">
+                <p class="text-secondary small">No fue posible interpretar el detalle; se muestra tal como fue registrado:</p>
+                <pre class="mb-0" style="white-space: pre-wrap;" th:text="${vista.crudo}"></pre>
+            </div>
+        </div>
+    </div>
+
+    <div class="d-flex flex-wrap gap-2 mt-3">
+        <a class="btn btn-outline-secondary" th:href="@{/auditoria}">
+            <i class="bi bi-arrow-left me-1"></i>Volver al historial
+        </a>
+    </div>
+</section>
+</html>

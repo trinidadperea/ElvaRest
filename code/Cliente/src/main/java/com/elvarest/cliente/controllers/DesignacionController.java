@@ -18,7 +18,7 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 @Controller
 @RequestMapping("/designaciones")
-public class DesignacionController extends BaseController<DesignacionDTO, Long> {
+public class DesignacionController extends BaseController<DesignacionDTO> {
 
     private final DocenteService docenteService;
     private final HttpServletRequest request;
@@ -58,7 +58,7 @@ public class DesignacionController extends BaseController<DesignacionDTO, Long> 
 
     /**
      * Conserva el contexto de "Cargo → Ver" al editar una designación: si el enlace de
-     * origen envió ?cargoId=..., se expone como "cargoOrigenId" para que el botón
+     * origen envió ?cargoUuid=..., se expone como "cargoOrigenUuid" para que el botón
      * Cancelar y el guardado exitoso del formulario vuelvan al detalle de ese cargo.
      * Sin el parámetro no agrega nada al modelo, por lo que los demás accesos al
      * formulario no cambian.
@@ -67,22 +67,22 @@ public class DesignacionController extends BaseController<DesignacionDTO, Long> 
         if (model == null) {
             return;
         }
-        String cargoId = request.getParameter("cargoId");
-        if (cargoId != null && cargoId.matches("\\d+")) {
-            model.addAttribute("cargoOrigenId", cargoId);
+        String cargoUuid = request.getParameter("cargoUuid");
+        if (cargoUuid != null && !cargoUuid.isBlank()) {
+            model.addAttribute("cargoOrigenUuid", cargoUuid);
         }
     }
 
     /**
      * Mismo destino que el botón Cancelar tras guardar: si la edición vino desde
-     * "Cargo → Ver" (el formulario envió cargoId), el guardado exitoso vuelve al
+     * "Cargo → Ver" (el formulario envió cargoUuid), el guardado exitoso vuelve al
      * detalle de ese cargo; sin el parámetro mantiene el redirect original al
      * listado de designaciones.
      */
     private String destinoTrasGuardar() {
-        String cargoId = request.getParameter("cargoId");
-        if (cargoId != null && cargoId.matches("\\d+")) {
-            return "redirect:/cargos/" + cargoId;
+        String cargoUuid = request.getParameter("cargoUuid");
+        if (cargoUuid != null && !cargoUuid.isBlank()) {
+            return "redirect:/cargos/" + cargoUuid;
         }
         return redirectList;
     }

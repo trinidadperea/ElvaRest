@@ -1,6 +1,6 @@
 <!doctype html>
 <html lang="es" xmlns:th="http://www.thymeleaf.org"
-      xmlns:sec="http://www.w3.org/1999/xhtml"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
       th:replace="~{base :: layout('Detalle del usuario', ~{::#encabezado}, ~{::#contenido}, '')}">
 <section id="encabezado">
   <h3 th:attr="data-subtitle=${item.rol?.name() == 'ADMIN' ? 'Administrador del sistema' : 'Usuario del sistema'}">

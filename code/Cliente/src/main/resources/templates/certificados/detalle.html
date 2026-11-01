@@ -19,7 +19,7 @@
                     <dt>Docente</dt>
                     <dd>
                         <a class="text-decoration-none fw-semibold" th:if="${postulacion != null and postulacion.docente != null}"
-                           th:href="@{/docentes/{id}(id=${postulacion.docente.id})}"
+                           th:href="@{/docentes/{uuid}(uuid=${postulacion.docente.uuid})}"
                            th:text="${postulacion.docente.apellido + ', ' + postulacion.docente.nombre}"></a>
                     </dd>
                 </div>
@@ -27,7 +27,7 @@
                     <dt>Concurso</dt>
                     <dd>
                         <a class="text-decoration-none" th:if="${postulacion != null and postulacion.concurso != null}"
-                           th:href="@{/concursos/{id}(id=${postulacion.concurso.id})}" th:text="${postulacion.concurso.descripcion}"></a>
+                           th:href="@{/concursos/{uuid}(uuid=${postulacion.concurso.uuid})}" th:text="${postulacion.concurso.descripcion}"></a>
                     </dd>
                 </div>
                 <div class="detail-item">
@@ -56,21 +56,21 @@
 
     <div class="list-toolbar">
         <div class="toolbar-filters">
-            <a class="btn btn-outline-secondary" th:if="${alertaOrigenId != null}"
-               th:href="@{/alertas/{id}(id=${alertaOrigenId})}">
+            <a class="btn btn-outline-secondary" th:if="${alertaOrigenUuid != null}"
+               th:href="@{/alertas/{uuid}(uuid=${alertaOrigenUuid})}">
                 <i class="bi bi-arrow-left me-1"></i>Volver
             </a>
-            <a class="btn btn-outline-secondary" th:if="${alertaOrigenId == null and docenteOrigenId != null}"
-               th:href="@{/docentes/{id}(id=${docenteOrigenId})}">
+            <a class="btn btn-outline-secondary" th:if="${alertaOrigenUuid == null and docenteOrigenUuid != null}"
+               th:href="@{/docentes/{uuid}(uuid=${docenteOrigenUuid})}">
                 <i class="bi bi-arrow-left me-1"></i>Volver al docente
             </a>
-            <a class="btn btn-outline-secondary" th:if="${alertaOrigenId == null and docenteOrigenId == null}"
+            <a class="btn btn-outline-secondary" th:if="${alertaOrigenUuid == null and docenteOrigenUuid == null}"
                th:href="@{/certificados/list}">
                 <i class="bi bi-arrow-left me-1"></i>Volver al listado
             </a>
         </div>
         <a class="btn btn-primary" th:if="${item.actual and item.concursoDocente != null and item.tipoCertificado != null}"
-           th:href="@{/certificados/nuevo/postulacion/{pid}(pid=${item.concursoDocente.id}, certificado=${item.id})}">
+           th:href="@{/certificados/nuevo/postulacion/{postulacionUuid}(postulacionUuid=${item.concursoDocente.uuid}, certificado=${item.uuid})}">
             <i class="bi bi-arrow-repeat me-1"></i>Renovar
         </a>
     </div>

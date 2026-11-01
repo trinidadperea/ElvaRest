@@ -7,7 +7,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 
 @Controller
 @RequestMapping("/licencias")
-public class LicenciaController extends BaseController<LicenciaDTO, Long> {
+public class LicenciaController extends BaseController<LicenciaDTO> {
 
     public LicenciaController(LicenciaService service) {
         super(service);

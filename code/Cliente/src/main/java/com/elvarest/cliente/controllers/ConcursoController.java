@@ -50,7 +50,7 @@ import java.util.Objects;
  */
 @Controller
 @RequestMapping("/concursos")
-public class ConcursoController extends BaseController<ConcursoDTO, Long> {
+public class ConcursoController extends BaseController<ConcursoDTO> {
 
     private final ConcursoDocenteService concursoDocenteService;
     private final DocenteService docenteService;
@@ -91,12 +91,12 @@ public class ConcursoController extends BaseController<ConcursoDTO, Long> {
             List<ConcursoDTO> concursos = service.listarActivos();
             concursos.forEach(this::aplicarTransicionEstado);
             List<ConcursoDocenteDTO> postulaciones = concursoDocenteService.listarActivos();
-            Map<Long, Integer> cantidadPostulantes = new HashMap<>();
-            Map<Long, ConcursoDocenteDTO> ganadores = new HashMap<>();
-            Map<Long, Integer> horasTotalesMap = new HashMap<>();
-            Map<Long, Integer> horasDisponiblesMap = new HashMap<>();
-            Map<Long, String> fechasConcursos = new HashMap<>();
-            Map<Long, String> aperturasConcursos = new HashMap<>();
+            Map<String, Integer> cantidadPostulantes = new HashMap<>();
+            Map<String, ConcursoDocenteDTO> ganadores = new HashMap<>();
+            Map<String, Integer> horasTotalesMap = new HashMap<>();
+            Map<String, Integer> horasDisponiblesMap = new HashMap<>();
+            Map<String, String> fechasConcursos = new HashMap<>();
+            Map<String, String> aperturasConcursos = new HashMap<>();
 
             for (ConcursoDTO concurso : concursos) {
                 List<ConcursoDocenteDTO> propias = postulaciones.stream()
@@ -156,9 +156,9 @@ public class ConcursoController extends BaseController<ConcursoDTO, Long> {
     protected void postConsulta(ConcursoDTO concurso) {
         aplicarTransicionEstado(concurso);
         List<ConcursoDocenteDTO> postulantes = postulantesDelConcurso(concurso.getId());
-        Map<Long, EstadoPostulacion> estadosPostulacion = new HashMap<>();
-        Map<Long, Integer> horasPostulacion = new HashMap<>();
-        Map<Long, String> observaciones = new HashMap<>();
+        Map<String, EstadoPostulacion> estadosPostulacion = new HashMap<>();
+        Map<String, Integer> horasPostulacion = new HashMap<>();
+        Map<String, String> observaciones = new HashMap<>();
         List<ConcursoDocenteDTO> pendientesCertificados = new ArrayList<>();
         List<ConcursoDocenteDTO> pendientesPosesion = new ArrayList<>();
         int designados = 0;
@@ -200,9 +200,9 @@ public class ConcursoController extends BaseController<ConcursoDTO, Long> {
         boolean listoParaCierre = esListoParaCierre(concurso, postulantes);
 
         ConcursoDTO concursoOrigen = null;
-        if (concurso.getConcursoOrigenId() != null) {
+        if (concurso.getConcursoOrigenUuid() != null) {
             try {
-                concursoOrigen = service.obtener(concurso.getConcursoOrigenId());
+                concursoOrigen = service.obtener(concurso.getConcursoOrigenUuid());
             } catch (Exception ignored) {
                 concursoOrigen = null;
             }
@@ -249,14 +249,14 @@ public class ConcursoController extends BaseController<ConcursoDTO, Long> {
      * Alta de concurso desde "Cargo → Ver → Abrir concurso para este cargo":
      * el cargo viene fijado por contexto y no se puede modificar en el formulario.
      */
-    @GetMapping("/nuevo-desde-cargo/{cargoId}")
-    public String crearDesdeCargo(@PathVariable Long cargoId, Model model, RedirectAttributes attributes) {
+    @GetMapping("/nuevo-desde-cargo/{cargoUuid}")
+    public String crearDesdeCargo(@PathVariable String cargoUuid, Model model, RedirectAttributes attributes) {
         try {
-            CargoDTO cargo = cargoService.obtener(cargoId);
+            CargoDTO cargo = cargoService.obtener(cargoUuid);
             if (cargo == null) {
                 throw new IllegalArgumentException("No se encontró el cargo.");
             }
-            if (cargoTieneConcursoAbierto(cargoId, null)) {
+            if (cargoTieneConcursoAbierto(cargoUuid, null)) {
                 throw new IllegalArgumentException(CARGO_CONCURSO_ABIERTO);
             }
             ConcursoDTO concurso = new ConcursoDTO();
@@ -270,7 +270,7 @@ public class ConcursoController extends BaseController<ConcursoDTO, Long> {
             return viewCreate;
         } catch (RuntimeException e) {
             attributes.addFlashAttribute("msgError", e.getMessage());
-            return "redirect:/cargos/" + cargoId;
+            return "redirect:/cargos/" + cargoUuid;
         }
     }
 
@@ -336,7 +336,7 @@ public class ConcursoController extends BaseController<ConcursoDTO, Long> {
                 // El estado inicial (PUBLICADO), la descripción, el cargo, la fecha, el carácter y las
                 // horas (con la carga horaria del cargo como respaldo) los resuelve el Servidor
                 // (ConcursoService.alta/preAlta): acá solo queda lo propio del formulario.
-                if (entidad.getConcursoOrigenId() == null) {
+                if (entidad.getConcursoOrigenUuid() == null) {
                     aplicarMotivoVacancia(entidad);
                     entidad.setEsRellamado(false);
                 }
@@ -366,7 +366,7 @@ public class ConcursoController extends BaseController<ConcursoDTO, Long> {
                         entidad.setHorasTransferidas(actual.getHorasTransferidas());
                     }
                     entidad.setEsRellamado(actual.getEsRellamado());
-                    entidad.setConcursoOrigenId(actual.getConcursoOrigenId());
+                    entidad.setConcursoOrigenUuid(actual.getConcursoOrigenUuid());
                 }
                 aplicarMotivoVacancia(entidad);
                 service.modificar(entidad.getId(), entidad);
@@ -392,13 +392,13 @@ public class ConcursoController extends BaseController<ConcursoDTO, Long> {
     // Paso 1: registrar / modificar toma de horas
     // ------------------------------------------------------------------
 
-    @GetMapping("/{concursoId}/postular")
-    public String mostrarFormularioPostulacion(@PathVariable Long concursoId, Model model,
+    @GetMapping("/{concursoUuid}/postular")
+    public String mostrarFormularioPostulacion(@PathVariable String concursoUuid, Model model,
                                                RedirectAttributes attributes) {
         try {
-            ConcursoDTO concurso = obtenerConcurso(concursoId);
+            ConcursoDTO concurso = obtenerConcurso(concursoUuid);
             validarAbierto(concurso, "no se pueden registrar tomas de horas");
-            List<ConcursoDocenteDTO> postulantes = postulantesDelConcurso(concursoId);
+            List<ConcursoDocenteDTO> postulantes = postulantesDelConcurso(concursoUuid);
             ConcursoDocenteDTO postulacion = new ConcursoDocenteDTO();
             postulacion.setConcurso(concurso);
             model.addAttribute("item", postulacion);
@@ -411,18 +411,18 @@ public class ConcursoController extends BaseController<ConcursoDTO, Long> {
             return "concursos/postular";
         } catch (RuntimeException e) {
             attributes.addFlashAttribute("msgError", e.getMessage());
-            return "redirect:/concursos/" + concursoId;
+            return "redirect:/concursos/" + concursoUuid;
         }
     }
 
-    @PostMapping("/{concursoId}/postular")
-    public String postular(@PathVariable Long concursoId,
+    @PostMapping("/{concursoUuid}/postular")
+    public String postular(@PathVariable String concursoUuid,
                            @ModelAttribute("item") ConcursoDocenteDTO postulacion,
                            RedirectAttributes attributes) {
         try {
-            ConcursoDTO concurso = obtenerConcurso(concursoId);
+            ConcursoDTO concurso = obtenerConcurso(concursoUuid);
             validarAbierto(concurso, "no se pueden registrar tomas de horas");
-            Long docenteId = postulacion.getDocente() == null ? null : postulacion.getDocente().getId();
+            String docenteId = postulacion.getDocente() == null ? null : postulacion.getDocente().getId();
             if (docenteId == null) {
                 throw new IllegalArgumentException("Debe seleccionar un docente.");
             }
@@ -440,7 +440,7 @@ public class ConcursoController extends BaseController<ConcursoDTO, Long> {
             if (!esDePreceptor && esPreceptor) {
                 throw new IllegalArgumentException("Este cargo es docente: no se pueden postular preceptores.");
             }
-            List<ConcursoDocenteDTO> postulantes = postulantesDelConcurso(concursoId);
+            List<ConcursoDocenteDTO> postulantes = postulantesDelConcurso(concursoUuid);
             boolean yaPostulado = postulantes.stream()
                     .anyMatch(actual -> !estadoEfectivo(actual).isCancelado()
                             && actual.getDocente() != null
@@ -487,17 +487,17 @@ public class ConcursoController extends BaseController<ConcursoDTO, Long> {
         } catch (RuntimeException e) {
             attributes.addFlashAttribute("msgError", e.getMessage());
         }
-        return "redirect:/concursos/" + concursoId;
+        return "redirect:/concursos/" + concursoUuid;
     }
 
-    @GetMapping("/{concursoId}/postulaciones/{postulacionId}/horas")
-    public String mostrarFormularioHoras(@PathVariable Long concursoId, @PathVariable Long postulacionId,
+    @GetMapping("/{concursoUuid}/postulaciones/{postulacionUuid}/horas")
+    public String mostrarFormularioHoras(@PathVariable String concursoUuid, @PathVariable String postulacionUuid,
                                          Model model, RedirectAttributes attributes) {
         try {
-            ConcursoDTO concurso = obtenerConcurso(concursoId);
-            ConcursoDocenteDTO postulacion = obtenerPostulacion(concursoId, postulacionId);
+            ConcursoDTO concurso = obtenerConcurso(concursoUuid);
+            ConcursoDocenteDTO postulacion = obtenerPostulacion(concursoUuid, postulacionUuid);
             validarModificacionHoras(concurso, postulacion);
-            List<ConcursoDocenteDTO> postulantes = postulantesDelConcurso(concursoId);
+            List<ConcursoDocenteDTO> postulantes = postulantesDelConcurso(concursoUuid);
             Integer actuales = horasEfectivas(postulacion);
             Integer disponibles = horasDisponiblesDe(concurso, postulantes);
             model.addAttribute("concurso", concurso);
@@ -509,22 +509,22 @@ public class ConcursoController extends BaseController<ConcursoDTO, Long> {
             return "concursos/modificar-horas";
         } catch (RuntimeException e) {
             attributes.addFlashAttribute("msgError", e.getMessage());
-            return "redirect:/concursos/" + concursoId;
+            return "redirect:/concursos/" + concursoUuid;
         }
     }
 
-    @PostMapping("/{concursoId}/postulaciones/{postulacionId}/horas")
-    public String modificarHoras(@PathVariable Long concursoId, @PathVariable Long postulacionId,
+    @PostMapping("/{concursoUuid}/postulaciones/{postulacionUuid}/horas")
+    public String modificarHoras(@PathVariable String concursoUuid, @PathVariable String postulacionUuid,
                                  @RequestParam(value = "horasNuevas", required = false) Integer horasNuevas,
                                  RedirectAttributes attributes) {
         try {
-            ConcursoDTO concurso = obtenerConcurso(concursoId);
-            ConcursoDocenteDTO postulacion = obtenerPostulacion(concursoId, postulacionId);
+            ConcursoDTO concurso = obtenerConcurso(concursoUuid);
+            ConcursoDocenteDTO postulacion = obtenerPostulacion(concursoUuid, postulacionUuid);
             validarModificacionHoras(concurso, postulacion);
             if (horasNuevas == null || horasNuevas < 1) {
                 throw new IllegalArgumentException("Indique una cantidad de horas válida (mínimo 1).");
             }
-            List<ConcursoDocenteDTO> postulantes = postulantesDelConcurso(concursoId);
+            List<ConcursoDocenteDTO> postulantes = postulantesDelConcurso(concursoUuid);
             Integer disponibles = horasDisponiblesDe(concurso, postulantes);
             Integer actuales = horasEfectivas(postulacion);
             if (disponibles != null) {
@@ -537,28 +537,28 @@ public class ConcursoController extends BaseController<ConcursoDTO, Long> {
             // Persistir las horas en el Servidor.
             postulacion.setHorasElegidas(horasNuevas);
             concursoDocenteService.modificar(postulacion.getId(), postulacion);
-            Integer nuevasDisponibles = horasDisponiblesDe(concurso, postulantesDelConcurso(concursoId));
+            Integer nuevasDisponibles = horasDisponiblesDe(concurso, postulantesDelConcurso(concursoUuid));
             attributes.addFlashAttribute("msgExito", "Horas actualizadas a " + horasNuevas + " h. Horas disponibles ahora: "
                     + (nuevasDisponibles == null ? "—" : nuevasDisponibles + " h") + ".");
         } catch (RuntimeException e) {
             attributes.addFlashAttribute("msgError", e.getMessage());
         }
-        return "redirect:/concursos/" + concursoId;
+        return "redirect:/concursos/" + concursoUuid;
     }
 
     // ------------------------------------------------------------------
     // Paso 2: validar certificados
     // ------------------------------------------------------------------
 
-    @GetMapping("/{concursoId}/postulaciones/{postulacionId}/certificados")
-    public String mostrarFormularioCertificados(@PathVariable Long concursoId, @PathVariable Long postulacionId,
+    @GetMapping("/{concursoUuid}/postulaciones/{postulacionUuid}/certificados")
+    public String mostrarFormularioCertificados(@PathVariable String concursoUuid, @PathVariable String postulacionUuid,
                                                 Model model, RedirectAttributes attributes) {
         try {
-            ConcursoDTO concurso = obtenerConcurso(concursoId);
-            ConcursoDocenteDTO postulacion = obtenerPostulacion(concursoId, postulacionId);
+            ConcursoDTO concurso = obtenerConcurso(concursoUuid);
+            ConcursoDocenteDTO postulacion = obtenerPostulacion(concursoUuid, postulacionUuid);
             validacionCertificadosService.validarPendiente(concurso, postulacion);
 
-            List<CertificadoDTO> certificados = certificadoService.listarPorPostulacion(postulacionId);
+            List<CertificadoDTO> certificados = certificadoService.listarPorPostulacion(postulacionUuid);
             CertificadoDTO nuevo = new CertificadoDTO();
             nuevo.setTipoCertificado(new TipoCertificadoDTO());
 
@@ -572,25 +572,25 @@ public class ConcursoController extends BaseController<ConcursoDTO, Long> {
             return "concursos/validar-certificados";
         } catch (RuntimeException e) {
             attributes.addFlashAttribute("msgError", e.getMessage());
-            return "redirect:/concursos/" + concursoId;
+            return "redirect:/concursos/" + concursoUuid;
         }
     }
 
-    @PostMapping("/{concursoId}/postulaciones/{postulacionId}/certificados")
-    public String validarCertificados(@PathVariable Long concursoId, @PathVariable Long postulacionId,
+    @PostMapping("/{concursoUuid}/postulaciones/{postulacionUuid}/certificados")
+    public String validarCertificados(@PathVariable String concursoUuid, @PathVariable String postulacionUuid,
                                       @RequestParam(value = "decision", required = false) String decision,
                                       @RequestParam(value = "observacion", required = false) String observacion,
                                       RedirectAttributes attributes) {
         try {
-            ConcursoDTO concurso = obtenerConcurso(concursoId);
-            ConcursoDocenteDTO postulacion = obtenerPostulacion(concursoId, postulacionId);
+            ConcursoDTO concurso = obtenerConcurso(concursoUuid);
+            ConcursoDocenteDTO postulacion = obtenerPostulacion(concursoUuid, postulacionUuid);
             String mensaje = validacionCertificadosService.resolver(concurso, postulacion, decision, observacion);
             attributes.addFlashAttribute("msgExito", mensaje);
-            return "redirect:/concursos/" + concursoId;
+            return "redirect:/concursos/" + concursoUuid;
         } catch (RuntimeException e) {
             // Se vuelve al paso 2 (no al concurso) para que el usuario pueda cargar lo que falta.
             attributes.addFlashAttribute("msgError", e.getMessage());
-            return "redirect:/concursos/" + concursoId + "/postulaciones/" + postulacionId + "/certificados";
+            return "redirect:/concursos/" + concursoUuid + "/postulaciones/" + postulacionUuid + "/certificados";
         }
     }
 
@@ -598,12 +598,12 @@ public class ConcursoController extends BaseController<ConcursoDTO, Long> {
     // Paso 3: confirmación de toma de posesión / declarar inefectivo
     // ------------------------------------------------------------------
 
-    @GetMapping("/{concursoId}/postulaciones/{postulacionId}/posesion")
-    public String mostrarFormularioPosesion(@PathVariable Long concursoId, @PathVariable Long postulacionId,
+    @GetMapping("/{concursoUuid}/postulaciones/{postulacionUuid}/posesion")
+    public String mostrarFormularioPosesion(@PathVariable String concursoUuid, @PathVariable String postulacionUuid,
                                             Model model, RedirectAttributes attributes) {
         try {
-            ConcursoDTO concurso = obtenerConcurso(concursoId);
-            ConcursoDocenteDTO postulacion = obtenerPostulacion(concursoId, postulacionId);
+            ConcursoDTO concurso = obtenerConcurso(concursoUuid);
+            ConcursoDocenteDTO postulacion = obtenerPostulacion(concursoUuid, postulacionUuid);
             validarAbierto(concurso, "no se puede confirmar la toma de posesión");
             if (estadoEfectivo(postulacion) != EstadoPostulacion.DESIGNADO_PENDIENTE_POSESION) {
                 throw new IllegalArgumentException("La postulación no está pendiente de toma de posesión.");
@@ -620,21 +620,21 @@ public class ConcursoController extends BaseController<ConcursoDTO, Long> {
             return "concursos/posesion";
         } catch (RuntimeException e) {
             attributes.addFlashAttribute("msgError", e.getMessage());
-            return "redirect:/concursos/" + concursoId;
+            return "redirect:/concursos/" + concursoUuid;
         }
     }
 
-    @PostMapping("/{concursoId}/postulaciones/{postulacionId}/posesion")
-    public String confirmarPosesion(@PathVariable Long concursoId, @PathVariable Long postulacionId,
+    @PostMapping("/{concursoUuid}/postulaciones/{postulacionUuid}/posesion")
+    public String confirmarPosesion(@PathVariable String concursoUuid, @PathVariable String postulacionUuid,
                                     @ModelAttribute("item") DesignacionDTO designacion,
                                     RedirectAttributes attributes) {
         try {
-            ConcursoDTO concurso = obtenerConcurso(concursoId);
+            ConcursoDTO concurso = obtenerConcurso(concursoUuid);
             validarAbierto(concurso, "no se puede confirmar la toma de posesión");
             // La designación, el vínculo con el cargo, el avance de la postulación y el cierre
             // automático los resuelve el Servidor en una sola operación.
-            concursoDocenteService.confirmarPosesion(concursoId, postulacionId, designacion);
-            ConcursoDTO actualizado = service.obtener(concursoId);
+            concursoDocenteService.confirmarPosesion(concursoUuid, postulacionUuid, designacion);
+            ConcursoDTO actualizado = service.obtener(concursoUuid);
             if (actualizado != null && esCerrado(actualizado)) {
                 attributes.addFlashAttribute("msgExito", "Toma de posesión confirmada. El concurso se cerró automáticamente: todas sus horas quedaron con designación definitiva.");
             } else {
@@ -643,15 +643,15 @@ public class ConcursoController extends BaseController<ConcursoDTO, Long> {
         } catch (RuntimeException e) {
             attributes.addFlashAttribute("msgError", e.getMessage());
         }
-        return "redirect:/concursos/" + concursoId;
+        return "redirect:/concursos/" + concursoUuid;
     }
 
-    @GetMapping("/{concursoId}/postulaciones/{postulacionId}/inefectivo")
-    public String mostrarFormularioInefectivo(@PathVariable Long concursoId, @PathVariable Long postulacionId,
+    @GetMapping("/{concursoUuid}/postulaciones/{postulacionUuid}/inefectivo")
+    public String mostrarFormularioInefectivo(@PathVariable String concursoUuid, @PathVariable String postulacionUuid,
                                               Model model, RedirectAttributes attributes) {
         try {
-            ConcursoDTO concurso = obtenerConcurso(concursoId);
-            ConcursoDocenteDTO postulacion = obtenerPostulacion(concursoId, postulacionId);
+            ConcursoDTO concurso = obtenerConcurso(concursoUuid);
+            ConcursoDocenteDTO postulacion = obtenerPostulacion(concursoUuid, postulacionUuid);
             validarAbierto(concurso, "no se puede declarar inefectivo");
             if (estadoEfectivo(postulacion) != EstadoPostulacion.DESIGNADO_PENDIENTE_POSESION) {
                 throw new IllegalArgumentException("Solo se puede declarar inefectivo a docentes pendientes de toma de posesión.");
@@ -662,17 +662,17 @@ public class ConcursoController extends BaseController<ConcursoDTO, Long> {
             return "concursos/inefectivo";
         } catch (RuntimeException e) {
             attributes.addFlashAttribute("msgError", e.getMessage());
-            return "redirect:/concursos/" + concursoId;
+            return "redirect:/concursos/" + concursoUuid;
         }
     }
 
-    @PostMapping("/{concursoId}/postulaciones/{postulacionId}/inefectivo")
-    public String declararInefectivo(@PathVariable Long concursoId, @PathVariable Long postulacionId,
+    @PostMapping("/{concursoUuid}/postulaciones/{postulacionUuid}/inefectivo")
+    public String declararInefectivo(@PathVariable String concursoUuid, @PathVariable String postulacionUuid,
                                      @RequestParam(value = "observacion", required = false) String observacion,
                                      RedirectAttributes attributes) {
         try {
-            ConcursoDTO concurso = obtenerConcurso(concursoId);
-            ConcursoDocenteDTO postulacion = obtenerPostulacion(concursoId, postulacionId);
+            ConcursoDTO concurso = obtenerConcurso(concursoUuid);
+            ConcursoDocenteDTO postulacion = obtenerPostulacion(concursoUuid, postulacionUuid);
             validarAbierto(concurso, "no se puede declarar inefectivo");
             if (estadoEfectivo(postulacion) != EstadoPostulacion.DESIGNADO_PENDIENTE_POSESION) {
                 throw new IllegalArgumentException("Solo se puede declarar inefectivo a docentes pendientes de toma de posesión.");
@@ -688,24 +688,24 @@ public class ConcursoController extends BaseController<ConcursoDTO, Long> {
         } catch (RuntimeException e) {
             attributes.addFlashAttribute("msgError", e.getMessage());
         }
-        return "redirect:/concursos/" + concursoId;
+        return "redirect:/concursos/" + concursoUuid;
     }
 
     // ------------------------------------------------------------------
     // Paso 4: cierre y rellamado
     // ------------------------------------------------------------------
 
-    @PostMapping("/{concursoId}/cerrar")
-    public String cerrarConcurso(@PathVariable Long concursoId, RedirectAttributes attributes) {
+    @PostMapping("/{concursoUuid}/cerrar")
+    public String cerrarConcurso(@PathVariable String concursoUuid, RedirectAttributes attributes) {
         try {
-            ConcursoDTO concurso = obtenerConcurso(concursoId);
+            ConcursoDTO concurso = obtenerConcurso(concursoUuid);
             if (esCerrado(concurso)) {
                 throw new IllegalArgumentException("El concurso ya está cerrado.");
             }
             // La regla de pendientes de certificados la valida el Servidor al cerrar.
             concurso.setEstadoConcurso(EstadoConcurso.FINALIZADO);
             service.modificar(concurso.getId(), concurso);
-            List<ConcursoDocenteDTO> postulantes = postulantesDelConcurso(concursoId);
+            List<ConcursoDocenteDTO> postulantes = postulantesDelConcurso(concursoUuid);
             Integer disponibles = horasDisponiblesDe(concurso, postulantes);
             if (disponibles != null && disponibles > 0) {
                 attributes.addFlashAttribute("msgInfo", "El concurso quedó cerrado con " + disponibles
@@ -716,22 +716,22 @@ public class ConcursoController extends BaseController<ConcursoDTO, Long> {
         } catch (RuntimeException e) {
             attributes.addFlashAttribute("msgError", e.getMessage());
         }
-        return "redirect:/concursos/" + concursoId;
+        return "redirect:/concursos/" + concursoUuid;
     }
 
-    @GetMapping("/{concursoId}/rellamado")
-    public String mostrarFormularioRellamado(@PathVariable Long concursoId, Model model,
+    @GetMapping("/{concursoUuid}/rellamado")
+    public String mostrarFormularioRellamado(@PathVariable String concursoUuid, Model model,
                                              RedirectAttributes attributes) {
         try {
-            ConcursoDTO concurso = obtenerConcurso(concursoId);
+            ConcursoDTO concurso = obtenerConcurso(concursoUuid);
             if (!esCerrado(concurso)) {
                 throw new IllegalArgumentException("Cierre primero el concurso para generar el rellamado con las horas remanentes.");
             }
-            Integer disponibles = horasDisponiblesDe(concurso, postulantesDelConcurso(concursoId));
+            Integer disponibles = horasDisponiblesDe(concurso, postulantesDelConcurso(concursoUuid));
             if (disponibles == null || disponibles <= 0) {
                 throw new IllegalArgumentException("No hay horas remanentes para un rellamado.");
             }
-            if (cargoTieneConcursoAbierto(concurso.getCargo() != null ? concurso.getCargo().getId() : null, concursoId)) {
+            if (cargoTieneConcursoAbierto(concurso.getCargo() != null ? concurso.getCargo().getId() : null, concursoUuid)) {
                 throw new IllegalArgumentException(CARGO_CONCURSO_ABIERTO);
             }
             ConcursoDTO rellamado = new ConcursoDTO();
@@ -742,29 +742,29 @@ public class ConcursoController extends BaseController<ConcursoDTO, Long> {
             rellamado.setCaracterDesignacion(concurso.getCaracterDesignacion());
             rellamado.setEstadoConcurso(EstadoConcurso.PUBLICADO);
             rellamado.setEsRellamado(true);
-            rellamado.setConcursoOrigenId(concurso.getId());
+            rellamado.setConcursoOrigenUuid(concurso.getId());
             model.addAttribute("concurso", concurso);
             model.addAttribute("horasRemanentes", disponibles);
             model.addAttribute("item", rellamado);
             return "concursos/rellamado";
         } catch (RuntimeException e) {
             attributes.addFlashAttribute("msgError", e.getMessage());
-            return "redirect:/concursos/" + concursoId;
+            return "redirect:/concursos/" + concursoUuid;
         }
     }
 
-    @PostMapping("/{concursoId}/rellamado")
-    public String crearRellamado(@PathVariable Long concursoId,
+    @PostMapping("/{concursoUuid}/rellamado")
+    public String crearRellamado(@PathVariable String concursoUuid,
                                  @ModelAttribute("item") ConcursoDTO rellamado,
                                  RedirectAttributes attributes) {
-        Long nuevoId = null;
+        String nuevoId = null;
         try {
             if (rellamado.getFechaConcurso() == null) {
                 throw new IllegalArgumentException("Indique la fecha y hora del concurso.");
             }
             rellamado.setId(null);
             rellamado.setEsRellamado(true);
-            rellamado.setConcursoOrigenId(concursoId);
+            rellamado.setConcursoOrigenUuid(concursoUuid);
             rellamado.setFechaCierre(rellamado.getFechaConcurso().toLocalDate());
             // El estado, el origen cerrado, las horas remanentes, la herencia y la transferencia los
             // resuelve el Servidor.
@@ -776,9 +776,9 @@ public class ConcursoController extends BaseController<ConcursoDTO, Long> {
                     + ". El concurso original quedó cerrado definitivamente.");
         } catch (RuntimeException e) {
             attributes.addFlashAttribute("msgError", e.getMessage());
-            return "redirect:/concursos/" + concursoId;
+            return "redirect:/concursos/" + concursoUuid;
         }
-        return nuevoId != null ? "redirect:/concursos/" + nuevoId : "redirect:/concursos/" + concursoId;
+        return nuevoId != null ? "redirect:/concursos/" + nuevoId : "redirect:/concursos/" + concursoUuid;
     }
 
     // ------------------------------------------------------------------
@@ -799,8 +799,8 @@ public class ConcursoController extends BaseController<ConcursoDTO, Long> {
         concurso.setOrigenVacancia(MotivoVacancia.texto(concurso.getMotivoVacancia(), concurso.getOrigenVacancia()));
     }
 
-    private ConcursoDTO obtenerConcurso(Long concursoId) {
-        ConcursoDTO concurso = service.obtener(concursoId);
+    private ConcursoDTO obtenerConcurso(String concursoUuid) {
+        ConcursoDTO concurso = service.obtener(concursoUuid);
         if (concurso == null) {
             throw new IllegalArgumentException("No se encontró el concurso.");
         }
@@ -808,9 +808,9 @@ public class ConcursoController extends BaseController<ConcursoDTO, Long> {
         return concurso;
     }
 
-    private ConcursoDocenteDTO obtenerPostulacion(Long concursoId, Long postulacionId) {
-        return postulantesDelConcurso(concursoId).stream()
-                .filter(postulacion -> Objects.equals(postulacion.getId(), postulacionId))
+    private ConcursoDocenteDTO obtenerPostulacion(String concursoUuid, String postulacionUuid) {
+        return postulantesDelConcurso(concursoUuid).stream()
+                .filter(postulacion -> Objects.equals(postulacion.getId(), postulacionUuid))
                 .findFirst()
                 .orElseThrow(() -> new IllegalArgumentException("La postulación no pertenece a este concurso."));
     }
@@ -851,7 +851,7 @@ public class ConcursoController extends BaseController<ConcursoDTO, Long> {
         } catch (RuntimeException e) {
             return List.of();
         }
-        List<Long> ocupados = concursosAbiertos(actual != null ? actual.getId() : null).stream()
+        List<String> ocupados = concursosAbiertos(actual != null ? actual.getId() : null).stream()
                 .map(concurso -> concurso.getCargo() != null ? concurso.getCargo().getId() : null)
                 .filter(Objects::nonNull)
                 .toList();
@@ -866,7 +866,7 @@ public class ConcursoController extends BaseController<ConcursoDTO, Long> {
     }
 
     /** Concursos abiertos: manda el estado (distinto de FINALIZADO), no las fechas. */
-    private List<ConcursoDTO> concursosAbiertos(Long concursoExcluido) {
+    private List<ConcursoDTO> concursosAbiertos(String concursoExcluido) {
         try {
             return service.listarActivos().stream()
                     .filter(concurso -> !esCerrado(concurso))
@@ -877,13 +877,13 @@ public class ConcursoController extends BaseController<ConcursoDTO, Long> {
         }
     }
 
-    private boolean cargoTieneConcursoAbierto(Long cargoId, Long concursoExcluido) {
-        if (cargoId == null) {
+    private boolean cargoTieneConcursoAbierto(String cargoUuid, String concursoExcluido) {
+        if (cargoUuid == null) {
             return false;
         }
         return concursosAbiertos(concursoExcluido).stream()
                 .anyMatch(concurso -> concurso.getCargo() != null
-                        && Objects.equals(concurso.getCargo().getId(), cargoId));
+                        && Objects.equals(concurso.getCargo().getId(), cargoUuid));
     }
 
     /**
@@ -944,7 +944,7 @@ public class ConcursoController extends BaseController<ConcursoDTO, Long> {
     }
 
     private List<DocenteDTO> docentesDisponibles(List<ConcursoDocenteDTO> postulantes) {
-        List<Long> ocupados = postulantes.stream()
+        List<String> ocupados = postulantes.stream()
                 .filter(postulacion -> !estadoEfectivo(postulacion).isCancelado())
                 .map(ConcursoDocenteDTO::getDocente)
                 .filter(Objects::nonNull)
@@ -970,7 +970,7 @@ public class ConcursoController extends BaseController<ConcursoDTO, Long> {
                 .toList();
         List<DocenteDTO> excluidosDocentes = new ArrayList<>(docentesConDesignacionActivaDelCargo(concurso));
         excluidosDocentes.addAll(docentesConDesignacionEfectivaDelOrigen(concurso));
-        List<Long> excluidos = excluidosDocentes.stream()
+        List<String> excluidos = excluidosDocentes.stream()
                 .map(DocenteDTO::getId)
                 .distinct()
                 .toList();
@@ -1018,14 +1018,14 @@ public class ConcursoController extends BaseController<ConcursoDTO, Long> {
      */
     private List<DocenteDTO> docentesConDesignacionEfectivaDelOrigen(ConcursoDTO concurso) {
         Boolean esRellamado = concurso.getEsRellamado();
-        Long concursoOrigenId = concurso.getConcursoOrigenId();
-        if (!Boolean.TRUE.equals(esRellamado) || concursoOrigenId == null || concurso.getCargo() == null) {
+        String concursoOrigenUuid = concurso.getConcursoOrigenUuid();
+        if (!Boolean.TRUE.equals(esRellamado) || concursoOrigenUuid == null || concurso.getCargo() == null) {
             return List.of();
         }
         ConcursoDTO origen;
         CargoDTO cargo;
         try {
-            origen = obtenerConcurso(concursoOrigenId);
+            origen = obtenerConcurso(concursoOrigenUuid);
             cargo = cargoService.obtener(concurso.getCargo().getId());
         } catch (RuntimeException e) {
             return List.of();
@@ -1039,15 +1039,15 @@ public class ConcursoController extends BaseController<ConcursoDTO, Long> {
         return cargo.getDesignaciones().stream()
                 .filter(designacion -> !Boolean.TRUE.equals(designacion.getEliminado()))
                 .filter(designacion -> designacion.getEstadoDesignacion() == EstadoDesignacion.ACTIVO)
-                .filter(designacion -> designacion.getConcursoId() != null
-                        ? Objects.equals(designacion.getConcursoId(), origen.getId())
+                .filter(designacion -> designacion.getConcursoUuid() != null
+                        ? Objects.equals(designacion.getConcursoUuid(), origen.getId())
                         : (origenEsperado != null && origenEsperado.equals(designacion.getOrigenVacancia())))
                 .map(DesignacionDTO::getDocente)
                 .filter(Objects::nonNull)
                 .toList();
     }
 
-    private List<ConcursoDocenteDTO> postulantesDelConcurso(Long concursoId) {
-        return flujoService.postulantesDelConcurso(concursoId);
+    private List<ConcursoDocenteDTO> postulantesDelConcurso(String concursoUuid) {
+        return flujoService.postulantesDelConcurso(concursoUuid);
     }
 }

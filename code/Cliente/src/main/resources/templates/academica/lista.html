@@ -1,5 +1,6 @@
 <!doctype html>
 <html lang="es" xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
       th:replace="~{base :: layout('Académica', ~{::#encabezado}, ~{::#contenido}, '')}">
 <section id="encabezado">
   <h3 data-subtitle="Cursos registrados en la institución">Académica</h3>
@@ -13,7 +14,7 @@
              placeholder="Buscar por año…" aria-label="Buscar cursos">
     </div>
     <div class="toolbar-filters">
-      <a class="btn btn-primary" th:href="@{/academica/nuevo}">
+      <a class="btn btn-primary" sec:authorize="hasRole('ADMIN')" th:href="@{/academica/nuevo}">
         <i class="bi bi-plus-lg me-1"></i>Nuevo curso
       </a>
     </div>
@@ -30,18 +31,18 @@
       <tbody>
       <tr th:each="item : ${items}">
         <td>
-          <a class="fw-semibold text-decoration-none" th:href="@{/academica/{id}(id=${item.id})}"
+          <a class="fw-semibold text-decoration-none" th:href="@{/academica/{uuid}(uuid=${item.uuid})}"
              th:text="${item.anio} + '° Año'"></a>
         </td>
         <td>
           <div class="table-actions">
-            <a class="btn btn-sm btn-outline-primary" th:href="@{/academica/{id}(id=${item.id})}">
+            <a class="btn btn-sm btn-outline-primary" th:href="@{/academica/{uuid}(uuid=${item.uuid})}">
               <i class="bi bi-eye"></i>Ver
             </a>
-            <a class="btn btn-sm btn-outline-secondary" th:href="@{/academica/{id}/editar(id=${item.id})}">
+            <a class="btn btn-sm btn-outline-secondary" sec:authorize="hasRole('ADMIN')" th:href="@{/academica/{uuid}/editar(uuid=${item.uuid})}">
               <i class="bi bi-pencil"></i>Editar
             </a>
-            <a class="btn btn-sm btn-outline-danger" th:href="@{/academica/baja/{id}(id=${item.id})}"
+            <a class="btn btn-sm btn-outline-danger" sec:authorize="hasRole('ADMIN')" th:href="@{/academica/baja/{uuid}(uuid=${item.uuid})}"
                th:attr="data-confirm=${'¿Dar de baja el curso ' + item.anio + '° Año?'}">
               <i class="bi bi-trash"></i>Eliminar
             </a>
@@ -56,7 +57,7 @@
     <i class="bi bi-mortarboard"></i>
     <p class="empty-title">Sin cursos registrados</p>
     <p>Registre los cursos de la institución para asociarlos a las materias y cargos.</p>
-    <a class="btn btn-primary mt-3" th:href="@{/academica/nuevo}">
+    <a class="btn btn-primary mt-3" sec:authorize="hasRole('ADMIN')" th:href="@{/academica/nuevo}">
       <i class="bi bi-plus-lg me-1"></i>Nuevo curso
     </a>
   </div>

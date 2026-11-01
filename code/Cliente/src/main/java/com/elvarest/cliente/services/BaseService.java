@@ -13,7 +13,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.List;
 
-public abstract class BaseService<T, ID> {
+public abstract class BaseService<T> {
 
     protected final RestTemplate restTemplate = new RestTemplate();
     protected final String apiUrl;
@@ -44,10 +44,10 @@ public abstract class BaseService<T, ID> {
         return (Class<T[]>) java.lang.reflect.Array.newInstance(dtoClass, 0).getClass();
     }
 
-    public T obtener(ID id) {
+    public T obtener(String uuid) {
         HttpEntity<Void> entity = new HttpEntity<>(authService.authHeaders());
         ResponseEntity<T> response = restTemplate.exchange(
-                apiUrl + "/" + id,
+                apiUrl + "/" + uuid,
                 HttpMethod.GET,
                 entity,
                 dtoClass
@@ -70,19 +70,19 @@ public abstract class BaseService<T, ID> {
         }
     }
 
-    public void modificar(ID id, T dto) {
+    public void modificar(String uuid, T dto) {
         HttpEntity<T> entity = new HttpEntity<>(dto, authService.authHeaders());
         try {
-            restTemplate.exchange(apiUrl + "/" + id, HttpMethod.PUT, entity, Void.class);
+            restTemplate.exchange(apiUrl + "/" + uuid, HttpMethod.PUT, entity, Void.class);
         } catch (HttpClientErrorException e) {
             throw errorDelServidor(e);
         }
     }
 
-    public void bajaLogica(ID id) {
+    public void bajaLogica(String uuid) {
         HttpEntity<Void> entity = new HttpEntity<>(authService.authHeaders());
         try {
-            restTemplate.exchange(apiUrl + "/" + id, HttpMethod.DELETE, entity, Void.class);
+            restTemplate.exchange(apiUrl + "/" + uuid, HttpMethod.DELETE, entity, Void.class);
         } catch (HttpClientErrorException e) {
             throw errorDelServidor(e);
         }
@@ -124,5 +124,5 @@ public abstract class BaseService<T, ID> {
     protected void preAlta(T entidad) throws ErrorServiceException {}
     protected void postAlta(T entidad)throws ErrorServiceException {}
     protected void preModificacion(T entidad)throws ErrorServiceException {}
-    protected void preBaja(ID id)throws ErrorServiceException {}
+    protected void preBaja(String uuid)throws ErrorServiceException {}
 }

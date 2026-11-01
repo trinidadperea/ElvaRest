@@ -23,7 +23,7 @@
                 <i class="bi bi-arrow-left me-1"></i>Volver
             </a>
             <a class="btn btn-outline-primary" target="_blank" rel="noopener"
-               th:href="@{/reportes/concurso/{id}/pdf(id=${item.id})}">
+               th:href="@{/reportes/concurso/{uuid}/pdf(uuid=${item.uuid})}">
                 <i class="bi bi-file-earmark-pdf me-1"></i>Descargar PDF
             </a>
         </div>
@@ -96,7 +96,7 @@
                 <div class="fw-semibold">Concurso de rellamado</div>
                 <div class="text-secondary small">
                     Hereda el cargo y las horas remanentes de
-                    <a th:href="@{/concursos/{id}(id=${concursoOrigen.id})}" th:text="${concursoOrigen.descripcion}">concurso origen</a>.
+                    <a th:href="@{/concursos/{uuid}(uuid=${concursoOrigen.uuid})}" th:text="${concursoOrigen.descripcion}">concurso origen</a>.
                 </div>
             </div>
         </div>
@@ -110,7 +110,7 @@
                 <h4 class="flow-step-title">Registrar / modificar toma de horas</h4>
                 <p class="flow-step-hint">Cada docente ocupa parte de las horas disponibles y queda pendiente de certificados. Las horas solo se pueden modificar mientras el concurso está abierto.</p>
             </div>
-            <a class="btn btn-sm btn-primary" th:if="${!cerrado and !preceptorCubierto and (horasDisponibles == null or horasDisponibles > 0)}" th:href="@{/concursos/{id}/postular(id=${item.id})}">
+            <a class="btn btn-sm btn-primary" th:if="${!cerrado and !preceptorCubierto and (horasDisponibles == null or horasDisponibles > 0)}" th:href="@{/concursos/{uuid}/postular(uuid=${item.uuid})}">
                 <i class="bi bi-person-plus me-1"></i><th:block th:text="${esDePreceptor ? 'Agregar preceptor' : 'Agregar nuevo docente'}">Agregar nuevo docente</th:block>
             </a>
         </div>
@@ -134,19 +134,19 @@
                             <span class="d-block text-secondary small" th:if="${postulacion.docente != null}"
                                   th:text="'DNI ' + ${postulacion.docente.numeroDocumento}"></span>
                         </td>
-                        <td th:text="${horasPostulacion[postulacion.id] != null ? horasPostulacion[postulacion.id] + ' h' : '—'}"></td>
+                        <td th:text="${horasPostulacion[postulacion.uuid] != null ? horasPostulacion[postulacion.uuid] + ' h' : '—'}"></td>
                         <td>
               <span class="status-badge"
-                    th:classappend="${estadosPostulacion[postulacion.id].badgeClass}"
-                    th:text="${estadosPostulacion[postulacion.id].etiqueta}"></span>
+                    th:classappend="${estadosPostulacion[postulacion.uuid].badgeClass}"
+                    th:text="${estadosPostulacion[postulacion.uuid].etiqueta}"></span>
                         </td>
                         <td class="text-secondary small"
-                            th:text="${observaciones[postulacion.id] != null ? observaciones[postulacion.id] : '—'}"></td>
+                            th:text="${observaciones[postulacion.uuid] != null ? observaciones[postulacion.uuid] : '—'}"></td>
                         <td>
                             <div class="table-actions">
                                 <a class="btn btn-sm btn-outline-secondary"
-                                   th:if="${!cerrado and !esDePreceptor and estadosPostulacion[postulacion.id] != T(com.elvarest.cliente.dto.enums.EstadoPostulacion).CANCELADO_INEFECTIVO and estadosPostulacion[postulacion.id] != T(com.elvarest.cliente.dto.enums.EstadoPostulacion).DESIGNACION_DEFINITIVA}"
-                                   th:href="@{/concursos/{cid}/postulaciones/{pid}/horas(cid=${item.id}, pid=${postulacion.id})}">
+                                   th:if="${!cerrado and !esDePreceptor and estadosPostulacion[postulacion.uuid] != T(com.elvarest.cliente.dto.enums.EstadoPostulacion).CANCELADO_INEFECTIVO and estadosPostulacion[postulacion.uuid] != T(com.elvarest.cliente.dto.enums.EstadoPostulacion).DESIGNACION_DEFINITIVA}"
+                                   th:href="@{/concursos/{concursoUuid}/postulaciones/{postulacionUuid}/horas(concursoUuid=${item.uuid}, postulacionUuid=${postulacion.uuid})}">
                                     <i class="bi bi-hourglass-split"></i>Modificar horas
                                 </a>
                             </div>
@@ -188,13 +188,13 @@
             <span class="mini-item-title"
                   th:text="${postulacion.docente != null ? postulacion.docente.apellido + ', ' + postulacion.docente.nombre : 'Docente sin datos'}"></span>
                         <div class="mini-item-meta">
-                            <span th:text="${horasPostulacion[postulacion.id] != null ? horasPostulacion[postulacion.id] + ' h reservadas' : 'Sin horas registradas'}"></span>
-                            <span class="status-badge" th:classappend="${estadosPostulacion[postulacion.id].badgeClass}"
-                                  th:text="${estadosPostulacion[postulacion.id].etiqueta}"></span>
+                            <span th:text="${horasPostulacion[postulacion.uuid] != null ? horasPostulacion[postulacion.uuid] + ' h reservadas' : 'Sin horas registradas'}"></span>
+                            <span class="status-badge" th:classappend="${estadosPostulacion[postulacion.uuid].badgeClass}"
+                                  th:text="${estadosPostulacion[postulacion.uuid].etiqueta}"></span>
                         </div>
                     </div>
                     <a class="btn btn-sm btn-primary align-self-center" th:if="${!cerrado}"
-                       th:href="@{/concursos/{cid}/postulaciones/{pid}/certificados(cid=${item.id}, pid=${postulacion.id})}">
+                       th:href="@{/concursos/{concursoUuid}/postulaciones/{postulacionUuid}/certificados(concursoUuid=${item.uuid}, postulacionUuid=${postulacion.uuid})}">
                         <i class="bi bi-patch-check me-1"></i>Validar
                     </a>
                 </li>
@@ -224,18 +224,18 @@
             <span class="mini-item-title"
                   th:text="${postulacion.docente != null ? postulacion.docente.apellido + ', ' + postulacion.docente.nombre : 'Docente sin datos'}"></span>
                         <div class="mini-item-meta">
-                            <span th:text="${horasPostulacion[postulacion.id] != null ? horasPostulacion[postulacion.id] + ' h asignadas' : 'Sin horas registradas'}"></span>
-                            <span class="status-badge" th:classappend="${estadosPostulacion[postulacion.id].badgeClass}"
-                                  th:text="${estadosPostulacion[postulacion.id].etiqueta}"></span>
+                            <span th:text="${horasPostulacion[postulacion.uuid] != null ? horasPostulacion[postulacion.uuid] + ' h asignadas' : 'Sin horas registradas'}"></span>
+                            <span class="status-badge" th:classappend="${estadosPostulacion[postulacion.uuid].badgeClass}"
+                                  th:text="${estadosPostulacion[postulacion.uuid].etiqueta}"></span>
                         </div>
                     </div>
                     <div class="d-flex flex-wrap gap-2 align-self-center" th:if="${!cerrado}">
                         <a class="btn btn-sm btn-success"
-                           th:href="@{/concursos/{cid}/postulaciones/{pid}/posesion(cid=${item.id}, pid=${postulacion.id})}">
+                           th:href="@{/concursos/{concursoUuid}/postulaciones/{postulacionUuid}/posesion(concursoUuid=${item.uuid}, postulacionUuid=${postulacion.uuid})}">
                             <i class="bi bi-person-check me-1"></i>Confirmar posesión
                         </a>
                         <a class="btn btn-sm btn-outline-danger"
-                           th:href="@{/concursos/{cid}/postulaciones/{pid}/inefectivo(cid=${item.id}, pid=${postulacion.id})}">
+                           th:href="@{/concursos/{concursoUuid}/postulaciones/{postulacionUuid}/inefectivo(concursoUuid=${item.uuid}, postulacionUuid=${postulacion.uuid})}">
                             <i class="bi bi-person-x me-1"></i>Declarar inefectivo
                         </a>
                     </div>
@@ -277,13 +277,13 @@
                 <i class="bi bi-arrow-repeat fs-5"></i>
                 <p class="free-hours-text"
                    th:text="'El concurso está cerrado con ' + ${horasDisponibles} + ' h remanentes. Puede abrir un nuevo concurso asociado (rellamado) que herede el cargo y tome esas horas como totales.'"></p>
-                <a class="btn btn-sm btn-primary" th:href="@{/concursos/{id}/rellamado(id=${item.id})}">
+                <a class="btn btn-sm btn-primary" th:href="@{/concursos/{uuid}/rellamado(uuid=${item.uuid})}">
                     <i class="bi bi-arrow-repeat me-1"></i>Abrir nuevo concurso (rellamado)
                 </a>
             </div>
 
             <div class="d-flex flex-wrap gap-2 align-items-center">
-                <form th:if="${!cerrado}" method="post" th:action="@{/concursos/{id}/cerrar(id=${item.id})}"
+                <form th:if="${!cerrado}" method="post" th:action="@{/concursos/{uuid}/cerrar(uuid=${item.uuid})}"
                       class="inline-action-form"
                       data-confirm="¿Cerrar el concurso? Se bloqueará la modificación de horas de todas las designaciones.">
                     <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">

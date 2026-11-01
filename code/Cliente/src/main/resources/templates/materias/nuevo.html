@@ -1,5 +1,6 @@
 <!doctype html>
 <html lang="es" xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
       th:replace="~{base :: layout('Nueva materia', ~{::#encabezado}, ~{::#contenido}, '')}">
 <section id="encabezado">
   <h3 data-subtitle="Registro de una materia de la institución">Nueva materia</h3>
@@ -22,9 +23,9 @@
     </div>
     <div class="mb-3">
       <label for="curso">Curso</label>
-      <select class="form-select" id="curso" name="curso.id">
+      <select class="form-select" id="curso" name="curso.uuid">
         <option value="">Sin curso asignado</option>
-        <option th:each="curso : ${cursos}" th:value="${curso.id}"
+        <option th:each="curso : ${cursos}" th:value="${curso.uuid}"
                 th:text="${curso.anio + '° Año'}"></option>
       </select>
       <div class="form-text">Curso al que pertenece la materia.</div>
@@ -34,7 +35,7 @@
       <a class="btn btn-outline-secondary" th:href="@{/materias/list}">
         <i class="bi bi-arrow-left me-1"></i>Cancelar
       </a>
-      <button type="submit" class="btn btn-primary">
+      <button type="submit" class="btn btn-primary" sec:authorize="hasRole('ADMIN')">
         <i class="bi bi-check-lg me-1"></i>Guardar materia
       </button>
     </div>

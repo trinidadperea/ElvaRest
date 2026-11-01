@@ -52,11 +52,11 @@
                 <div class="d-flex flex-wrap align-items-center gap-2 mb-2">
                     <h4 class="h6 mb-0">
                         <a class="text-decoration-none" th:if="${postulacion.concurso != null}"
-                           th:href="@{/concursos/{id}(id=${postulacion.concurso.id})}" th:text="${postulacion.concurso.descripcion}"></a>
+                           th:href="@{/concursos/{uuid}(uuid=${postulacion.concurso.uuid})}" th:text="${postulacion.concurso.descripcion}"></a>
                     </h4>
                     <span class="badge rounded-pill text-bg-secondary" th:if="${!grupo.admiteCarga}">Postulación cancelada</span>
                     <a class="btn btn-sm btn-outline-primary ms-auto" th:if="${grupo.admiteCarga}"
-                       th:href="@{/certificados/nuevo/postulacion/{id}(id=${postulacion.id})}">
+                       th:href="@{/certificados/nuevo/postulacion/{uuid}(uuid=${postulacion.uuid})}">
                         <i class="bi bi-file-earmark-plus me-1"></i>Cargar / renovar
                     </a>
                 </div>
@@ -98,7 +98,7 @@
                     </thead>
                     <tbody>
                     <tr th:each="designacion : ${designacionesDocente}">
-                        <td th:text="${materiasDesignaciones[designacion.id] != null ? materiasDesignaciones[designacion.id] : '—'}"></td>
+                        <td th:text="${materiasDesignaciones[designacion.uuid] != null ? materiasDesignaciones[designacion.uuid] : '—'}"></td>
                         <td>
                             <span th:text="${designacion.origenVacancia != null and !designacion.origenVacancia.isBlank() ? designacion.origenVacancia : '—'}"></span>
                             <span class="d-block text-secondary small"
@@ -153,7 +153,7 @@
                     <span class="mini-item-icon"><i class="bi bi-trophy"></i></span>
                     <div class="mini-item-body">
                         <a class="mini-item-title" th:if="${postulacion.concurso != null}"
-                           th:href="@{/concursos/{id}(id=${postulacion.concurso.id})}"
+                           th:href="@{/concursos/{uuid}(uuid=${postulacion.concurso.uuid})}"
                            th:text="${postulacion.concurso.descripcion}"></a>
                         <span class="mini-item-title" th:if="${postulacion.concurso == null}">Concurso sin datos</span>
                         <div class="mini-item-meta">
@@ -161,14 +161,14 @@
                 <i class="bi bi-calendar3 me-1"></i>
                 <time th:text="${#temporals.format(postulacion.fechaEmision, 'dd/MM/yyyy')}"></time>
               </span>
-                            <span th:text="${horasHistorial[postulacion.id] != null ? horasHistorial[postulacion.id] + ' h' : 'Sin horas registradas'}"></span>
-                            <span class="status-badge" th:if="${estadosHistorial[postulacion.id] != null}"
-                                  th:classappend="${estadosHistorial[postulacion.id].badgeClass}"
-                                  th:text="${estadosHistorial[postulacion.id].etiqueta}"></span>
+                            <span th:text="${horasHistorial[postulacion.uuid] != null ? horasHistorial[postulacion.uuid] + ' h' : 'Sin horas registradas'}"></span>
+                            <span class="status-badge" th:if="${estadosHistorial[postulacion.uuid] != null}"
+                                  th:classappend="${estadosHistorial[postulacion.uuid].badgeClass}"
+                                  th:text="${estadosHistorial[postulacion.uuid].etiqueta}"></span>
                         </div>
                     </div>
                     <a class="btn btn-sm btn-outline-primary align-self-center" th:if="${postulacion.concurso != null}"
-                       th:href="@{/concursos/{id}(id=${postulacion.concurso.id})}">Ver concurso</a>
+                       th:href="@{/concursos/{uuid}(uuid=${postulacion.concurso.uuid})}">Ver concurso</a>
                 </li>
             </ul>
             <div class="empty-state d-none" data-filter-empty="historialConcursos" th:if="${!historialPostulaciones.isEmpty()}">
