@@ -24,6 +24,6 @@ public class AlertaDTO extends BaseDTO{
     private LocalDate fechaResolucion;
     /** Certificado que originó la alerta (nulo en las alertas manuales). Llega sin la postulación. */
     private CertificadoDTO certificado;
-    /** Concurso que originó la alerta automática (id plano); nulo en las de certificado y designación. */
-    private Long concursoId;
+    /** UUID del concurso que originó la alerta automática; nulo en las de certificado y designación. */
+    private String concursoUuid;
 }

@@ -1,5 +1,6 @@
 <!doctype html>
 <html lang="es" xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
       th:replace="~{base :: layout('Tipos de certificado', ~{::#encabezado}, ~{::#contenido}, '')}">
 <section id="encabezado">
     <h3 data-subtitle="Documentación que se pide al docente cuando gana un concurso">Tipos de certificado</h3>
@@ -7,7 +8,7 @@
 <section id="contenido">
     <div class="list-toolbar">
         <span></span>
-        <a class="btn btn-primary" th:href="@{/tipos-certificado/nuevo}">
+        <a class="btn btn-primary" th:href="@{/tipos-certificado/nuevo}" sec:authorize="hasRole('ADMIN')">
             <i class="bi bi-plus-lg me-1"></i>Nuevo tipo
         </a>
     </div>
@@ -31,10 +32,11 @@
                 <td th:text="${item.permiteProvisorio ? 'Sí' : 'No'}"></td>
                 <td>
                     <div class="table-actions">
-                        <a class="btn btn-sm btn-outline-secondary" th:href="@{/tipos-certificado/{id}/editar(id=${item.id})}">
+                        <a class="btn btn-sm btn-outline-secondary" th:href="@{/tipos-certificado/{uuid}/editar(uuid=${item.uuid})}" sec:authorize="hasRole('ADMIN')">
                             <i class="bi bi-pencil"></i>Editar
                         </a>
-                        <a class="btn btn-sm btn-outline-danger" th:href="@{/tipos-certificado/baja/{id}(id=${item.id})}"
+                        <a class="btn btn-sm btn-outline-danger" th:href="@{/tipos-certificado/baja/{uuid}(uuid=${item.uuid})}"
+                           sec:authorize="hasRole('ADMIN')"
                            th:attr="data-confirm='¿Dar de baja este tipo de certificado?'">
                             <i class="bi bi-trash"></i>Eliminar
                         </a>

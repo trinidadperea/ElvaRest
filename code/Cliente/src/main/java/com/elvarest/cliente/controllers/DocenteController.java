@@ -24,7 +24,7 @@ import java.util.Objects;
 
 @Controller
 @RequestMapping("/docentes")
-public class DocenteController extends BaseController<DocenteDTO, Long> {
+public class DocenteController extends BaseController<DocenteDTO> {
 
     private final CertificadoService certificadoService;
     private final ConcursoDocenteService concursoDocenteService;
@@ -59,8 +59,8 @@ public class DocenteController extends BaseController<DocenteDTO, Long> {
                 .toList();
         model.addAttribute("historialPostulaciones", historial);
 
-        Map<Long, EstadoPostulacion> estadosHistorial = new HashMap<>();
-        Map<Long, Integer> horasHistorial = new HashMap<>();
+        Map<String, EstadoPostulacion> estadosHistorial = new HashMap<>();
+        Map<String, Integer> horasHistorial = new HashMap<>();
         for (ConcursoDocenteDTO postulacion : historial) {
             if (postulacion.getId() != null) {
                 estadosHistorial.put(postulacion.getId(), flujoService.estadoEfectivo(postulacion));
@@ -79,7 +79,7 @@ public class DocenteController extends BaseController<DocenteDTO, Long> {
         // Materia/Curso de cada designación, resuelta desde su vínculo con el cargo
         // (mismo formato que el listado de cargos). Las designaciones manuales sin
         // cargo vinculado no aparecen en el mapa y la vista muestra "—".
-        Map<Long, String> materiasDesignaciones = new HashMap<>();
+        Map<String, String> materiasDesignaciones = new HashMap<>();
         for (CargoDTO cargo : cargoService.listarActivos()) {
             if (cargo.getDesignaciones() == null) {
                 continue;

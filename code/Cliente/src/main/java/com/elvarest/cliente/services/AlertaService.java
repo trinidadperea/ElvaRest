@@ -4,7 +4,7 @@ import com.elvarest.cliente.dto.AlertaDTO;
 import org.springframework.stereotype.Service;
 
 @Service
-public class AlertaService extends BaseService<AlertaDTO, Long> {
+public class AlertaService extends BaseService<AlertaDTO> {
 
     private static final String API_URL = "http://localhost:8080/alertas";
 

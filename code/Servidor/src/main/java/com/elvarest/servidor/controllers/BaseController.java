@@ -44,10 +44,10 @@ public abstract class BaseController<T extends BaseEntity<ID>, ID> {
     }
 
 
-    @GetMapping("/{id}")
-    public ResponseEntity<?> getOne(@PathVariable ID id) {
+    @GetMapping("/{uuid}")
+    public ResponseEntity<?> getOne(@PathVariable String uuid) {
         try {
-            T entidad = service.getOne(id);
+            T entidad = service.getOnePorUuid(uuid);
             return ResponseEntity.status(HttpStatus.OK).body(entidad);
         } catch (ErrorServiceException e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND)
@@ -79,11 +79,16 @@ public abstract class BaseController<T extends BaseEntity<ID>, ID> {
         }
     }
 
-    @PutMapping("/{id}")
-    public ResponseEntity<?> update(@PathVariable ID id, @RequestBody T entidad) {
+    @PutMapping("/{uuid}")
+    public ResponseEntity<?> update(@PathVariable String uuid, @RequestBody T entidad) {
         try {
             preUpdate(entidad);
-            Optional<T> actualizado = service.modificar(id, entidad);
+            Optional<ID> id = service.idPorUuid(uuid);
+            if (id.isEmpty()) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                        .body(new ErrorResponse("Entidad no encontrada"));
+            }
+            Optional<T> actualizado = service.modificar(id.get(), entidad);
 
             if (actualizado.isPresent()) {
                 postUpdate(actualizado.get());
@@ -101,10 +106,15 @@ public abstract class BaseController<T extends BaseEntity<ID>, ID> {
         }
     }
 
-    @DeleteMapping("/{id}")
-    public ResponseEntity<?> delete(@PathVariable ID id) {
+    @DeleteMapping("/{uuid}")
+    public ResponseEntity<?> delete(@PathVariable String uuid) {
         try {
-            boolean eliminado = service.bajaLogica(id);
+            Optional<ID> id = service.idPorUuid(uuid);
+            if (id.isEmpty()) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                        .body(new ErrorResponse("Entidad no encontrada"));
+            }
+            boolean eliminado = service.bajaLogica(id.get());
 
             if (eliminado) {
                 return ResponseEntity.status(HttpStatus.OK)

@@ -4,6 +4,7 @@ import com.elvarest.servidor.entities.Cargo;
 import com.elvarest.servidor.entities.Materia;
 import com.elvarest.servidor.exceptions.ErrorServiceException;
 import com.elvarest.servidor.repositories.CargoRepository;
+import com.elvarest.servidor.repositories.CursoRepository;
 import com.elvarest.servidor.repositories.MateriaRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -32,13 +33,15 @@ class MateriaServiceTest {
     private MateriaRepository materiaRepository;
     @Mock
     private CargoRepository cargoRepository;
+    @Mock
+    private CursoRepository cursoRepository;
 
     private MateriaService service;
     private Materia materia;
 
     @BeforeEach
     void setUp() {
-        service = new MateriaService(materiaRepository, cargoRepository);
+        service = new MateriaService(materiaRepository, cargoRepository, cursoRepository);
         materia = new Materia();
         materia.setId(1L);
     }

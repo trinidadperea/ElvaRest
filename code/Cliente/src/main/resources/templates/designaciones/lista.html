@@ -1,5 +1,6 @@
 <!doctype html>
 <html lang="es" xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
       th:replace="~{base :: layout('Designaciones', ~{::#encabezado}, ~{::#contenido}, '')}">
 <section id="encabezado">
   <h3 data-subtitle="Designaciones docentes registradas en el sistema">Gestión de designaciones</h3>
@@ -47,13 +48,13 @@
         </td>
         <td>
           <div class="table-actions">
-            <a class="btn btn-sm btn-outline-primary" th:href="@{/designaciones/{id}(id=${item.id})}">
+            <a class="btn btn-sm btn-outline-primary" th:href="@{/designaciones/{uuid}(uuid=${item.uuid})}">
               <i class="bi bi-eye"></i>Ver
             </a>
-            <a class="btn btn-sm btn-outline-secondary" th:href="@{/designaciones/{id}/editar(id=${item.id})}">
+            <a class="btn btn-sm btn-outline-secondary" sec:authorize="hasRole('ADMIN')" th:href="@{/designaciones/{uuid}/editar(uuid=${item.uuid})}">
               <i class="bi bi-pencil"></i>Editar
             </a>
-            <a class="btn btn-sm btn-outline-danger" th:href="@{/designaciones/baja/{id}(id=${item.id})}"
+            <a class="btn btn-sm btn-outline-danger" sec:authorize="hasRole('ADMIN')" th:href="@{/designaciones/baja/{uuid}(uuid=${item.uuid})}"
                data-confirm="¿Dar de baja esta designación? La acción se puede revertir desde la edición.">
               <i class="bi bi-trash"></i>Eliminar
             </a>

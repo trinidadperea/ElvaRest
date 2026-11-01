@@ -9,6 +9,7 @@ import com.elvarest.servidor.entities.enums.TipoCargo;
 import com.elvarest.servidor.exceptions.ErrorServiceException;
 import com.elvarest.servidor.repositories.CargoRepository;
 import com.elvarest.servidor.repositories.ConcursoRepository;
+import com.elvarest.servidor.repositories.MateriaRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -41,13 +42,15 @@ class CargoServiceTest {
     private CargoRepository cargoRepository;
     @Mock
     private ConcursoRepository concursoRepository;
+    @Mock
+    private MateriaRepository materiaRepository;
 
     private CargoService service;
     private Cargo cargo;
 
     @BeforeEach
     void setUp() {
-        service = new CargoService(cargoRepository, concursoRepository);
+        service = new CargoService(cargoRepository, concursoRepository, materiaRepository);
         cargo = new Cargo();
         cargo.setId(1L);
     }

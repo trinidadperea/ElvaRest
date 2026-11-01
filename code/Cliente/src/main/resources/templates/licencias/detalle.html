@@ -1,5 +1,6 @@
 <!doctype html>
 <html lang="es" xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
       th:replace="~{base :: layout('Detalle de licencia', ~{::#encabezado}, ~{::#contenido}, '')}">
 <section id="encabezado">
   <h3 th:attr="data-subtitle=${item.fechaInicio != null ? 'Desde el ' + #temporals.format(item.fechaInicio, 'dd/MM/yyyy') : 'Sin fecha de inicio registrada'}">
@@ -47,11 +48,11 @@
       </a>
     </div>
     <div class="d-flex flex-wrap gap-2">
-      <a class="btn btn-outline-danger" th:href="@{/licencias/baja/{id}(id=${item.id})}"
+      <a class="btn btn-outline-danger" sec:authorize="hasRole('ADMIN')" th:href="@{/licencias/baja/{uuid}(uuid=${item.uuid})}"
          th:attr="data-confirm='¿Dar de baja la licencia ' + ${item.tipo != null ? item.tipo : ''} + '?'">
         <i class="bi bi-trash me-1"></i>Eliminar
       </a>
-      <a class="btn btn-primary" th:href="@{/licencias/{id}/editar(id=${item.id})}">
+      <a class="btn btn-primary" sec:authorize="hasRole('ADMIN')" th:href="@{/licencias/{uuid}/editar(uuid=${item.uuid})}">
         <i class="bi bi-pencil me-1"></i>Editar licencia
       </a>
     </div>

@@ -1,5 +1,6 @@
 <!doctype html>
 <html lang="es" xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
       th:replace="~{base :: layout('Detalle de designación', ~{::#encabezado}, ~{::#contenido}, '')}">
 <section id="encabezado">
   <h3 th:attr="data-subtitle=${item.docente != null ? 'Docente: ' + item.docente.apellido + ', ' + item.docente.nombre : 'Sin docente asignado'}">
@@ -21,7 +22,7 @@
           <dt>Docente</dt>
           <dd>
             <a th:if="${item.docente != null}" class="text-decoration-none"
-               th:href="@{/docentes/{id}(id=${item.docente.id})}"
+               th:href="@{/docentes/{uuid}(uuid=${item.docente.uuid})}"
                th:text="${item.docente.apellido + ', ' + item.docente.nombre}"></a>
             <span th:if="${item.docente == null}">Sin docente asignado</span>
           </dd>
@@ -61,7 +62,7 @@
             th:classappend="${alerta.prioridad == T(com.elvarest.cliente.dto.enums.PrioridadAlerta).ALTA ? ' mini-red' : ' mini-blue'}">
           <span class="mini-item-icon"><i class="bi bi-bell"></i></span>
           <div class="mini-item-body">
-            <a class="mini-item-title" th:href="@{/alertas/{id}(id=${alerta.id})}"
+            <a class="mini-item-title" th:href="@{/alertas/{uuid}(uuid=${alerta.uuid})}"
                th:text="${#strings.abbreviate(alerta.mensaje, 80)}"></a>
             <div class="mini-item-meta">
               <span class="badge rounded-pill"
@@ -76,15 +77,15 @@
 
   <div class="d-flex flex-wrap gap-2 mt-3">
     <!-- Al ingresar desde "Cargo → Ver" queda solo el botón Volver, que regresa al cargo de origen -->
-    <a th:if="${cargoOrigenId != null}" class="btn btn-outline-secondary"
-       th:href="@{/cargos/{id}(id=${cargoOrigenId})}">
+    <a th:if="${cargoOrigenUuid != null}" class="btn btn-outline-secondary"
+       th:href="@{/cargos/{uuid}(uuid=${cargoOrigenUuid})}">
       <i class="bi bi-arrow-left me-1"></i>Volver al cargo
     </a>
-    <a th:unless="${cargoOrigenId != null}" class="btn btn-outline-secondary"
+    <a th:unless="${cargoOrigenUuid != null}" class="btn btn-outline-secondary"
        th:href="@{/designaciones}">
       <i class="bi bi-arrow-left me-1"></i>Volver al listado
     </a>
-    <a th:if="${cargoOrigenId == null}" class="btn btn-primary" th:href="@{/designaciones/{id}/editar(id=${item.id})}">
+    <a th:if="${cargoOrigenUuid == null}" class="btn btn-primary" sec:authorize="hasRole('ADMIN')" th:href="@{/designaciones/{uuid}/editar(uuid=${item.uuid})}">
       <i class="bi bi-pencil me-1"></i>Editar designación
     </a>
   </div>

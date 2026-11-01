@@ -1,5 +1,6 @@
 <!doctype html>
 <html lang="es" xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
       th:replace="~{base :: layout('Reportes', ~{::#encabezado}, ~{::#contenido}, ~{::#scripts})}">
 <section id="encabezado">
   <h3 data-subtitle="Suplentes vigentes, historial de designaciones y avance de los concursos">Módulo de reportes</h3>
@@ -10,9 +11,13 @@
   <!-- ============ Barra de acciones ============ -->
   <div class="list-toolbar">
     <div class="toolbar-filters">
-      <span class="text-secondary small">
+      <span class="text-secondary small" sec:authorize="hasRole('ADMIN')">
         <i class="bi bi-info-circle me-1"></i>
         Los reportes se generan con los datos registrados en el sistema. Cada sección puede exportarse a CSV o imprimirse completa.
+      </span>
+      <span class="text-secondary small" sec:authorize="!hasRole('ADMIN')">
+        <i class="bi bi-info-circle me-1"></i>
+        Los reportes se generan con los datos registrados en el sistema. Cada sección puede imprimirse completa.
       </span>
     </div>
     <button type="button" class="btn btn-outline-secondary" data-print>
@@ -75,6 +80,7 @@
       <span class="badge text-bg-secondary" th:text="${#lists.size(suplentesVigentes)} + ' registro(s)'"></span>
       <button type="button" class="btn btn-sm btn-outline-secondary ms-auto"
               th:if="${!suplentesVigentes.isEmpty()}"
+              sec:authorize="hasRole('ADMIN')"
               data-export-csv="#tablaSuplentes" data-export-name="suplentes-vigentes">
         <i class="bi bi-download me-1"></i>CSV
       </button>
@@ -97,7 +103,7 @@
           <tr th:each="item : ${suplentesVigentes}">
             <td>
               <a class="fw-semibold text-decoration-none"
-                 th:href="@{/docentes/{id}(id=${item.designacion.docente.id})}"
+                 th:href="@{/docentes/{uuid}(uuid=${item.designacion.docente.uuid})}"
                  th:text="${item.designacion.docente.apellido + ', ' + item.designacion.docente.nombre}"></a>
             </td>
             <td th:text="${item.cargo != null ? item.cargo.descripcion : 'Sin cargo'}"></td>
@@ -128,6 +134,7 @@
       <span class="badge text-bg-secondary" th:text="${#lists.size(historialDesignaciones)} + ' registro(s)'"></span>
       <button type="button" class="btn btn-sm btn-outline-secondary ms-auto"
               th:if="${!historialDesignaciones.isEmpty()}"
+              sec:authorize="hasRole('ADMIN')"
               data-export-csv="#tablaHistorial" data-export-name="historial-designaciones">
         <i class="bi bi-download me-1"></i>CSV
       </button>
@@ -149,7 +156,7 @@
           <tr th:each="item : ${historialDesignaciones}">
             <td>
               <a class="fw-semibold text-decoration-none"
-                 th:href="@{/docentes/{id}(id=${item.designacion.docente.id})}"
+                 th:href="@{/docentes/{uuid}(uuid=${item.designacion.docente.uuid})}"
                  th:text="${item.designacion.docente.apellido + ', ' + item.designacion.docente.nombre}"></a>
             </td>
             <td th:text="${item.cargo != null ? item.cargo.descripcion : 'Sin cargo'}"></td>
@@ -188,6 +195,7 @@
       <span class="badge text-bg-secondary" th:text="${#lists.size(concursosReporte)} + ' registro(s)'"></span>
       <button type="button" class="btn btn-sm btn-outline-secondary ms-auto"
               th:if="${!concursosReporte.isEmpty()}"
+              sec:authorize="hasRole('ADMIN')"
               data-export-csv="#tablaConcursos" data-export-name="concursos">
         <i class="bi bi-download me-1"></i>CSV
       </button>
@@ -215,7 +223,7 @@
                        cubiertas=${reporte.horasTotales != null ? reporte.horasTotales - (reporte.horasDisponibles == null ? 0 : reporte.horasDisponibles) : 0}">
             <td>
               <a class="fw-semibold text-decoration-none"
-                 th:href="@{/concursos/{id}(id=${reporte.concurso.id})}"
+                 th:href="@{/concursos/{uuid}(uuid=${reporte.concurso.uuid})}"
                  th:text="${reporte.concurso.descripcion != null and !reporte.concurso.descripcion.isBlank() ? reporte.concurso.descripcion : 'Concurso sin descripción'}"></a>
               <span class="badge text-bg-info ms-1" th:if="${reporte.rellamado}">Rellamado</span>
             </td>
@@ -241,7 +249,7 @@
             <td th:text="${reporte.postulantesVigentes}"></td>
             <td class="text-end d-print-none" data-export-skip>
               <a class="btn btn-sm btn-outline-secondary" target="_blank" rel="noopener"
-                 th:href="@{/reportes/concurso/{id}/pdf(id=${reporte.concurso.id})}" title="Descargar reporte PDF">
+                 th:href="@{/reportes/concurso/{uuid}/pdf(uuid=${reporte.concurso.uuid})}" title="Descargar reporte PDF">
                 <i class="bi bi-file-earmark-pdf me-1"></i>PDF
               </a>
             </td>

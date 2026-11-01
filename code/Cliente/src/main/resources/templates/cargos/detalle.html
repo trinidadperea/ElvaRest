@@ -1,5 +1,6 @@
 <!doctype html>
 <html lang="es" xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
       th:replace="~{base :: layout('Detalle del cargo', ~{::#encabezado}, ~{::#contenido}, '')}">
 <section id="encabezado" class="detail-header">
   <h3 th:attr="data-subtitle=${item.materia != null ? 'Materia: ' + item.materia.nombre : (item.tipoCargo?.name() == 'PRECEPTOR' ? 'Preceptoría' : 'Sin materia asignada')}">
@@ -73,7 +74,7 @@
               <span class="badge rounded-pill text-bg-secondary"
                     th:text="${designacion.caracterDesignacion != null ? designacion.caracterDesignacion : '—'}"></span>
             </td>
-            <td th:text="${horasDesignacion[designacion.id] != null ? horasDesignacion[designacion.id] + ' h' : item.cargaHoraria + ' h'}"></td>
+            <td th:text="${horasDesignacion[designacion.uuid] != null ? horasDesignacion[designacion.uuid] + ' h' : item.cargaHoraria + ' h'}"></td>
             <td th:text="${designacion.fechaInicioEfectiva != null ? #temporals.format(designacion.fechaInicioEfectiva, 'dd/MM/yyyy') : '—'}"></td>
             <td th:text="${designacion.fechaFinDefinitiva != null ? #temporals.format(designacion.fechaFinDefinitiva, 'dd/MM/yyyy') : ''}"></td>
             <td>
@@ -81,16 +82,16 @@
                     th:classappend="${designacion.estadoDesignacion == T(com.elvarest.cliente.dto.enums.EstadoDesignacion).ACTIVO ? 'text-bg-success' : (designacion.estadoDesignacion == T(com.elvarest.cliente.dto.enums.EstadoDesignacion).PENDIENTE ? 'text-bg-warning' : 'text-bg-secondary')}"
                     th:text="${designacion.estadoDesignacion != null ? designacion.estadoDesignacion : '—'}"></span>
             </td>
-            <td th:text="${motivosDesignacion[designacion.id] != null ? motivosDesignacion[designacion.id] : '—'}"></td>
+            <td th:text="${motivosDesignacion[designacion.uuid] != null ? motivosDesignacion[designacion.uuid] : '—'}"></td>
             <td th:text="${designacion.profesorReemplazante != null and !designacion.profesorReemplazante.isBlank() ? designacion.profesorReemplazante : '—'}"></td>
             <td>
               <div class="table-actions">
                 <a class="btn btn-sm btn-outline-primary"
-                   th:href="@{/designaciones/{id}(id=${designacion.id}, cargoId=${item.id})}">
+                   th:href="@{/designaciones/{uuid}(uuid=${designacion.uuid}, cargoUuid=${item.uuid})}">
                   <i class="bi bi-eye"></i>Ver
                 </a>
-                <a class="btn btn-sm btn-outline-secondary"
-                   th:href="@{/designaciones/{id}/editar(id=${designacion.id}, cargoId=${item.id})}">
+                <a class="btn btn-sm btn-outline-secondary" sec:authorize="hasRole('ADMIN')"
+                   th:href="@{/designaciones/{uuid}/editar(uuid=${designacion.uuid}, cargoUuid=${item.uuid})}">
                   <i class="bi bi-pencil"></i>Editar
                 </a>
               </div>
@@ -120,7 +121,7 @@
         <i class="bi bi-hourglass-split me-1"></i>Concurso abierto
       </span>
       <a class="btn btn-outline-primary" th:unless="${tieneConcursoAbierto}"
-         th:href="@{/concursos/nuevo-desde-cargo/{id}(id=${item.id})}">
+         th:href="@{/concursos/nuevo-desde-cargo/{uuid}(uuid=${item.uuid})}">
         <i class="bi bi-trophy me-1"></i>Abrir concurso para este cargo
       </a>
     </div>

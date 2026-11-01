@@ -1,0 +1,116 @@
+<!doctype html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{base :: layout('Historial de cambios', ~{::#encabezado}, ~{::#contenido}, '')}">
+<section id="encabezado">
+    <h3 data-subtitle="Registro de solo lectura de los cambios realizados en el sistema">Historial de cambios</h3>
+</section>
+<section id="contenido">
+    <!-- Módulo de auditoría: solo consulta. No hay acciones de alta, edición ni baja. -->
+    <p class="text-secondary">
+        <i class="bi bi-lock me-1"></i>Registro de solo lectura: los eventos no pueden crearse, modificarse ni eliminarse.
+    </p>
+
+    <div class="card filter-panel" data-filter-scope th:if="${!#lists.isEmpty(items)}">
+        <div class="card-body">
+            <div class="row g-3 align-items-end" data-date-filter="#tablaAuditoria">
+                <div class="col-12 col-lg-5">
+                    <label class="filter-label" for="auditoriaBuscar">Buscar</label>
+                    <div class="input-group">
+                        <span class="input-group-text"><i class="bi bi-search"></i></span>
+                        <input id="auditoriaBuscar" type="search" class="form-control" data-filter-input="#tablaAuditoria"
+                               placeholder="Usuario, módulo o UUID…" aria-label="Buscar en el historial">
+                    </div>
+                </div>
+                <div class="col-6 col-lg-2">
+                    <label class="filter-label" for="auditoriaFechaDesde">Fecha desde</label>
+                    <input id="auditoriaFechaDesde" type="date" class="form-control" data-date-from
+                           aria-label="Fecha del evento desde">
+                </div>
+                <div class="col-6 col-lg-2">
+                    <label class="filter-label" for="auditoriaFechaHasta">Fecha hasta</label>
+                    <input id="auditoriaFechaHasta" type="date" class="form-control" data-date-to
+                           aria-label="Fecha del evento hasta">
+                </div>
+                <div class="col-12 col-lg-3">
+                    <button type="button" class="btn btn-outline-secondary w-100" data-filter-reset="#tablaAuditoria">
+                        <i class="bi bi-x-circle me-1"></i>Limpiar filtros
+                    </button>
+                </div>
+            </div>
+            <div class="filter-divider"></div>
+            <div class="d-flex flex-wrap align-items-center gap-2">
+                <span class="filter-label mb-0">Acción</span>
+                <button type="button" class="btn btn-sm btn-outline-primary active"
+                        data-filter-btn data-filter-group="accionAuditoria" data-filter-target="#tablaAuditoria"
+                        data-filter-value="">Todas</button>
+                <button type="button" class="btn btn-sm btn-outline-primary"
+                        data-filter-btn data-filter-group="accionAuditoria" data-filter-target="#tablaAuditoria"
+                        data-filter-value="alta">Altas</button>
+                <button type="button" class="btn btn-sm btn-outline-primary"
+                        data-filter-btn data-filter-group="accionAuditoria" data-filter-target="#tablaAuditoria"
+                        data-filter-value="modificacion">Modificaciones</button>
+                <button type="button" class="btn btn-sm btn-outline-primary"
+                        data-filter-btn data-filter-group="accionAuditoria" data-filter-target="#tablaAuditoria"
+                        data-filter-value="baja">Bajas</button>
+                <span class="text-secondary small ms-auto"
+                      th:text="${#lists.size(items)} + ' evento(s) en total'"></span>
+            </div>
+        </div>
+    </div>
+
+    <div class="table-responsive" th:if="${!#lists.isEmpty(items)}">
+        <table class="table" id="tablaAuditoria">
+            <thead>
+            <tr>
+                <th>Fecha y hora</th>
+                <th>Usuario</th>
+                <th>Acción</th>
+                <th>Módulo afectado</th>
+                <th>Detalle</th>
+                <th class="text-end">Consulta</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr th:each="item : ${items}"
+                th:data-filter-tags="${item.accion != null ? #strings.toLowerCase(item.accion.name()) : ''}"
+                th:data-filter-date="${item.fechaHora != null ? #temporals.format(item.fechaHora, 'yyyy-MM-dd') : ''}">
+                <td th:text="${item.fechaHora != null ? #temporals.format(item.fechaHora, 'dd/MM/yyyy HH:mm:ss') : '—'}"></td>
+                <td th:text="${item.usuario != null and !item.usuario.isBlank() ? item.usuario : '—'}"></td>
+                <td>
+                    <span class="badge rounded-pill text-bg-success" th:if="${item.accion?.name() == 'ALTA'}">Alta</span>
+                    <span class="badge rounded-pill text-bg-warning" th:if="${item.accion?.name() == 'MODIFICACION'}">Modificación</span>
+                    <span class="badge rounded-pill text-bg-danger" th:if="${item.accion?.name() == 'BAJA'}">Baja</span>
+                    <span th:if="${item.accion == null}">—</span>
+                </td>
+                <td th:text="${item.entidad != null and !item.entidad.isBlank() ? item.entidad : '—'}"></td>
+                <td class="text-wrap" style="min-width: 260px; max-width: 420px;">
+                    <div>
+                        <div th:if="${item.detalle != null and !item.detalle.isBlank()}"
+                             th:text="${#strings.abbreviate(item.detalle, 200)}" th:title="${item.detalle}"></div>
+                        <div class="text-secondary small" th:if="${item.detalle == null or item.detalle.isBlank()}">—</div>
+                </td>
+                <td>
+                    <div class="table-actions">
+                        <a class="btn btn-sm btn-outline-primary" th:href="@{/auditoria/{uuid}(uuid=${item.uuid})}">
+                            <i class="bi bi-eye"></i>Ver
+                        </a>
+                    </div>
+                </td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <div class="empty-state" th:if="${#lists.isEmpty(items)}">
+        <i class="bi bi-clock-history"></i>
+        <p class="empty-title">Sin movimientos registrados</p>
+        <p>Los cambios que se realicen en el sistema aparecerán en este historial.</p>
+    </div>
+
+    <div class="empty-state d-none" data-filter-empty="tablaAuditoria" th:if="${!#lists.isEmpty(items)}">
+        <i class="bi bi-search"></i>
+        <p class="empty-title">Sin resultados</p>
+        <p>Ningún evento coincide con los filtros seleccionados.</p>
+    </div>
+</section>
+</html>

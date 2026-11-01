@@ -1,5 +1,6 @@
 <!doctype html>
 <html lang="es" xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
       th:replace="~{base :: layout('Editar docente', ~{::#encabezado}, ~{::#contenido}, '')}">
 <section id="encabezado">
   <h3 th:attr="data-subtitle='Modificando: ' + ${item.apellido + ', ' + item.nombre}">Editar docente</h3>
@@ -9,7 +10,7 @@
 
   <form method="post" th:action="@{/docentes/actualizar}" th:object="${item}" data-loading>
     <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
-    <input type="hidden" th:field="*{id}">
+    <input type="hidden" th:field="*{uuid}">
 
     <div class="mb-3">
       <label for="nombre">Nombre *</label>
@@ -55,10 +56,10 @@
 
     <div class="mt-4 pt-2 border-top d-flex justify-content-end gap-2">
       <a class="btn btn-outline-secondary" th:href="@{/docentes}">Cancelar</a>
-      <a class="btn btn-outline-primary" th:href="@{/docentes/{id}(id=${item.id})}">
+      <a class="btn btn-outline-primary" th:href="@{/docentes/{uuid}(uuid=${item.uuid})}">
         <i class="bi bi-eye me-1"></i>Ver detalle
       </a>
-      <button class="btn btn-primary" type="submit">
+      <button class="btn btn-primary" type="submit" sec:authorize="hasRole('ADMIN')">
         <i class="bi bi-check-lg me-1"></i>Guardar cambios
       </button>
     </div>

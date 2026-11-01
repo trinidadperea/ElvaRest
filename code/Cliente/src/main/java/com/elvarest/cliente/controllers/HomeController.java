@@ -104,7 +104,7 @@ public class HomeController {
         model.addAttribute("alertasRecientes", alertasSinLeer.stream().limit(5).toList());
 
         // --- Pendientes de atención del flujo ---
-        Map<Long, ConcursoDTO> concursosPorId = new HashMap<>();
+        Map<String, ConcursoDTO> concursosPorId = new HashMap<>();
         concursos.forEach(concurso -> concursosPorId.put(concurso.getId(), concurso));
         List<PendienteAtencion> pendientes = new ArrayList<>();
         for (ConcursoDocenteDTO postulacion : postulaciones) {
@@ -129,7 +129,7 @@ public class HomeController {
                         Comparator.nullsLast(Comparator.reverseOrder())))
                 .limit(6)
                 .toList();
-        Map<Long, EstadoPostulacion> estadosRecientes = new HashMap<>();
+        Map<String, EstadoPostulacion> estadosRecientes = new HashMap<>();
         for (ConcursoDocenteDTO postulacion : actividadReciente) {
             if (postulacion.getId() != null) {
                 estadosRecientes.put(postulacion.getId(), flujoService.estadoEfectivo(postulacion));

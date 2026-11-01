@@ -4,7 +4,7 @@ import com.elvarest.cliente.dto.LicenciaDTO;
 import org.springframework.stereotype.Service;
 
 @Service
-public class LicenciaService extends BaseService<LicenciaDTO, Long> {
+public class LicenciaService extends BaseService<LicenciaDTO> {
 
     private static final String API_URL = "http://localhost:8080/licencias";
 

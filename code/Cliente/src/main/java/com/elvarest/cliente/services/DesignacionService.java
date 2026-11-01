@@ -4,7 +4,7 @@ import com.elvarest.cliente.dto.DesignacionDTO;
 import org.springframework.stereotype.Service;
 
 @Service
-public class DesignacionService extends BaseService<DesignacionDTO, Long> {
+public class DesignacionService extends BaseService<DesignacionDTO> {
 
     private static final String API_URL = "http://localhost:8080/designaciones";
 

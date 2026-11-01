@@ -26,12 +26,12 @@ public class ReporteService {
     }
 
     /** PDF del concurso: datos, resumen de horas y postulaciones (incluidas las canceladas). */
-    public byte[] pdfConcurso(Long concursoId) {
+    public byte[] pdfConcurso(String concursoUuid) {
         HttpHeaders headers = authService.authHeaders();
         headers.setAccept(List.of(MediaType.APPLICATION_PDF));
 
         return restTemplate.exchange(
-                API_URL + "/concurso/" + concursoId,
+                API_URL + "/concurso/" + concursoUuid,
                 HttpMethod.GET,
                 new HttpEntity<Void>(headers),
                 byte[].class

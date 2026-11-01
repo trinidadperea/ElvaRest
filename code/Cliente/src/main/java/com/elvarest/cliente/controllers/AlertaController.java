@@ -17,7 +17,7 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
  */
 @Controller
 @RequestMapping("/alertas")
-public class AlertaController extends BaseController<AlertaDTO, Long> {
+public class AlertaController extends BaseController<AlertaDTO> {
 
     private final CertificadoService certificadoService;
     private final ConcursoService concursoService;
@@ -41,10 +41,10 @@ public class AlertaController extends BaseController<AlertaDTO, Long> {
             return;
         }
         if (existeCertificado(found)) {
-            model.addAttribute("certificadoDestinoId", found.getCertificado().getId());
+            model.addAttribute("certificadoDestinoUuid", found.getCertificado().getId());
         }
         if (existeConcurso(found)) {
-            model.addAttribute("concursoDestinoId", found.getConcursoId());
+            model.addAttribute("concursoDestinoUuid", found.getConcursoUuid());
         }
     }
 
@@ -60,32 +60,32 @@ public class AlertaController extends BaseController<AlertaDTO, Long> {
     }
 
     private boolean existeConcurso(AlertaDTO alerta) {
-        if (alerta.getConcursoId() == null) {
+        if (alerta.getConcursoUuid() == null) {
             return false;
         }
         try {
-            return concursoService.obtener(alerta.getConcursoId()) != null;
+            return concursoService.obtener(alerta.getConcursoUuid()) != null;
         } catch (RuntimeException e) {
             return false;
         }
     }
 
     /** Marca la alerta como leída / resuelta conservando el resto de sus datos. */
-    @PostMapping("/{id}/marcar-leida")
-    public String marcarLeida(@PathVariable Long id, RedirectAttributes attributes) {
+    @PostMapping("/{uuid}/marcar-leida")
+    public String marcarLeida(@PathVariable String uuid, RedirectAttributes attributes) {
         try {
-            AlertaDTO alerta = service.obtener(id);
+            AlertaDTO alerta = service.obtener(uuid);
             if (alerta == null) {
-                throw new IllegalArgumentException("No encontrado: " + id);
+                throw new IllegalArgumentException("No encontrado: " + uuid);
             }
             alerta.setLeida(true);
-            service.modificar(id, alerta);
+            service.modificar(uuid, alerta);
             attributes.addFlashAttribute("msgExito", "La alerta quedó marcada como leída.");
         } catch (ErrorServiceException e) {
             attributes.addFlashAttribute("msgError", e.getMessage());
         } catch (Exception e) {
             attributes.addFlashAttribute("msgError", "Error de Sistema");
         }
-        return "redirect:/alertas/" + id;
+        return "redirect:/alertas/" + uuid;
     }
 }

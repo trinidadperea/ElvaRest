@@ -30,7 +30,7 @@ import java.util.Objects;
 
 @Controller
 @RequestMapping("/cargos")
-public class CargoController extends BaseController<CargoDTO, Long> {
+public class CargoController extends BaseController<CargoDTO> {
 
     private final MateriaService materiaService;
     private final ConcursoService concursoService;
@@ -71,7 +71,7 @@ public class CargoController extends BaseController<CargoDTO, Long> {
                 .filter(designacion -> designacion.getEstadoDesignacion() == EstadoDesignacion.ACTIVO)
                 .count());
         model.addAttribute("horasDesignacion", horasTomadasEnConcursos(cargo, designaciones));
-        Map<Long, String> motivosDesignacion = new HashMap<>();
+        Map<String, String> motivosDesignacion = new HashMap<>();
         for (DesignacionDTO designacion : designaciones) {
             if (designacion.getId() != null) {
                 motivosDesignacion.put(designacion.getId(), motivoVisible(designacion.getOrigenVacancia()));
@@ -97,15 +97,15 @@ public class CargoController extends BaseController<CargoDTO, Long> {
      * Indica si el cargo ya tiene un concurso abierto (estado distinto de FINALIZADO). Se usa para
      * no ofrecer "Abrir concurso para este cargo" cuando la regla no lo permite.
      */
-    private boolean tieneConcursoAbierto(Long cargoId) {
-        if (cargoId == null) {
+    private boolean tieneConcursoAbierto(String cargoUuid) {
+        if (cargoUuid == null) {
             return false;
         }
         try {
             return concursoService.listarActivos().stream()
                     .filter(concurso -> concurso.getEstadoConcurso() != EstadoConcurso.FINALIZADO)
                     .anyMatch(concurso -> concurso.getCargo() != null
-                            && Objects.equals(concurso.getCargo().getId(), cargoId));
+                            && Objects.equals(concurso.getCargo().getId(), cargoUuid));
         } catch (RuntimeException e) {
             return false;
         }
@@ -118,8 +118,8 @@ public class CargoController extends BaseController<CargoDTO, Long> {
         String vista = super.listar(model);
         try {
             if (model.getAttribute("items") instanceof List<?> cargos) {
-                Map<Long, Boolean> estadosCargos = new HashMap<>();
-                Map<Long, Long> designacionesActivas = new HashMap<>();
+                Map<String, Boolean> estadosCargos = new HashMap<>();
+                Map<String, Long> designacionesActivas = new HashMap<>();
                 for (Object elemento : cargos) {
                     if (elemento instanceof CargoDTO cargo && cargo.getId() != null) {
                         estadosCargos.put(cargo.getId(),
@@ -201,8 +201,8 @@ public class CargoController extends BaseController<CargoDTO, Long> {
      * resto de la aplicación; si una designación no tiene concurso resoluble (manual o histórica),
      * no se agrega entrada y la vista mantiene la carga horaria del cargo.
      */
-    private Map<Long, Integer> horasTomadasEnConcursos(CargoDTO cargo, List<DesignacionDTO> designaciones) {
-        Map<Long, Integer> horas = new HashMap<>();
+    private Map<String, Integer> horasTomadasEnConcursos(CargoDTO cargo, List<DesignacionDTO> designaciones) {
+        Map<String, Integer> horas = new HashMap<>();
         if (cargo.getId() == null || designaciones.isEmpty()) {
             return horas;
         }
@@ -228,15 +228,15 @@ public class CargoController extends BaseController<CargoDTO, Long> {
      * directo con el concurso (concursoId) se resuelve por ese identificador; las designaciones
      * históricas conservan el respaldo por descripción ("Concurso: <descripción>").
      */
-    private Integer horasTomadasEnConcurso(DesignacionDTO designacion, Long cargoId,
+    private Integer horasTomadasEnConcurso(DesignacionDTO designacion, String cargoUuid,
                                            List<ConcursoDTO> concursos, List<ConcursoDocenteDTO> postulaciones) {
         if (designacion.getDocente() == null) {
             return null;
         }
-        List<Long> concursosOrigen;
-        if (designacion.getConcursoId() != null) {
+        List<String> concursosOrigen;
+        if (designacion.getConcursoUuid() != null) {
             concursosOrigen = concursos.stream()
-                    .filter(concurso -> Objects.equals(concurso.getId(), designacion.getConcursoId()))
+                    .filter(concurso -> Objects.equals(concurso.getId(), designacion.getConcursoUuid()))
                     .map(ConcursoDTO::getId)
                     .toList();
         } else if (designacion.getOrigenVacancia() != null
@@ -244,7 +244,7 @@ public class CargoController extends BaseController<CargoDTO, Long> {
             String descripcion = designacion.getOrigenVacancia().substring("Concurso: ".length());
             concursosOrigen = concursos.stream()
                     .filter(concurso -> concurso.getCargo() != null
-                            && Objects.equals(concurso.getCargo().getId(), cargoId)
+                            && Objects.equals(concurso.getCargo().getId(), cargoUuid)
                             && descripcion.equals(concurso.getDescripcion()))
                     .map(ConcursoDTO::getId)
                     .toList();

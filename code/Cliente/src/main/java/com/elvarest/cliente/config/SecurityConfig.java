@@ -6,6 +6,7 @@ import com.elvarest.cliente.dto.UsuarioDTO;
 import com.elvarest.cliente.dto.enums.Rol;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -82,11 +83,33 @@ public class SecurityConfig {
                         .requestMatchers("/usuarios/cambiar-contrasena").authenticated()
                         // Gestión de usuarios (alta, baja, edición y restablecer): exclusiva del ADMIN
                         .requestMatchers("/usuarios/**").hasRole("ADMIN")
+                        // Auditoría (historial de cambios): solo lectura y exclusiva del ADMIN.
+                        // Cualquier verbo distinto de GET se rechaza para todos, ADMIN incluido.
+                        .requestMatchers(HttpMethod.GET, "/auditoria/**").hasRole("ADMIN")
+                        .requestMatchers("/auditoria/**").denyAll()
                         .requestMatchers("/tipos-certificado/**").hasRole("ADMIN")
                         // Alertas: cualquiera las consulta; crear, editar, resolver y eliminar es de ADMIN
                         .requestMatchers("/alertas/nuevo", "/alertas/alta", "/alertas/actualizar",
                                 "/alertas/*/editar", "/alertas/modificar/**", "/alertas/baja/**",
                                 "/alertas/*/marcar-leida").hasRole("ADMIN")
+                        // Certificados: cualquiera los consulta y carga/renueva desde una postulación;
+                        // el alta genérica, la actualización y la baja son de ADMIN
+                        .requestMatchers("/certificados/alta", "/certificados/nuevo", "/certificados/actualizar",
+                                "/certificados/baja/**").hasRole("ADMIN")
+                        // Módulos de solo lectura para USER: alta, edición y baja exclusivas del ADMIN.
+                        // Concursos, cargos y reportes quedan con acceso total (anyRequest).
+                        .requestMatchers(
+                                "/docentes/nuevo", "/docentes/alta", "/docentes/actualizar",
+                                "/docentes/*/editar", "/docentes/modificar/**", "/docentes/baja/**",
+                                "/materias/nuevo", "/materias/alta", "/materias/actualizar",
+                                "/materias/*/editar", "/materias/modificar/**", "/materias/baja/**",
+                                "/academica/nuevo", "/academica/alta", "/academica/actualizar",
+                                "/academica/*/editar", "/academica/modificar/**", "/academica/baja/**",
+                                "/designaciones/nuevo", "/designaciones/alta", "/designaciones/actualizar",
+                                "/designaciones/*/editar", "/designaciones/modificar/**", "/designaciones/baja/**",
+                                "/licencias/nuevo", "/licencias/alta", "/licencias/actualizar",
+                                "/licencias/*/editar", "/licencias/modificar/**", "/licencias/baja/**"
+                        ).hasRole("ADMIN")
                         .anyRequest().authenticated()
                 )
                 .formLogin(form -> form

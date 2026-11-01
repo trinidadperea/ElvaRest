@@ -31,9 +31,9 @@
 
     <div class="mb-3" id="bloqueMateria">
       <label for="materia">Materia / curso</label>
-      <select class="form-select" id="materia" name="materia.id">
+      <select class="form-select" id="materia" name="materia.uuid">
         <option value="">Sin materia asignada</option>
-        <option th:each="materia : ${materias}" th:value="${materia.id}"
+        <option th:each="materia : ${materias}" th:value="${materia.uuid}"
                 th:text="${materia.nombre + (materia.curso != null ? ' — ' + materia.curso.anio + '° Año' : '')}"></option>
       </select>
     </div>

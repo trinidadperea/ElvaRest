@@ -1,5 +1,6 @@
 <!doctype html>
 <html lang="es" xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
       th:replace="~{base :: layout('Materias', ~{::#encabezado}, ~{::#contenido}, '')}">
 <section id="encabezado">
   <h3 data-subtitle="Materias registradas en la institución">Materias</h3>
@@ -13,7 +14,7 @@
              placeholder="Buscar por nombre o área…" aria-label="Buscar materias">
     </div>
     <div class="toolbar-filters">
-      <a class="btn btn-primary" th:href="@{/materias/nuevo}">
+      <a class="btn btn-primary" sec:authorize="hasRole('ADMIN')" th:href="@{/materias/nuevo}">
         <i class="bi bi-plus-lg me-1"></i>Nueva materia
       </a>
     </div>
@@ -32,7 +33,7 @@
       <tbody>
       <tr th:each="item : ${items}">
         <td>
-          <a class="fw-semibold text-decoration-none" th:href="@{/materias/{id}(id=${item.id})}"
+          <a class="fw-semibold text-decoration-none" th:href="@{/materias/{uuid}(uuid=${item.uuid})}"
              th:text="${item.nombre != null and !item.nombre.isBlank() ? item.nombre : 'Materia sin nombre'}"></a>
         </td>
         <td th:text="${item.area != null and !item.area.isBlank() ? item.area : '—'}"></td>
@@ -42,10 +43,10 @@
         </td>
         <td>
           <div class="table-actions">
-            <a class="btn btn-sm btn-outline-secondary" th:href="@{/materias/{id}/editar(id=${item.id})}">
+            <a class="btn btn-sm btn-outline-secondary" sec:authorize="hasRole('ADMIN')" th:href="@{/materias/{uuid}/editar(uuid=${item.uuid})}">
               <i class="bi bi-pencil"></i>Editar
             </a>
-            <a class="btn btn-sm btn-outline-danger" th:href="@{/materias/baja/{id}(id=${item.id})}"
+            <a class="btn btn-sm btn-outline-danger" sec:authorize="hasRole('ADMIN')" th:href="@{/materias/baja/{uuid}(uuid=${item.uuid})}"
                th:attr="data-confirm=${'¿Dar de baja la materia ' + item.nombre + '?'}">
               <i class="bi bi-trash"></i>Eliminar
             </a>
@@ -60,7 +61,7 @@
     <i class="bi bi-book"></i>
     <p class="empty-title">Sin materias registradas</p>
     <p>Registre las materias de la institución para asociarlas a los cursos y cargos.</p>
-    <a class="btn btn-primary mt-3" th:href="@{/materias/nuevo}">
+    <a class="btn btn-primary mt-3" sec:authorize="hasRole('ADMIN')" th:href="@{/materias/nuevo}">
       <i class="bi bi-plus-lg me-1"></i>Nueva materia
     </a>
   </div>

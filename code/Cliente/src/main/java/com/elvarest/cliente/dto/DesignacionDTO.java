@@ -23,8 +23,8 @@ public class DesignacionDTO extends BaseDTO{
     private MotivoVacancia motivoVacancia;
     /** Docente que se reemplaza (texto informativo, sin relación con la entidad Docente). */
     private String profesorReemplazante;
-    /** Concurso del que nació la designación (nulo en las manuales). */
-    private Long concursoId;
+    /** UUID del concurso del que nació la designación (nulo en las manuales). */
+    private String concursoUuid;
     private CaracterDesignacion caracterDesignacion;
     private EstadoDesignacion estadoDesignacion;
     private DocenteDTO docente;

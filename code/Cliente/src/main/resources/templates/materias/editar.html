@@ -1,5 +1,6 @@
 <!doctype html>
 <html lang="es" xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
       th:replace="~{base :: layout('Editar materia', ~{::#encabezado}, ~{::#contenido}, '')}">
 <section id="encabezado">
   <h3 th:attr="data-subtitle=${'Materia: ' + item.nombre}">Editar materia</h3>
@@ -9,7 +10,7 @@
 
   <form method="post" th:action="@{/materias/actualizar}" th:object="${item}" data-loading>
     <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
-    <input type="hidden" th:field="*{id}">
+    <input type="hidden" th:field="*{uuid}">
 
     <div class="mb-3">
       <label for="nombre">Nombre</label>
@@ -23,10 +24,10 @@
     </div>
     <div class="mb-3">
       <label for="curso">Curso</label>
-      <select class="form-select" id="curso" name="curso.id">
+      <select class="form-select" id="curso" name="curso.uuid">
         <option value="">Sin curso asignado</option>
-        <option th:each="curso : ${cursos}" th:value="${curso.id}"
-                th:selected="${item.curso != null and item.curso.id == curso.id}"
+        <option th:each="curso : ${cursos}" th:value="${curso.uuid}"
+                th:selected="${item.curso != null and item.curso.uuid == curso.uuid}"
                 th:text="${curso.anio + '° Año'}"></option>
       </select>
       <div class="form-text">Curso al que pertenece la materia.</div>
@@ -36,7 +37,7 @@
       <a class="btn btn-outline-secondary" th:href="@{/materias/list}">
         <i class="bi bi-arrow-left me-1"></i>Cancelar
       </a>
-      <button type="submit" class="btn btn-primary">
+      <button type="submit" class="btn btn-primary" sec:authorize="hasRole('ADMIN')">
         <i class="bi bi-check-lg me-1"></i>Guardar cambios
       </button>
     </div>

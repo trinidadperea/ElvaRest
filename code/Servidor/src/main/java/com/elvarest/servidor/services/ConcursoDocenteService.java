@@ -101,6 +101,9 @@ public class ConcursoDocenteService
         Concurso concurso = concursoDe(postulacion);
         validarAbierto(concurso, "no se pueden registrar tomas de horas");
 
+        // El docente puede llegar por uuid (el id numérico no viaja en las respuestas).
+        postulacion.setDocente(resolverReferencia(postulacion.getDocente(), docenteRepository,
+                "No se encontró el docente."));
         Long docenteId = postulacion.getDocente() == null ? null : postulacion.getDocente().getId();
         if (docenteId == null) {
             throw new ErrorServiceException("Debe seleccionar un docente.");
@@ -171,6 +174,11 @@ public class ConcursoDocenteService
 
     @Override
     protected void preModificacion(ConcursoDocente nueva) throws ErrorServiceException {
+        // Las referencias pueden llegar por uuid (el id numérico no viaja en las respuestas).
+        nueva.setConcurso(resolverReferencia(nueva.getConcurso(), concursoRepository,
+                "No se encontró el concurso."));
+        nueva.setDocente(resolverReferencia(nueva.getDocente(), docenteRepository,
+                "No se encontró el docente."));
         Optional<ConcursoDocente> guardada = concursoDocenteRepository.findById(nueva.getId());
         if (guardada.isEmpty()) {
             return; // BaseService responde "no encontrada".
@@ -268,6 +276,9 @@ public class ConcursoDocenteService
     // ------------------------------------------------------------------
 
     private Concurso concursoDe(ConcursoDocente postulacion) throws ErrorServiceException {
+        // El concurso puede llegar por uuid (el id numérico no viaja en las respuestas).
+        postulacion.setConcurso(resolverReferencia(postulacion.getConcurso(), concursoRepository,
+                "No se encontró el concurso."));
         Long concursoId = postulacion.getConcurso() == null ? null : postulacion.getConcurso().getId();
         if (concursoId == null) {
             throw new ErrorServiceException("Debe indicar el concurso.");
@@ -337,6 +348,22 @@ public class ConcursoDocenteService
      * designación definitiva y cierra el concurso si quedó completo. Al vivir en el servicio,
      * cualquier llamada a la API obtiene el mismo resultado y no puede quedar a mitad de camino.
      */
+    /**
+     * Variante por uuid: las URLs públicas usan el identificador opaco (anti-IDOR); se resuelve y
+     * se delega en la operación original, que conserva todas las reglas de negocio.
+     */
+    @Transactional(rollbackFor = Exception.class)
+    public Designacion confirmarPosesion(String concursoUuid, String postulacionUuid, Designacion datos)
+            throws ErrorServiceException {
+        Concurso concurso = concursoRepository.findByUuid(concursoUuid)
+                .filter(encontrado -> !Boolean.TRUE.equals(encontrado.getEliminado()))
+                .orElseThrow(() -> new ErrorServiceException("No se encontró el concurso."));
+        ConcursoDocente postulacion = concursoDocenteRepository.findByUuid(postulacionUuid)
+                .filter(encontrada -> !Boolean.TRUE.equals(encontrada.getEliminado()))
+                .orElseThrow(() -> new ErrorServiceException("No se encontró la postulación."));
+        return confirmarPosesion(concurso.getId(), postulacion.getId(), datos);
+    }
+
     @Transactional(rollbackFor = Exception.class)
     public Designacion confirmarPosesion(Long concursoId, Long postulacionId, Designacion datos)
             throws ErrorServiceException {

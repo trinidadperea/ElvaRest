@@ -139,6 +139,9 @@ public class CertificadoService extends BaseService<Certificado, Long> {
     }
 
     private ConcursoDocente postulacionDe(Certificado certificado) throws ErrorServiceException {
+        // La postulación puede llegar por uuid (el id numérico no viaja en las respuestas).
+        certificado.setConcursoDocente(resolverReferencia(certificado.getConcursoDocente(),
+                concursoDocenteRepository, "No se encontró la postulación."));
         Long id = certificado.getConcursoDocente() == null ? null : certificado.getConcursoDocente().getId();
         if (id == null) {
             throw new ErrorServiceException("El certificado debe estar asociado a una postulación (docente y concurso).");
@@ -149,6 +152,9 @@ public class CertificadoService extends BaseService<Certificado, Long> {
     }
 
     private TipoCertificado tipoDe(Certificado certificado) throws ErrorServiceException {
+        // El tipo puede llegar por uuid (el id numérico no viaja en las respuestas).
+        certificado.setTipoCertificado(resolverReferencia(certificado.getTipoCertificado(),
+                tipoCertificadoRepository, "No se encontró el tipo de certificado."));
         Long id = certificado.getTipoCertificado() == null ? null : certificado.getTipoCertificado().getId();
         if (id == null) {
             throw new ErrorServiceException("Seleccione el tipo de certificado.");

@@ -16,12 +16,11 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.ui.ExtendedModelMap;
 import org.springframework.web.servlet.mvc.support.RedirectAttributesModelMap;
 
-import java.util.Map;
-
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -98,12 +97,11 @@ class UsuarioSeguridadTest {
     @WithMockUser(roles = "ADMIN")
     void elAdminRestableceLaContrasenaDeUnUsuarioPorSuUuid() throws Exception {
         mvc.perform(post("/usuarios/uuid-1/restablecer-contrasena")
-                        .with(csrf())
-                        .sessionAttr("usuariosUuidMap", Map.of("uuid-1", 1L)))
+                        .with(csrf()))
                 .andExpect(status().is3xxRedirection())
                 .andExpect(redirectedUrl("/usuarios/ver/uuid-1"));
 
-        verify(usuarioService).restablecerContraseña(1L);
+        verify(usuarioService).restablecerContraseña("uuid-1");
     }
 
     @Test
@@ -134,12 +132,13 @@ class UsuarioSeguridadTest {
 
     @Test
     @WithMockUser(roles = "ADMIN")
-    void unUuidQueNoEstaEnLaSesionRedirigeAlListado() throws Exception {
-        mvc.perform(get("/usuarios/ver/uuid-otro")
-                        .sessionAttr("usuariosUuidMap", Map.of("uuid-1", 1L)))
+    void unUuidInexistenteRedirigeAlListado() throws Exception {
+        when(usuarioService.obtener("uuid-otro")).thenReturn(null);
+
+        mvc.perform(get("/usuarios/ver/uuid-otro"))
                 .andExpect(status().is3xxRedirection())
                 .andExpect(redirectedUrl("/usuarios/list"))
-                .andExpect(flash().attribute("msgError", "Enlace no válido o expirado."));
+                .andExpect(flash().attribute("msgError", "Error de Sistema"));
     }
 
     @Test

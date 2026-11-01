@@ -47,6 +47,9 @@ public class ConcursoService extends BaseService<Concurso, Long> {
         if (concurso.getEstadoConcurso() == null) {
             throw new ErrorServiceException("Debe seleccionar un estado para el concurso.");
         }
+        // El cargo puede llegar por uuid (el id numérico no viaja en las respuestas).
+        concurso.setCargo(resolverReferencia(concurso.getCargo(), cargoRepository,
+                "No se encontró el cargo."));
         validarHorasDelCargo(concurso);
     }
 

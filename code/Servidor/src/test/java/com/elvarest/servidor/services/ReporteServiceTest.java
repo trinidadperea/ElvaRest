@@ -12,16 +12,22 @@ import com.elvarest.servidor.repositories.ConcursoRepository;
 import com.elvarest.servidor.repositories.ReporteRepository;
 import com.lowagie.text.pdf.PdfReader;
 import com.lowagie.text.pdf.parser.PdfTextExtractor;
+import org.apache.poi.ss.usermodel.Cell;
+import org.apache.poi.ss.usermodel.Row;
+import org.apache.poi.ss.usermodel.Sheet;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.io.ByteArrayInputStream;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -42,6 +48,7 @@ class ReporteServiceTest {
 
     private ReporteService service;
     private Concurso concurso;
+    private static final String UUID_CONCURSO = "11111111-1111-1111-1111-111111111111";
 
     @BeforeEach
     void setUp() {
@@ -53,6 +60,7 @@ class ReporteServiceTest {
 
         concurso = new Concurso();
         concurso.setId(1L);
+        concurso.setUuid(UUID_CONCURSO);
         concurso.setDescripcion("Concurso Matemática 2026");
         concurso.setEstadoConcurso(EstadoConcurso.EN_PROCESO);
         concurso.setFechaApertura(LocalDate.of(2026, 10, 1));
@@ -93,14 +101,14 @@ class ReporteServiceTest {
 
     @Test
     void reporteIncluyeCanceladasYCalculaHorasSoloConVigentes() throws Exception {
-        when(concursoRepository.findById(1L)).thenReturn(Optional.of(concurso));
+        when(concursoRepository.findByUuid(UUID_CONCURSO)).thenReturn(Optional.of(concurso));
         when(concursoDocenteRepository.findByConcursoIdOrderByIdAsc(1L)).thenReturn(List.of(
                 postulacion("Gomez", 8, EstadoPostulacion.DESIGNACION_DEFINITIVA, null, false),
                 postulacion("Perez", 6, EstadoPostulacion.CANCELADO_INEFECTIVO,
                         "No se presentó a la toma de posesión", false),
                 postulacion("Borrada", 4, EstadoPostulacion.PENDIENTE_CERTIFICADOS, null, true)));
 
-        String texto = textoDelPdf(service.generarReporteConcurso(1L));
+        String texto = textoDelPdf(service.generarReporteConcurso(UUID_CONCURSO));
 
         assertTrue(texto.contains("Concurso Matemática 2026"));
         assertTrue(texto.contains("Gomez, Ana"));
@@ -114,19 +122,45 @@ class ReporteServiceTest {
 
     @Test
     void concursoSinPostulacionesLoIndica() throws Exception {
-        when(concursoRepository.findById(1L)).thenReturn(Optional.of(concurso));
+        when(concursoRepository.findByUuid(UUID_CONCURSO)).thenReturn(Optional.of(concurso));
         when(concursoDocenteRepository.findByConcursoIdOrderByIdAsc(1L)).thenReturn(List.of());
 
-        assertTrue(textoDelPdf(service.generarReporteConcurso(1L)).contains("No hay docentes postulados."));
+        assertTrue(textoDelPdf(service.generarReporteConcurso(UUID_CONCURSO)).contains("No hay docentes postulados."));
     }
 
     @Test
     void concursoInexistenteOEliminadoLanzaError() {
-        when(concursoRepository.findById(99L)).thenReturn(Optional.empty());
-        assertThrows(ErrorServiceException.class, () -> service.generarReporteConcurso(99L));
+        when(concursoRepository.findByUuid("uuid-inexistente")).thenReturn(Optional.empty());
+        assertThrows(ErrorServiceException.class, () -> service.generarReporteConcurso("uuid-inexistente"));
 
         concurso.setEliminado(true);
-        when(concursoRepository.findById(1L)).thenReturn(Optional.of(concurso));
-        assertThrows(ErrorServiceException.class, () -> service.generarReporteConcurso(1L));
+        when(concursoRepository.findByUuid(UUID_CONCURSO)).thenReturn(Optional.of(concurso));
+        assertThrows(ErrorServiceException.class, () -> service.generarReporteConcurso(UUID_CONCURSO));
+    }
+
+    @Test
+    void reporteExcelIncluyeDatosYPostulaciones() throws Exception {
+        when(concursoRepository.findByUuid(UUID_CONCURSO)).thenReturn(Optional.of(concurso));
+        when(concursoDocenteRepository.findByConcursoIdOrderByIdAsc(1L)).thenReturn(List.of(
+                postulacion("Gomez", 8, EstadoPostulacion.DESIGNACION_DEFINITIVA, null, false)));
+
+        byte[] excel = service.generarReporteConcursoExcel(UUID_CONCURSO);
+
+        try (XSSFWorkbook libro = new XSSFWorkbook(new ByteArrayInputStream(excel))) {
+            assertEquals("Datos del concurso", libro.getSheetAt(0).getSheetName());
+            assertEquals("Postulaciones", libro.getSheetAt(1).getSheetName());
+            assertTrue(textoDe(libro.getSheetAt(0)).contains("Concurso Matemática 2026"));
+            assertTrue(textoDe(libro.getSheetAt(1)).contains("Gomez, Ana"));
+        }
+    }
+
+    private String textoDe(Sheet hoja) {
+        StringBuilder texto = new StringBuilder();
+        for (Row fila : hoja) {
+            for (Cell celda : fila) {
+                texto.append(celda).append(' ');
+            }
+        }
+        return texto.toString();
     }
 }

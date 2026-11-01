@@ -3,6 +3,7 @@ package com.elvarest.servidor.services;
 import com.elvarest.servidor.entities.Materia;
 import com.elvarest.servidor.exceptions.ErrorServiceException;
 import com.elvarest.servidor.repositories.CargoRepository;
+import com.elvarest.servidor.repositories.CursoRepository;
 import com.elvarest.servidor.repositories.MateriaRepository;
 import org.springframework.stereotype.Service;
 
@@ -13,10 +14,20 @@ import java.util.Optional;
 public class MateriaService extends BaseService<Materia, Long> {
 
     private final CargoRepository cargoRepository;
+    private final CursoRepository cursoRepository;
 
-    public MateriaService(MateriaRepository repository, CargoRepository cargoRepository) {
+    public MateriaService(MateriaRepository repository, CargoRepository cargoRepository,
+                          CursoRepository cursoRepository) {
         super(repository);
         this.cargoRepository = cargoRepository;
+        this.cursoRepository = cursoRepository;
+    }
+
+    @Override
+    protected void validar(Materia materia) throws ErrorServiceException {
+        // El curso puede llegar por uuid (el id numérico no viaja en las respuestas).
+        materia.setCurso(resolverReferencia(materia.getCurso(), cursoRepository,
+                "No se encontró el curso."));
     }
 
     /** Regla de eliminación de materias: no se elimina una materia asociada a un cargo. */

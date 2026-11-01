@@ -95,6 +95,13 @@ public class AlertaService extends BaseService<Alerta, Long> {
         alerta.setFechaResolucion(alerta.isLeida() ? LocalDate.now() : null);
     }
 
+    /** El certificado de origen puede llegar por uuid (el id numérico no viaja en las respuestas). */
+    @Override
+    protected void validar(Alerta alerta) throws ErrorServiceException {
+        alerta.setCertificado(resolverReferencia(alerta.getCertificado(), certificadoRepository,
+                "No se encontró el certificado."));
+    }
+
     /** Los vínculos de origen no se cambian desde la API (p. ej. al marcar la alerta como leída). */
     @Override
     protected void preModificacion(Alerta alerta) throws ErrorServiceException {

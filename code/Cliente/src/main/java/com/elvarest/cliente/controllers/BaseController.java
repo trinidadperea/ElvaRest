@@ -15,11 +15,11 @@ import java.io.Serializable;
 import java.util.List;
 
 @Controller
-public abstract class BaseController<T extends Identifiable<ID>, ID> {
+public abstract class BaseController<T extends Identifiable<String>> {
 
     private static final Logger log = LoggerFactory.getLogger(BaseController.class);
 
-    protected final BaseService<T, ID> service;
+    protected final BaseService<T> service;
     private String nameClass = "";
     protected String viewList = "";
     protected String viewCreate = "";
@@ -34,7 +34,7 @@ public abstract class BaseController<T extends Identifiable<ID>, ID> {
     protected String urlPrefix = "";
 
     @SuppressWarnings("SpringJavaInjectionPointsAutowiringInspection")
-    protected BaseController(BaseService<T, ID> service) {
+    protected BaseController(BaseService<T> service) {
         this.service = service;
     }
 
@@ -112,13 +112,13 @@ public abstract class BaseController<T extends Identifiable<ID>, ID> {
         }
     }
 
-    @GetMapping("/consultar/{id}")
-    public String consultar(@PathVariable ID id, Model model, RedirectAttributes attributes) {
+    @GetMapping("/consultar/{uuid}")
+    public String consultar(@PathVariable String uuid, Model model, RedirectAttributes attributes) {
         try {
             this.model = model;
-            T found = service.obtener(id);
+            T found = service.obtener(uuid);
             if (found == null)
-                throw new IllegalArgumentException("No encontrado: " + id);
+                throw new IllegalArgumentException("No encontrado: " + uuid);
 
             postConsulta(found);
             this.model.addAttribute("item", found);
@@ -136,18 +136,18 @@ public abstract class BaseController<T extends Identifiable<ID>, ID> {
         }
     }
 
-    @GetMapping("/{id}")
-    public String detalle(@PathVariable ID id, Model model, RedirectAttributes attributes) {
-        return consultar(id, model, attributes);
+    @GetMapping("/{uuid}")
+    public String detalle(@PathVariable String uuid, Model model, RedirectAttributes attributes) {
+        return consultar(uuid, model, attributes);
     }
 
-    @GetMapping({"/modificar/{id}", "/{id}/editar"})
-    public String editar(@PathVariable ID id, Model model, RedirectAttributes attributes) {
+    @GetMapping({"/modificar/{uuid}", "/{uuid}/editar"})
+    public String editar(@PathVariable String uuid, Model model, RedirectAttributes attributes) {
         try {
             this.model = model;
-            T found = service.obtener(id);
+            T found = service.obtener(uuid);
             if (found == null)
-                throw new IllegalArgumentException("No encontrado: " + id);
+                throw new IllegalArgumentException("No encontrado: " + uuid);
 
             this.model.addAttribute("item", found);
             this.model.addAttribute("isDisabled", false);
@@ -164,10 +164,10 @@ public abstract class BaseController<T extends Identifiable<ID>, ID> {
         }
     }
 
-    @GetMapping("/baja/{id}")
-    public String eliminar(@PathVariable ID id, RedirectAttributes attributes) {
+    @GetMapping("/baja/{uuid}")
+    public String eliminar(@PathVariable String uuid, RedirectAttributes attributes) {
         try {
-            service.bajaLogica(id);
+            service.bajaLogica(uuid);
             attributes.addFlashAttribute("msgExito", "La acción fue realizada correctamente.");
             return redirectList;
         } catch (ErrorServiceException e) {
@@ -180,7 +180,7 @@ public abstract class BaseController<T extends Identifiable<ID>, ID> {
     }
 
     /**
-     * El formulario debe publicar un objeto 'item' con la misma estructura del DTO (incluyendo id).
+     * El formulario debe publicar un objeto 'item' con la misma estructura del DTO (incluyendo uuid).
      */
     @PostMapping("/actualizar")
     public String actualizar(@ModelAttribute("item") T entidad, @RequestParam(value = "file", required = false) MultipartFile file, RedirectAttributes attributes, Model model) {

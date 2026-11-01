@@ -66,13 +66,13 @@ public class ReporteController {
     }
 
     /** PDF de un concurso generado por el Servidor; se abre en una pestaña nueva del navegador. */
-    @GetMapping("/concurso/{concursoId}/pdf")
-    public ResponseEntity<byte[]> pdfConcurso(@PathVariable Long concursoId) {
+    @GetMapping("/concurso/{concursoUuid}/pdf")
+    public ResponseEntity<byte[]> pdfConcurso(@PathVariable String concursoUuid) {
         try {
-            byte[] pdf = reporteService.pdfConcurso(concursoId);
+            byte[] pdf = reporteService.pdfConcurso(concursoUuid);
             return ResponseEntity.ok()
                     .header(HttpHeaders.CONTENT_DISPOSITION,
-                            "inline; filename=reporte-concurso-" + concursoId + ".pdf")
+                            "inline; filename=reporte-concurso-" + concursoUuid + ".pdf")
                     .contentType(MediaType.APPLICATION_PDF)
                     .body(pdf);
         } catch (HttpClientErrorException.NotFound e) {
@@ -97,7 +97,7 @@ public class ReporteController {
         List<ConcursoDocenteDTO> postulaciones = listarSeguro(concursoDocenteService::listarActivos);
 
         // El DTO de designación no referencia al cargo: se resuelve por el cargo que la contiene.
-        Map<Long, CargoDTO> cargoPorDesignacion = mapaCargoPorDesignacion(cargos);
+        Map<String, CargoDTO> cargoPorDesignacion = mapaCargoPorDesignacion(cargos);
 
         // --- 1. Suplentes vigentes: designaciones activas con carácter de suplencia ---
         List<SuplenteVigente> suplentes = designaciones.stream()
@@ -173,8 +173,8 @@ public class ReporteController {
     }
 
     /** Asocia cada designación con el cargo que la contiene. */
-    private Map<Long, CargoDTO> mapaCargoPorDesignacion(List<CargoDTO> cargos) {
-        Map<Long, CargoDTO> mapa = new HashMap<>();
+    private Map<String, CargoDTO> mapaCargoPorDesignacion(List<CargoDTO> cargos) {
+        Map<String, CargoDTO> mapa = new HashMap<>();
         for (CargoDTO cargo : cargos) {
             if (cargo.getDesignaciones() == null) {
                 continue;

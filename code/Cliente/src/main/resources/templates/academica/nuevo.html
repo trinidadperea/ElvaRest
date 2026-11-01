@@ -1,5 +1,6 @@
 <!doctype html>
 <html lang="es" xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
       th:replace="~{base :: layout('Nuevo curso', ~{::#encabezado}, ~{::#contenido}, '')}">
 <section id="encabezado">
   <h3 data-subtitle="Registro de un curso de la institución">Nuevo curso</h3>
@@ -20,7 +21,7 @@
       <a class="btn btn-outline-secondary" th:href="@{/academica/list}">
         <i class="bi bi-arrow-left me-1"></i>Cancelar
       </a>
-      <button type="submit" class="btn btn-primary">
+      <button type="submit" class="btn btn-primary" sec:authorize="hasRole('ADMIN')">
         <i class="bi bi-check-lg me-1"></i>Guardar curso
       </button>
     </div>

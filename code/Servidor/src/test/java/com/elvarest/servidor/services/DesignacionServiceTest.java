@@ -8,6 +8,7 @@ import com.elvarest.servidor.entities.enums.EstadoDesignacion;
 import com.elvarest.servidor.exceptions.ErrorServiceException;
 import com.elvarest.servidor.repositories.ConcursoRepository;
 import com.elvarest.servidor.repositories.DesignacionRepository;
+import com.elvarest.servidor.repositories.DocenteRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -40,6 +41,8 @@ class DesignacionServiceTest {
     @Mock
     private ConcursoRepository concursoRepository;
     @Mock
+    private DocenteRepository docenteRepository;
+    @Mock
     private AlertaService alertaService;
 
     private DesignacionService service;
@@ -48,7 +51,8 @@ class DesignacionServiceTest {
 
     @BeforeEach
     void setUp() {
-        service = new DesignacionService(designacionRepository, concursoRepository, alertaService);
+        service = new DesignacionService(designacionRepository, concursoRepository, alertaService,
+                docenteRepository);
 
         docente = new Docente();
         docente.setId(7L);

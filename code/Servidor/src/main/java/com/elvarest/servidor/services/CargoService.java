@@ -6,6 +6,7 @@ import com.elvarest.servidor.entities.enums.TipoCargo;
 import com.elvarest.servidor.exceptions.ErrorServiceException;
 import com.elvarest.servidor.repositories.CargoRepository;
 import com.elvarest.servidor.repositories.ConcursoRepository;
+import com.elvarest.servidor.repositories.MateriaRepository;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -16,10 +17,20 @@ import java.util.Optional;
 public class CargoService extends BaseService<Cargo, Long> {
 
     private final ConcursoRepository concursoRepository;
+    private final MateriaRepository materiaRepository;
 
-    public CargoService(CargoRepository repository, ConcursoRepository concursoRepository) {
+    public CargoService(CargoRepository repository, ConcursoRepository concursoRepository,
+                        MateriaRepository materiaRepository) {
         super(repository);
         this.concursoRepository = concursoRepository;
+        this.materiaRepository = materiaRepository;
+    }
+
+    @Override
+    protected void validar(Cargo cargo) throws ErrorServiceException {
+        // La materia puede llegar por uuid (el id numérico no viaja en las respuestas).
+        cargo.setMateria(resolverReferencia(cargo.getMateria(), materiaRepository,
+                "No se encontró la materia."));
     }
 
     @Override

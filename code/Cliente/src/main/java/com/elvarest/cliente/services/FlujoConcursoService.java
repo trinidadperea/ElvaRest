@@ -27,18 +27,18 @@ public class FlujoConcursoService {
     }
 
     /** Postulaciones (toma de horas) de un concurso puntual. */
-    public List<ConcursoDocenteDTO> postulantesDelConcurso(Long concursoId) {
+    public List<ConcursoDocenteDTO> postulantesDelConcurso(String concursoUuid) {
         return concursoDocenteService.listarActivos().stream()
                 .filter(postulacion -> postulacion.getConcurso() != null
-                        && Objects.equals(postulacion.getConcurso().getId(), concursoId))
+                        && Objects.equals(postulacion.getConcurso().getId(), concursoUuid))
                 .toList();
     }
 
     /** Filtra, desde una lista ya cargada, las postulaciones de un concurso (evita llamadas repetidas a la API). */
-    public List<ConcursoDocenteDTO> postulantesDe(List<ConcursoDocenteDTO> postulaciones, Long concursoId) {
+    public List<ConcursoDocenteDTO> postulantesDe(List<ConcursoDocenteDTO> postulaciones, String concursoUuid) {
         return postulaciones.stream()
                 .filter(postulacion -> postulacion.getConcurso() != null
-                        && Objects.equals(postulacion.getConcurso().getId(), concursoId))
+                        && Objects.equals(postulacion.getConcurso().getId(), concursoUuid))
                 .toList();
     }
 

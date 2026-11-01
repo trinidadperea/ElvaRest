@@ -17,7 +17,7 @@ import java.util.List;
 
 @Controller
 @RequestMapping("/materias")
-public class MateriaController extends BaseController<MateriaDTO, Long> {
+public class MateriaController extends BaseController<MateriaDTO> {
 
     private final CursoService cursoService;
 

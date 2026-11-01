@@ -1,5 +1,6 @@
 <!doctype html>
 <html lang="es" xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
       th:replace="~{base :: layout('Docentes', ~{::#encabezado}, ~{::#contenido}, '')}">
 <section id="encabezado">
   <h3 data-subtitle="Plantel docente activo e inactivo del sistema">Docentes</h3>
@@ -13,7 +14,7 @@
              placeholder="Buscar por nombre, documento o área…" aria-label="Buscar docentes">
     </div>
     <div class="toolbar-filters">
-      <a class="btn btn-primary" th:href="@{/docentes/nuevo}">
+      <a class="btn btn-primary" sec:authorize="hasRole('ADMIN')" th:href="@{/docentes/nuevo}">
         <i class="bi bi-plus-lg me-1"></i>Nuevo docente
       </a>
     </div>
@@ -33,7 +34,7 @@
       <tbody>
       <tr th:each="item : ${items}">
         <td>
-          <a class="fw-semibold text-decoration-none" th:href="@{/docentes/{id}(id=${item.id})}"
+          <a class="fw-semibold text-decoration-none" th:href="@{/docentes/{uuid}(uuid=${item.uuid})}"
              th:text="${item.apellido + ', ' + item.nombre}"></a>
           <span class="badge rounded-pill text-bg-info ms-1" th:if="${item.tipo?.name() == 'PRECEPTOR'}">Preceptor</span>
           <span class="d-block text-secondary small" th:if="${item.interno}">Interno</span>
@@ -47,13 +48,13 @@
         </td>
         <td>
           <div class="table-actions">
-            <a class="btn btn-sm btn-outline-primary" th:href="@{/docentes/{id}(id=${item.id})}">
+            <a class="btn btn-sm btn-outline-primary" th:href="@{/docentes/{uuid}(uuid=${item.uuid})}">
               <i class="bi bi-eye"></i>Ver
             </a>
-            <a class="btn btn-sm btn-outline-secondary" th:href="@{/docentes/{id}/editar(id=${item.id})}">
+            <a class="btn btn-sm btn-outline-secondary" sec:authorize="hasRole('ADMIN')" th:href="@{/docentes/{uuid}/editar(uuid=${item.uuid})}">
               <i class="bi bi-pencil"></i>Editar
             </a>
-            <a class="btn btn-sm btn-outline-danger" th:href="@{/docentes/baja/{id}(id=${item.id})}"
+            <a class="btn btn-sm btn-outline-danger" sec:authorize="hasRole('ADMIN')" th:href="@{/docentes/baja/{uuid}(uuid=${item.uuid})}"
                th:attr="data-confirm='¿Dar de baja a ' + ${item.apellido + ', ' + item.nombre} + '? La acción se puede revertir desde la edición.'">
               <i class="bi bi-trash"></i>Eliminar
             </a>
@@ -68,7 +69,7 @@
     <i class="bi bi-people"></i>
     <p class="empty-title">Sin docentes registrados</p>
     <p>Registre el primer docente para comenzar a gestionar concursos y designaciones.</p>
-    <a class="btn btn-primary mt-3" th:href="@{/docentes/nuevo}">
+    <a class="btn btn-primary mt-3" sec:authorize="hasRole('ADMIN')" th:href="@{/docentes/nuevo}">
       <i class="bi bi-plus-lg me-1"></i>Nuevo docente
     </a>
   </div>

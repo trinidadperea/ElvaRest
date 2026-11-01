@@ -10,7 +10,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 @Service
-public class UsuarioService extends BaseService<UsuarioDTO, Long> {
+public class UsuarioService extends BaseService<UsuarioDTO> {
 
     private static final String API_URL = "http://localhost:8080/usuarios";
 
@@ -19,10 +19,10 @@ public class UsuarioService extends BaseService<UsuarioDTO, Long> {
     }
 
     /** Restablece la contraseña de un usuario: vuelve a ser su nombreUsuario (acción de ADMIN). */
-    public void restablecerContraseña(Long id) {
+    public void restablecerContraseña(String uuid) {
         HttpEntity<Void> entity = new HttpEntity<>(authService.authHeaders());
         try {
-            restTemplate.exchange(apiUrl + "/" + id + "/restablecer-contrasena", HttpMethod.POST, entity, Void.class);
+            restTemplate.exchange(apiUrl + "/" + uuid + "/restablecer-contrasena", HttpMethod.POST, entity, Void.class);
         } catch (HttpClientErrorException e) {
             throw errorDelServidor(e);
         }

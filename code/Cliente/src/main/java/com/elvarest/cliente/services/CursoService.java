@@ -4,7 +4,7 @@ import com.elvarest.cliente.dto.CursoDTO;
 import org.springframework.stereotype.Service;
 
 @Service
-public class CursoService extends BaseService<CursoDTO, Long> {
+public class CursoService extends BaseService<CursoDTO> {
 
     private static final String API_URL = "http://localhost:8080/cursos";
 

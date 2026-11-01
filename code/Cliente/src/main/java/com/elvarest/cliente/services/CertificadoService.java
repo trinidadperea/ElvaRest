@@ -12,7 +12,7 @@ import java.util.Objects;
 import java.util.stream.Collectors;
 
 @Service
-public class CertificadoService extends BaseService<CertificadoDTO, Long> {
+public class CertificadoService extends BaseService<CertificadoDTO> {
 
     private static final String API_URL = "http://localhost:8080/certificados";
 
@@ -31,10 +31,10 @@ public class CertificadoService extends BaseService<CertificadoDTO, Long> {
     }
 
     /** Certificados (actuales e historial) de una postulación. */
-    public List<CertificadoDTO> listarPorPostulacion(Long postulacionId) {
+    public List<CertificadoDTO> listarPorPostulacion(String postulacionUuid) {
         return listarActivos().stream()
                 .filter(certificado -> certificado.getConcursoDocente() != null
-                        && Objects.equals(certificado.getConcursoDocente().getId(), postulacionId))
+                        && Objects.equals(certificado.getConcursoDocente().getId(), postulacionUuid))
                 .sorted(MAS_RECIENTE_PRIMERO)
                 .toList();
     }
@@ -43,17 +43,17 @@ public class CertificadoService extends BaseService<CertificadoDTO, Long> {
      * Certificados del docente agrupados por concurso, del concurso más reciente al más antiguo.
      * Incluye las postulaciones con certificados cargados y las no canceladas (para poder cargarlos).
      */
-    public List<CertificadosPostulacionDTO> agruparPorDocente(Long docenteId) {
-        Map<Long, List<CertificadoDTO>> porPostulacion = listarActivos().stream()
+    public List<CertificadosPostulacionDTO> agruparPorDocente(String docenteUuid) {
+        Map<String, List<CertificadoDTO>> porPostulacion = listarActivos().stream()
                 .filter(certificado -> certificado.getConcursoDocente() != null
                         && certificado.getConcursoDocente().getId() != null
                         && certificado.getConcursoDocente().getDocente() != null
-                        && Objects.equals(certificado.getConcursoDocente().getDocente().getId(), docenteId))
+                        && Objects.equals(certificado.getConcursoDocente().getDocente().getId(), docenteUuid))
                 .collect(Collectors.groupingBy(certificado -> certificado.getConcursoDocente().getId()));
 
         return concursoDocenteService.listarActivos().stream()
                 .filter(postulacion -> postulacion.getDocente() != null
-                        && Objects.equals(postulacion.getDocente().getId(), docenteId))
+                        && Objects.equals(postulacion.getDocente().getId(), docenteUuid))
                 .filter(postulacion -> porPostulacion.containsKey(postulacion.getId())
                         || !flujoService.estadoEfectivo(postulacion).isCancelado())
                 .sorted(Comparator.comparing(ConcursoDocenteDTO::getFechaEmision,

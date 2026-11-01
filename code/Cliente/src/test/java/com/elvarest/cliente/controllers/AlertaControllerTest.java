@@ -44,42 +44,42 @@ class AlertaControllerTest {
 
     @Test
     void elConcursoEliminadoNoOfreceElEnlace() {
-        AlertaDTO alerta = alertaDeConcurso(1L, 9L);
-        when(concursoService.obtener(9L)).thenThrow(new RuntimeException("Entidad no encontrada o eliminada"));
+        AlertaDTO alerta = alertaDeConcurso("alert-1", "conc-9");
+        when(concursoService.obtener("conc-9")).thenThrow(new RuntimeException("Entidad no encontrada o eliminada"));
 
         controller.postConsulta(alerta);
 
-        assertFalse(model.containsAttribute("concursoDestinoId"));
+        assertFalse(model.containsAttribute("concursoDestinoUuid"));
     }
 
     @Test
     void elConcursoVigenteOfreceElEnlace() {
-        AlertaDTO alerta = alertaDeConcurso(1L, 9L);
-        when(concursoService.obtener(9L)).thenReturn(new ConcursoDTO());
+        AlertaDTO alerta = alertaDeConcurso("alert-1", "conc-9");
+        when(concursoService.obtener("conc-9")).thenReturn(new ConcursoDTO());
 
         controller.postConsulta(alerta);
 
-        assertEquals(9L, model.getAttribute("concursoDestinoId"));
+        assertEquals("conc-9", model.getAttribute("concursoDestinoUuid"));
     }
 
     @Test
     void elCertificadoEliminadoNoOfreceElEnlace() {
         AlertaDTO alerta = new AlertaDTO();
-        alerta.setId(2L);
+        alerta.setId("alert-2");
         CertificadoDTO certificado = new CertificadoDTO();
-        certificado.setId(4L);
+        certificado.setId("cert-4");
         alerta.setCertificado(certificado);
-        when(certificadoService.obtener(4L)).thenThrow(new RuntimeException("Entidad no encontrada o eliminada"));
+        when(certificadoService.obtener("cert-4")).thenThrow(new RuntimeException("Entidad no encontrada o eliminada"));
 
         controller.postConsulta(alerta);
 
-        assertFalse(model.containsAttribute("certificadoDestinoId"));
+        assertFalse(model.containsAttribute("certificadoDestinoUuid"));
     }
 
-    private AlertaDTO alertaDeConcurso(Long id, Long concursoId) {
+    private AlertaDTO alertaDeConcurso(String id, String concursoUuid) {
         AlertaDTO alerta = new AlertaDTO();
         alerta.setId(id);
-        alerta.setConcursoId(concursoId);
+        alerta.setConcursoUuid(concursoUuid);
         return alerta;
     }
 }

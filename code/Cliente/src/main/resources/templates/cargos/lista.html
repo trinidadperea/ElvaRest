@@ -14,7 +14,7 @@
              placeholder="Buscar por cargo, materia o curso…" aria-label="Buscar cargos">
     </div>
     <div class="toolbar-filters">
-      <a class="btn btn-primary" th:href="@{/cargos/nuevo}" sec:authorize="hasRole('ADMIN')">
+      <a class="btn btn-primary" th:href="@{/cargos/nuevo}">
         <i class="bi bi-plus-lg me-1"></i>Nuevo cargo
       </a>
     </div>
@@ -33,7 +33,7 @@
       <tbody>
       <tr th:each="cargo : ${items}">
         <td>
-          <a class="fw-semibold text-decoration-none" th:href="@{/cargos/{id}(id=${cargo.id})}"
+          <a class="fw-semibold text-decoration-none" th:href="@{/cargos/{uuid}(uuid=${cargo.uuid})}"
              th:text="${cargo.descripcion}"></a>
           <span class="badge rounded-pill text-bg-info ms-1" th:if="${cargo.tipoCargo?.name() == 'PRECEPTOR'}">Preceptor</span>
           <span class="d-block text-secondary small">
@@ -46,17 +46,17 @@
         <td th:text="${cargo.cargaHoraria} + ' h'"></td>
         <td>
           <span class="badge rounded-pill text-bg-secondary"
-                th:text="${cargosDesignacionesActivas != null and cargosDesignacionesActivas[cargo.id] != null ? cargosDesignacionesActivas[cargo.id] : 0}"></span>
+                th:text="${cargosDesignacionesActivas != null and cargosDesignacionesActivas[cargo.uuid] != null ? cargosDesignacionesActivas[cargo.uuid] : 0}"></span>
         </td>
         <td>
           <div class="table-actions">
-            <a class="btn btn-sm btn-outline-primary" th:href="@{/cargos/{id}(id=${cargo.id})}">
+            <a class="btn btn-sm btn-outline-primary" th:href="@{/cargos/{uuid}(uuid=${cargo.uuid})}">
               <i class="bi bi-eye"></i>Ver
             </a>
-            <a class="btn btn-sm btn-outline-secondary" th:href="@{/cargos/{id}/editar(id=${cargo.id})}">
+            <a class="btn btn-sm btn-outline-secondary" th:href="@{/cargos/{uuid}/editar(uuid=${cargo.uuid})}">
               <i class="bi bi-pencil"></i>Editar
             </a>
-            <a class="btn btn-sm btn-outline-danger" th:href="@{/cargos/baja/{id}(id=${cargo.id})}"
+            <a class="btn btn-sm btn-outline-danger" th:href="@{/cargos/baja/{uuid}(uuid=${cargo.uuid})}"
                th:attr="data-confirm='¿Dar de baja el cargo «' + ${cargo.descripcion} + '»? Sus designaciones asociadas dejarán de estar disponibles.'">
               <i class="bi bi-trash"></i>Eliminar
             </a>
@@ -71,7 +71,7 @@
     <i class="bi bi-briefcase"></i>
     <p class="empty-title">Sin cargos registrados</p>
     <p>Cree el primer cargo con su carga horaria para poder abrir concursos.</p>
-    <a class="btn btn-primary mt-3" th:href="@{/cargos/nuevo}" sec:authorize="hasRole('ADMIN')">
+    <a class="btn btn-primary mt-3" th:href="@{/cargos/nuevo}">
       <i class="bi bi-plus-lg me-1"></i>Nuevo cargo
     </a>
   </div>
